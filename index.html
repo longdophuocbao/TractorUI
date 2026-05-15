@@ -183,7 +183,7 @@
 
 <body class="text-white font-sans text-sm select-none bg-[#111]">
 
-    <!-- LỚP CAO NHẤT: MÀN HÌNH CHỜ KẾT NỐI (SPLASH SCREEN) KHÔI PHỤC THEO THIẾT KẾ CỦA BẠN -->
+    <!-- LỚP CAO NHẤT: MÀN HÌNH CHỜ KẾT NỐI (SPLASH SCREEN) -->
     <div id="splash-screen"
         class="fixed inset-0 z-[100] bg-[#1a1a1a] transition-opacity duration-700 flex flex-col items-center justify-center p-4 sm:p-8 overflow-y-auto">
 
@@ -202,8 +202,7 @@
                         </svg>
                     </div>
                     <div>
-                        <h1 class="text-2xl font-bold text-white tracking-widest uppercase drop-shadow-md">Straight
-                            Driving Assist Tractor
+                        <h1 class="text-2xl font-bold text-white tracking-widest uppercase drop-shadow-md">Tractor HUD
                         </h1>
                         <p class="text-gray-400 text-xs mt-1" data-i18n="splash-desc">Ready to connect to ROSBridge</p>
                     </div>
@@ -224,20 +223,20 @@
                 </template>
             </div>
 
-            <!-- Main Content: Split Views (Bản quyền của User) -->
+            <!-- Main Content: Split Views -->
             <div class="flex flex-col gap-4 relative z-10 w-full">
-                <div class="flex justify-center">
-                    <!-- <div id="statusIndicator"
+                <!-- <div class="flex justify-center">
+                    <div id="statusIndicator"
                         class="px-6 py-2 rounded-full text-sm font-bold bg-green-900 text-green-300 border border-green-500 shadow-lg">
-                        Hoàn thành</div> -->
-                </div>
+                        Hoàn thành</div>
+                </div> -->
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
                     <!-- View 1: 3D/Top-Down View -->
                     <div class="flex flex-col gap-2">
                         <div class="splash-canvas-container">
                             <canvas id="viewOutCanvas"></canvas>
-                            <div class="comic-bubble thought" id="outOverlay">Waiting for command...</div>
+                            <div class="comic-bubble thought" id="outOverlay">Chờ lệnh...</div>
                         </div>
                     </div>
 
@@ -245,7 +244,7 @@
                     <div class="flex flex-col gap-2">
                         <div class="splash-canvas-container">
                             <canvas id="viewInCanvas"></canvas>
-                            <div class="comic-bubble thought" id="inOverlay">Keep your hands on the steering wheel</div>
+                            <div class="comic-bubble thought" id="inOverlay">Tay trên vô lăng</div>
                         </div>
                     </div>
                 </div>
@@ -308,9 +307,7 @@
                             d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7">
                         </path>
                     </svg>
-                    <!-- <span id="map-source-text" class="text-xs font-bold text-gray-300 hidden sm:block">NLSC</span> -->
                 </button>
-
                 <!-- Nút Toàn Màn Hình (Fullscreen) -->
                 <button onclick="toggleFullScreen()"
                     class="pointer-events-auto glass-panel hover:bg-white/10 p-2.5 rounded-full shadow-lg transition active:scale-90"
@@ -417,6 +414,14 @@
             <button onclick="setControlMode('path')" id="toggle-path"
                 class="px-4 py-1.5 rounded-full text-xs font-bold transition-all text-gray-400 hover:text-white cursor-pointer"
                 data-i18n="mode-path">Path Mode</button>
+
+
+            <button id="btn-clear-all"
+                class="relative overflow-hidden glass-panel w-9 h-9 rounded-full flex items-center justify-center bg-red-500/10 hover:bg-red-500/30 border border-red-500/40 transition active:scale-90 group"
+                title="Hold to Clear All">
+                <div class="hold-progress absolute left-0 bottom-0 top-0 w-0 bg-red-500/70 pointer-events-none"></div>
+                <span class="relative z-10 text-lg group-hover:scale-110 transition-transform">🗑️</span>
+            </button>
         </div>
 
         <div
@@ -639,6 +644,9 @@
         let odomX = 0, odomY = 0, tractorMathYaw = 0, tractorCssAngle = 0;
         let refLinePoints = [];
         let currentTopicSub = null;
+
+        // Theo dõi các điểm Vertex Markers trên bản đồ để không vẽ đè
+        let activeVertexMarkers = {};
 
         // --- Hàm kiểm tra bảo mật (Canvas Web chặn WS) ---
         function isSecureContextBlockingWs(url) {
@@ -915,15 +923,15 @@
                         statusInd.className = "px-6 py-2 rounded-full text-sm font-bold bg-yellow-900 text-yellow-300 border border-yellow-500 shadow-lg";
                     }
                     if (outOverlay) outOverlay.innerText = "Recording trajectory...";
-                    if (inOverlay) inOverlay.innerText = "Keep your hands on the steering wheel!";
+                    if (inOverlay) inOverlay.innerText = "Just hold on tight to the steering wheel!";
                     break;
                 case SPLASH_STATE_CALCULATING:
                     if (statusInd) {
                         statusInd.innerText = "Bước 2: Tạo đường tham chiếu";
                         statusInd.className = "px-6 py-2 rounded-full text-sm font-bold bg-blue-900 text-blue-300 border border-blue-500 shadow-lg";
                     }
-                    if (outOverlay) outOverlay.innerText = "Calculating...";
-                    if (inOverlay) inOverlay.innerText = "Almost there...";
+                    if (outOverlay) outOverlay.innerText = "Calculating... Hmm...";
+                    if (inOverlay) inOverlay.innerText = "Soon to be released...";
                     break;
                 case SPLASH_STATE_AUTO:
                     if (statusInd) {
@@ -931,7 +939,7 @@
                         statusInd.className = "px-6 py-2 rounded-full text-sm font-bold bg-green-900 text-green-300 border border-green-500 shadow-lg";
                     }
                     if (outOverlay) outOverlay.innerText = "Following the red line!";
-                    if (inOverlay) inOverlay.innerText = "So easy! Let the machine handle it!";
+                    if (inOverlay) inOverlay.innerText = "So easy! Just let the machine do it all!";
                     break;
             }
         }
@@ -980,7 +988,7 @@
 
                 // Animate dashed line calculating
                 ctxOut.beginPath();
-                ctxOut.strokeStyle = '#fa0000'; // Red ref line
+                ctxOut.strokeStyle = '#ff0000'; // Red ref line
                 ctxOut.lineWidth = 4;
                 ctxOut.setLineDash([10, 10]);
                 ctxOut.lineDashOffset = -performance.now() / 20; // moving dash effect
@@ -1081,7 +1089,7 @@
             // Draw Reference Line (Projected from front of tractor to horizon)
             if ((splashState === SPLASH_STATE_CALCULATING || splashState === SPLASH_STATE_AUTO) && splashRefLine.length >= 2) {
                 ctxIn.beginPath();
-                ctxIn.strokeStyle = 'rgba(255, 0, 10, 0.8)'; // Glowing RED
+                ctxIn.strokeStyle = 'rgba(255, 0, 0, 0.8)'; // Glowing red
                 ctxIn.lineWidth = 6;
                 ctxIn.setLineDash([20, 20]);
                 ctxIn.lineDashOffset = -performance.now() / 15;
@@ -1239,7 +1247,7 @@
 
             // Ngăn lỗi SecurityError khi chạy trên Canvas preview do chặn ws://
             if (isSecureContextBlockingWs(url)) {
-                console.warn("Môi trường duyệt web đã chặn kết nối ws://");
+                console.warn("Trình duyệt web bảo mật đã chặn kết nối ws://");
                 splashBtnConnect.innerHTML = `<span class="text-red-400 text-xs font-bold text-center px-2 py-1">Lỗi bảo mật (Trình duyệt chặn ws://)<br>Vui lòng tải tệp HTML về máy tính để chạy</span>`;
                 setTimeout(() => resetSplashBtn(), 4500);
                 return;
@@ -1495,6 +1503,7 @@
         let tractorMarker = L.marker([22.644689, 120.357255], { icon: tractorIcon }).addTo(map);
         let miniTractorMarker = L.marker([22.644689, 120.357255], { icon: miniTractorIcon }).addTo(minimap);
         let referencePathLayer = L.polyline([], { color: '#ef4444', weight: 4, opacity: 0.9, lineJoin: 'round' }).addTo(map);
+        let vertexMarkersLayer = L.layerGroup().addTo(map); // Lớp chứa các điểm đánh dấu (vertices)
 
         window.addEventListener('resize', () => { map.invalidateSize(); minimap.invalidateSize(); });
         setTimeout(() => { map.invalidateSize(); minimap.invalidateSize(); }, 500);
@@ -1944,6 +1953,11 @@
             lonDisplay.innerText = '--.------';
 
             referencePathLayer.setLatLngs([]);
+
+            // Xóa rỗng các điểm Vertex khi mất kết nối
+            vertexMarkersLayer.clearLayers();
+            activeVertexMarkers = {};
+
             refLinePoints = [];
             hasReferenceLine = false;
             isRecordingLine = false;
@@ -1995,14 +2009,13 @@
 
             subscribeToTopic('/gps/fix', 'sensor_msgs/NavSatFix', (m) => {
                 if (m.latitude !== 0) {
-                    tractorMarker.setLatLng([m.latitude, m.longitude]);
-                    miniTractorMarker.setLatLng([m.latitude, m.longitude]);
-
-                    if (mapOriginLat === null) { mapOriginLat = m.latitude; mapOriginLon = m.longitude; }
+                    // tractorMarker.setLatLng([m.latitude, m.longitude]);
+                    // miniTractorMarker.setLatLng([m.latitude, m.longitude]);
 
                     latDisplay.innerText = m.latitude.toFixed(6);
                     lonDisplay.innerText = m.longitude.toFixed(6);
-                    latestLat = m.latitude; latestLon = m.longitude;
+                    latestLat = m.latitude;
+                    latestLon = m.longitude;
 
                     if (!firstGpsFix) {
                         map.setView([m.latitude, m.longitude], 19);
@@ -2027,6 +2040,33 @@
             subscribeToTopic('/odom/absolute', 'nav_msgs/Odometry', (m) => {
                 odomX = m.pose.pose.position.x;
                 odomY = m.pose.pose.position.y;
+
+                // --- BỔ SUNG: Tính tọa độ Lat/Lon của xe dựa trên Odom ---
+                if (mapOriginLat !== null && mapOriginLon !== null) {
+                    const r_earth = 6378137.0;
+                    let dLat = (odomY / r_earth) * (180 / Math.PI);
+                    let dLon = (odomX / r_earth) * (180 / Math.PI) / Math.cos(mapOriginLat * Math.PI / 180);
+
+                    let tractorLat = mapOriginLat + dLat;
+                    let tractorLon = mapOriginLon + dLon;
+
+                    // Di chuyển Icon xe
+                    tractorMarker.setLatLng([tractorLat, tractorLon]);
+                    miniTractorMarker.setLatLng([tractorLat, tractorLon]);
+
+                    // Cập nhật tọa độ hiển thị trên màn hình
+                    latDisplay.innerText = tractorLat.toFixed(6);
+                    lonDisplay.innerText = tractorLon.toFixed(6);
+                    latestLat = tractorLat;
+                    latestLon = tractorLon;
+
+                    if (!firstGpsFix) {
+                        map.setView([tractorLat, tractorLon], 19);
+                        firstGpsFix = true;
+                    }
+                    checkRecenterVisibility();
+                }
+                // ---------------------------------------------------------
 
                 // Get Quaternion
                 let q = m.pose.pose.orientation;
@@ -2079,7 +2119,67 @@
                 updateRecordLineButtonUI();
                 updateDynamicPanelsVisibility();
             });
-        });
+
+            // Lắng nghe topic /path_endpoints để vẽ các điểm đã ghi (vertices)
+            subscribeToTopic('/path_endpoints', 'visualization_msgs/MarkerArray', (m) => {
+                if (mapOriginLat === null || mapOriginLon === null) return;
+                const r_earth = 6378137.0;
+
+                m.markers.forEach(marker => {
+                    // Marker Actions: 0=ADD/MODIFY, 2=DELETE, 3=DELETEALL
+                    if (marker.action === 2) { // DELETE
+                        if (activeVertexMarkers[marker.id]) {
+                            vertexMarkersLayer.removeLayer(activeVertexMarkers[marker.id]);
+                            delete activeVertexMarkers[marker.id];
+                        }
+                        return;
+                    } else if (marker.action === 3) { // DELETEALL
+                        vertexMarkersLayer.clearLayers();
+                        activeVertexMarkers = {};
+                        return;
+                    }
+
+                    // Nếu đã tồn tại marker ID này, xoá cái cũ đi vẽ cái mới (cập nhật nếu bị ghi đè)
+                    if (activeVertexMarkers[marker.id]) {
+                        vertexMarkersLayer.removeLayer(activeVertexMarkers[marker.id]);
+                    }
+
+                    let pointsToDraw = [];
+                    if (marker.points && marker.points.length > 0) {
+                        pointsToDraw = marker.points;
+                    } else if (marker.pose && marker.pose.position) {
+                        pointsToDraw = [marker.pose.position];
+                    }
+
+                    pointsToDraw.forEach(pt => {
+                        let dLat = (pt.y / r_earth) * (180 / Math.PI);
+                        let dLon = (pt.x / r_earth) * (180 / Math.PI) / Math.cos(mapOriginLat * Math.PI / 180);
+
+                        let lat = mapOriginLat + dLat;
+                        let lon = mapOriginLon + dLon;
+
+                        let circle = L.circleMarker([lat, lon], {
+                            radius: 6,
+                            fillColor: "#eab308",
+                            color: "#ffffff",
+                            weight: 2,
+                            opacity: 1,
+                            fillOpacity: 0.9
+                        }).addTo(vertexMarkersLayer);
+
+                        // Lưu circle vào object activeVertexMarkers để theo dõi
+                        activeVertexMarkers[marker.id] = circle;
+                    });
+                });
+            });
+
+            // Subscribe để lấy mốc tọa độ chuẩn từ C++
+            subscribeToTopic('/map_origin', 'sensor_msgs/NavSatFix', (m) => {
+                mapOriginLat = m.latitude;
+                mapOriginLon = m.longitude;
+                console.log("✅ Đã nhận mốc gốc đồng bộ: ", mapOriginLat, mapOriginLon);
+            });
+        }); // <-- FIXED: Added missing closing brace for ros.on('connection')
 
         // --- 10. Long Press / Hold Logic ---
         function setupHoldButton(btnId, actionFn, duration = 800) {
@@ -2160,9 +2260,12 @@
         updateDynamicPanelsVisibility();
 
         // Đăng ký sự kiện nhấn giữ cho 3 nút (Thời gian 800ms)
-        setupHoldButton('btn-record-vertex', () => callService('/record_vertex'), 800);
-        setupHoldButton('btn-generate-path', () => callService('/generate_path'), 800);
-        setupHoldButton('btn-record-line', toggleRecordLine, 800);
+        setupHoldButton('btn-record-vertex', () => callService('/record_vertex'), 500);
+        setupHoldButton('btn-generate-path', () => callService('/generate_path'), 500);
+        setupHoldButton('btn-record-line', toggleRecordLine, 500);
+
+        // BỔ SUNG: Nhấn giữ nút Thùng rác 1 giây để xóa toàn bộ
+        setupHoldButton('btn-clear-all', () => callService('/clear_all'), 500);
 
         // Chạy ngay lập tức Animation nền của màn hình chờ
         setTimeout(() => {
