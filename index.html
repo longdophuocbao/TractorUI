@@ -360,7 +360,7 @@
         <div class="glass-panel p-2 rounded-2xl flex flex-col gap-2 pointer-events-none">
             <div class="text-[10px] text-gray-400 text-center uppercase tracking-wider font-bold mb-1"
                 data-i18n="ctrl-fine-tune">Fine Tune</div>
-            <button onclick="callService('/steer_pc_node/rotate_ref_left')"
+            <button onclick="callService('/steer_planner_node/rotate_ref_left')"
                 class="bg-white/5 hover:bg-white/15 p-3 rounded-xl transition active:scale-90 flex justify-center items-center"
                 title="Rotate Left">
                 <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -368,7 +368,7 @@
                         d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
                 </svg>
             </button>
-            <button onclick="callService('/steer_pc_node/rotate_ref_right')"
+            <button onclick="callService('/steer_planner_node/rotate_ref_right')"
                 class="bg-white/5 hover:bg-white/15 p-3 rounded-xl transition active:scale-90 flex justify-center items-center"
                 title="Rotate Right">
                 <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -382,7 +382,7 @@
         <div class="glass-panel p-2 rounded-2xl flex flex-col gap-2 pointer-events-none">
             <div class="text-[10px] text-gray-400 text-center uppercase tracking-wider font-bold mb-1"
                 data-i18n="ctrl-swath">Swath</div>
-            <button onclick="callService('/swath_planner/swath_left')"
+            <button onclick="callService('/steer_planner_node/swath_left')"
                 class="bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 border border-indigo-500/30 p-3 rounded-xl transition active:scale-90 flex justify-center items-center"
                 title="Swath Left">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -390,7 +390,7 @@
                         d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path>
                 </svg>
             </button>
-            <button onclick="callService('/swath_planner/swath_right')"
+            <button onclick="callService('/steer_planner_node/swath_right')"
                 class="bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 border border-indigo-500/30 p-3 rounded-xl transition active:scale-90 flex justify-center items-center"
                 title="Swath Right">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1311,7 +1311,7 @@
         }
 
         function toggleRecordLine() {
-            callService('/steer_pc_node/toggle_line_recording');
+            callService('/steer_planner_node/toggle_line_recording');
             isRecordingLine = !isRecordingLine;
             updateRecordLineButtonUI();
         }
