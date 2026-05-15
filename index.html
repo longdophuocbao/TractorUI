@@ -225,11 +225,6 @@
 
             <!-- Main Content: Split Views -->
             <div class="flex flex-col gap-4 relative z-10 w-full">
-                <!-- <div class="flex justify-center">
-                    <div id="statusIndicator"
-                        class="px-6 py-2 rounded-full text-sm font-bold bg-green-900 text-green-300 border border-green-500 shadow-lg">
-                        Hoàn thành</div>
-                </div> -->
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
                     <!-- View 1: 3D/Top-Down View -->
@@ -415,7 +410,6 @@
                 class="px-4 py-1.5 rounded-full text-xs font-bold transition-all text-gray-400 hover:text-white cursor-pointer"
                 data-i18n="mode-path">Path Mode</button>
 
-
             <button id="btn-clear-all"
                 class="relative overflow-hidden glass-panel w-9 h-9 rounded-full flex items-center justify-center bg-red-500/10 hover:bg-red-500/30 border border-red-500/40 transition active:scale-90 group"
                 title="Hold to Clear All">
@@ -445,6 +439,7 @@
                     Path</span>
             </button>
 
+            <!-- Nút Record Line (sẽ tự thay đổi UI dựa trên Topic state_machine) -->
             <button id="btn-record-line"
                 class="relative overflow-hidden select-none flex-1 flex flex-col items-center justify-center bg-red-500/20 hover:bg-red-500/40 border border-red-500/30 py-2 rounded-xl transition active:scale-95 group">
                 <div class="hold-progress absolute left-0 bottom-0 top-0 w-0 bg-white/30 pointer-events-none"></div>
@@ -639,11 +634,14 @@
         let isSettingsOpen = false;
         let latestLat = 22.644689395509474, latestLon = 120.35725482912399;
         let mapOriginLat = null, mapOriginLon = null;
-        let isRecordingLine = false, hasReferenceLine = false, firstGpsFix = false;
+        let hasReferenceLine = false, firstGpsFix = false;
 
         let odomX = 0, odomY = 0, tractorMathYaw = 0, tractorCssAngle = 0;
         let refLinePoints = [];
         let currentTopicSub = null;
+
+        // ROS Planner State (1: IDLE, 2: RECORDING, 3: ACTIVE)
+        let plannerState = 1; 
 
         // Theo dõi các điểm Vertex Markers trên bản đồ để không vẽ đè
         let activeVertexMarkers = {};
@@ -696,6 +694,8 @@
                 "btn-record-vertex": "Record Vertex",
                 "btn-generate-path": "Generate Path",
                 "btn-record-line": "Record Line",
+                "btn-recording-line": "Recording...",
+                "btn-cancel": "Cancel",
                 "set-title": "Settings & Monitoring",
                 "set-ros-conn": "ROSBridge Connection",
                 "set-params-exp": "ROS 2 Parameter Explorer",
@@ -732,6 +732,8 @@
                 "btn-record-vertex": "記錄頂點",
                 "btn-generate-path": "生成路徑",
                 "btn-record-line": "記錄路線",
+                "btn-recording-line": "記錄中...",
+                "btn-cancel": "取消",
                 "set-title": "設置與監控",
                 "set-ros-conn": "ROSBridge 連接",
                 "set-params-exp": "ROS 2 參數管理",
@@ -789,6 +791,9 @@
                 btnConnect.innerText = t('btn-connect');
                 statusText.innerText = t('hud-disconnected');
             }
+
+            // Gọi lại UI cập nhật sau khi dịch để áp dụng đúng trạng thái động (Record/Recording/Cancel)
+            updateRecordLineButtonUI();
         }
 
         document.getElementById('lang-toggle').addEventListener('click', () => {
@@ -1310,10 +1315,9 @@
             }
         }
 
+        // Action gửi lệnh đi
         function toggleRecordLine() {
             callService('/steer_planner_node/toggle_line_recording');
-            isRecordingLine = !isRecordingLine;
-            updateRecordLineButtonUI();
         }
 
         function updateRecordLineButtonUI() {
@@ -1323,18 +1327,29 @@
             const text = btn.querySelectorAll('span')[1];
             btn.className = "relative overflow-hidden select-none flex-1 flex flex-col items-center justify-center py-2 rounded-xl transition active:scale-95 group border";
 
-            if (isRecordingLine) {
+            // plannerState: 1 = IDLE, 2 = RECORDING, 3 = ACTIVE (Đang lái bám theo vạch)
+            if (plannerState === 2) {
+                // Đang ghi quỹ đạo (chờ bấm điểm thứ 2)
                 btn.classList.add('bg-orange-500/20', 'hover:bg-orange-500/40', 'border-orange-500/30');
                 icon.className = "relative z-10 text-xl mb-1 group-hover:scale-110 transition-transform text-orange-400 animate-pulse";
+                icon.innerText = "⏺";
                 text.className = "relative z-10 text-xs font-bold text-orange-100";
-            } else if (hasReferenceLine) {
-                btn.classList.add('bg-green-500/20', 'hover:bg-green-500/40', 'border-green-500/30');
-                icon.className = "relative z-10 text-xl mb-1 group-hover:scale-110 transition-transform text-green-400";
-                text.className = "relative z-10 text-xs font-bold text-green-100";
-            } else {
+                text.innerText = t('btn-recording-line');
+            } else if (plannerState === 3) {
+                // Đang theo vạch (Active), nhấp vào để Hủy (Cancel)
                 btn.classList.add('bg-red-500/20', 'hover:bg-red-500/40', 'border-red-500/30');
                 icon.className = "relative z-10 text-xl mb-1 group-hover:scale-110 transition-transform text-red-400";
+                icon.innerText = "✖";
                 text.className = "relative z-10 text-xs font-bold text-red-100";
+                text.innerText = t('btn-cancel');
+            } else {
+                // Trạng thái bình thường (IDLE) - Cho phép bấm ghi (Record)
+                // Đổi nền màu đỏ để gợi nhớ nút Record quen thuộc.
+                btn.classList.add('bg-red-500/20', 'hover:bg-red-500/40', 'border-red-500/30');
+                icon.className = "relative z-10 text-xl mb-1 group-hover:scale-110 transition-transform text-red-400";
+                icon.innerText = "⏺";
+                text.className = "relative z-10 text-xs font-bold text-red-100";
+                text.innerText = t('btn-record-line');
             }
         }
 
@@ -1917,6 +1932,12 @@
             cancelAnimationFrame(splashAnimFrame);
             setTimeout(() => { if (ros.isConnected) splashScreen.classList.add('hidden'); }, 700);
             resetSplashBtn();
+            
+            // Lắng nghe State Machine từ ROS để update nút Record Line
+            subscribeToTopic('/steer_planner_node/state_machine', 'std_msgs/Int32', (m) => {
+                plannerState = m.data;
+                updateRecordLineButtonUI();
+            });
         });
 
         ros.on('error', (error) => {
@@ -1961,6 +1982,7 @@
             refLinePoints = [];
             hasReferenceLine = false;
             isRecordingLine = false;
+            plannerState = 1;
             updateRecordLineButtonUI();
             updateDynamicPanelsVisibility();
 
@@ -2179,7 +2201,7 @@
                 mapOriginLon = m.longitude;
                 console.log("✅ Đã nhận mốc gốc đồng bộ: ", mapOriginLat, mapOriginLon);
             });
-        }); // <-- FIXED: Added missing closing brace for ros.on('connection')
+        }); 
 
         // --- 10. Long Press / Hold Logic ---
         function setupHoldButton(btnId, actionFn, duration = 800) {
