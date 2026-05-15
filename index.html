@@ -644,7 +644,7 @@
         let currentTopicSub = null;
 
         // ROS Planner State (1: IDLE, 2: RECORDING, 3: ACTIVE)
-        let plannerState = 1;
+        let plannerState = 1; 
 
         // Theo dõi các điểm Vertex Markers trên bản đồ để không vẽ đè
         let activeVertexMarkers = {};
@@ -1947,7 +1947,7 @@
             cancelAnimationFrame(splashAnimFrame);
             setTimeout(() => { if (ros.isConnected) splashScreen.classList.add('hidden'); }, 700);
             resetSplashBtn();
-
+            
             // Lắng nghe State Machine từ ROS để update nút Record Line
             subscribeToTopic('/steer_planner_node/state_machine', 'std_msgs/Int32', (m) => {
                 plannerState = m.data;
@@ -1960,10 +1960,16 @@
             statusDot.className = 'w-2.5 h-2.5 rounded-full bg-yellow-500 shadow-[0_0_6px_#eab308]';
 
             // Hiển thị lại Splash Screen khi lỗi và khởi động lại Animation
-            if (splashScreen.classList.contains('hidden')) {
+            if (splashScreen.classList.contains('hidden') || splashScreen.classList.contains('opacity-0')) {
                 splashScreen.classList.remove('hidden');
                 void splashScreen.offsetWidth; // Force reflow
                 splashScreen.classList.remove('opacity-0', 'pointer-events-none');
+                
+                // Khôi phục lại kích thước Canvas sau khi bị ẩn (display: none -> width/height = 0)
+                resizeSplashCanvases();
+                // Dọn dẹp vòng lặp cũ để tránh bị kẹt khung hình
+                cancelAnimationFrame(splashAnimFrame);
+                
                 splashLastTime = performance.now();
                 splashAnimFrame = requestAnimationFrame(splashAnimationLoop);
             }
@@ -2016,6 +2022,12 @@
                 splashScreen.classList.remove('hidden');
                 void splashScreen.offsetWidth; // Force reflow
                 splashScreen.classList.remove('opacity-0', 'pointer-events-none');
+                
+                // Khôi phục lại kích thước Canvas sau khi bị ẩn
+                resizeSplashCanvases();
+                // Dọn dẹp vòng lặp cũ
+                cancelAnimationFrame(splashAnimFrame);
+                
                 splashLastTime = performance.now();
                 splashAnimFrame = requestAnimationFrame(splashAnimationLoop);
             }
@@ -2278,7 +2290,7 @@
                         else {
                             leafletMarker = L.circleMarker([lat, lon], {
                                 radius: 6, fillColor: "#eab308", color: "#ffffff", weight: 2, opacity: 1, fillOpacity: 0.9
-                            }).addTo(vertexMarkersLayer);
+                        }).addTo(vertexMarkersLayer);
                         }
 
                         activeVertexMarkers[markerKey] = leafletMarker;
@@ -2292,7 +2304,7 @@
                 mapOriginLon = m.longitude;
                 console.log("✅ Đã nhận mốc gốc đồng bộ: ", mapOriginLat, mapOriginLon);
             });
-        });
+        }); 
 
         // --- 10. Long Press / Hold Logic ---
         function setupHoldButton(btnId, actionFn, duration = 800) {
