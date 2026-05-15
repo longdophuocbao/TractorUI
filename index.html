@@ -1,0 +1,2185 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tractor HUD Dashboard</title>
+
+    <!-- Biến Web thành App trên Mobile -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Tractor HUD">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#111111">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- ROSLibJS & EventEmitter2 -->
+    <script src="https://cdn.jsdelivr.net/npm/eventemitter2@6.4.9/lib/eventemitter2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/roslib@1/build/roslib.min.js"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Leaflet.js -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <style>
+        /* Đảm bảo không bị cuộn trang trên mobile */
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #111;
+        }
+
+        /* Chỉnh lại vị trí của các nút zoom bản đồ */
+        .leaflet-control-zoom {
+            border: none !important;
+            margin-bottom: 20px !important;
+            margin-left: 20px !important;
+        }
+
+        .leaflet-bar a {
+            background-color: rgba(0, 0, 0, 0.6) !important;
+            color: white !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+        }
+
+        .leaflet-bar a:hover {
+            background-color: rgba(0, 0, 0, 0.8) !important;
+        }
+
+        /* Hiệu ứng kính mờ cho UI */
+        .glass-panel {
+            background: rgba(17, 24, 39, 0.75);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Ẩn thanh cuộn cho Modal */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #4B5563;
+            border-radius: 4px;
+        }
+
+        /* Loại bỏ viền trắng mặc định của Leaflet divIcon */
+        .custom-tractor-icon,
+        .custom-mini-tractor-icon {
+            background: transparent;
+            border: none;
+        }
+
+        /* CSS cho Minimap */
+        #minimap {
+            background-color: #1a1a1a;
+        }
+
+        .leaflet-control-attribution {
+            display: none !important;
+        }
+
+        .btn-set-active {
+            background-color: #059669 !important;
+        }
+
+        /* Hiệu ứng nảy (Pop) khi nhấn giữ thành công */
+        @keyframes pop-bounce {
+            0% {
+                transform: scale(0.95);
+            }
+
+            50% {
+                transform: scale(1.15);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .animate-pop-bounce {
+            animation: pop-bounce 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        /* --- Phong cách khu vực mô phỏng Màn hình chờ --- */
+        #viewOutCanvas,
+        #viewInCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            border-radius: 0.5rem;
+            background-color: #2d2d2d;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+        }
+
+        .splash-canvas-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 4/3;
+        }
+
+        /* --- Phong cách bong bóng truyện tranh (Comic Bubble) từ bản mô phỏng --- */
+        .comic-bubble {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: #ffffff;
+            color: #000000;
+            padding: 10px 20px;
+            border-radius: 20px;
+            border: 3px solid #000000;
+            font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
+            font-weight: bold;
+            font-size: 1rem;
+            box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.8);
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* Tạo hình đám mây suy nghĩ (Thought bubble tail) */
+        .comic-bubble.thought::before {
+            content: '';
+            position: absolute;
+            bottom: -15px;
+            left: 30px;
+            width: 14px;
+            height: 14px;
+            background: #ffffff;
+            border: 3px solid #000000;
+            border-radius: 50%;
+            box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.8);
+        }
+
+        .comic-bubble.thought::after {
+            content: '';
+            position: absolute;
+            bottom: -28px;
+            left: 20px;
+            width: 8px;
+            height: 8px;
+            background: #ffffff;
+            border: 3px solid #000000;
+            border-radius: 50%;
+            box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.8);
+        }
+    </style>
+</head>
+
+<body class="text-white font-sans text-sm select-none bg-[#111]">
+
+    <!-- LỚP CAO NHẤT: MÀN HÌNH CHỜ KẾT NỐI (SPLASH SCREEN) KHÔI PHỤC THEO THIẾT KẾ CỦA BẠN -->
+    <div id="splash-screen"
+        class="fixed inset-0 z-[100] bg-[#1a1a1a] transition-opacity duration-700 flex flex-col items-center justify-center p-4 sm:p-8 overflow-y-auto">
+
+        <div class="w-full max-w-5xl flex flex-col gap-6 my-auto">
+            <!-- Header & Connect Button -->
+            <div
+                class="glass-panel p-6 rounded-3xl shadow-[0_0_30px_rgba(0,0,0,0.5)] flex flex-col md:flex-row items-center justify-between gap-6 border border-white/10 w-full relative z-20">
+                <div class="flex items-center gap-4">
+                    <div
+                        class="w-16 h-16 bg-gray-900/80 rounded-full flex items-center justify-center shadow-inner border border-gray-700">
+                        <svg class="w-8 h-8 text-blue-400 drop-shadow-[0_0_8px_rgba(96,165,250,0.8)]" fill="none"
+                            stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z">
+                            </path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-white tracking-widest uppercase drop-shadow-md">Straight
+                            Driving Assist Tractor
+                        </h1>
+                        <p class="text-gray-400 text-xs mt-1" data-i18n="splash-desc">Ready to connect to ROSBridge</p>
+                    </div>
+                </div>
+
+                <button id="splash-btn-connect"
+                    class="w-full md:w-auto px-8 py-3.5 rounded-xl font-bold tracking-wider uppercase transition-all duration-300 bg-gray-700 text-gray-400 flex justify-center items-center gap-2 border border-gray-600">
+                    <span data-i18n="splash-btn">Connect System</span>
+                </button>
+                <!-- Loading Template -->
+                <template id="loading-spinner">
+                    <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
+                        viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                        </circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                    </svg>
+                </template>
+            </div>
+
+            <!-- Main Content: Split Views (Bản quyền của User) -->
+            <div class="flex flex-col gap-4 relative z-10 w-full">
+                <div class="flex justify-center">
+                    <!-- <div id="statusIndicator"
+                        class="px-6 py-2 rounded-full text-sm font-bold bg-green-900 text-green-300 border border-green-500 shadow-lg">
+                        Hoàn thành</div> -->
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+                    <!-- View 1: 3D/Top-Down View -->
+                    <div class="flex flex-col gap-2">
+                        <div class="splash-canvas-container">
+                            <canvas id="viewOutCanvas"></canvas>
+                            <div class="comic-bubble thought" id="outOverlay">Waiting for command...</div>
+                        </div>
+                    </div>
+
+                    <!-- View 2: 1st Person View -->
+                    <div class="flex flex-col gap-2">
+                        <div class="splash-canvas-container">
+                            <canvas id="viewInCanvas"></canvas>
+                            <div class="comic-bubble thought" id="inOverlay">Keep your hands on the steering wheel</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- LỚP 0: BẢN ĐỒ TRÀN VIỀN -->
+    <div id="map" class="absolute inset-0 z-0"></div>
+
+    <!-- LỚP 1: GIAO DIỆN ĐIỀU KHIỂN (HUD Overlay) -->
+
+    <!-- TOP BAR: Trạng thái & Telemetry -->
+    <div class="absolute top-4 left-4 right-4 z-10 flex justify-between items-start pointer-events-none">
+
+        <!-- Cụm Trái: Tên hệ thống & Trạng thái kết nối -->
+        <div class="pointer-events-auto flex items-center gap-3 glass-panel rounded-full px-4 py-2 shadow-lg">
+            <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z">
+                </path>
+            </svg>
+            <div class="flex items-center gap-2">
+                <span id="status-dot"
+                    class="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_6px_#ef4444] animate-pulse"></span>
+                <span id="status-text" class="text-xs font-semibold text-red-400 uppercase"
+                    data-i18n="hud-disconnected">Disconnected</span>
+            </div>
+        </div>
+
+        <!-- Cụm Phải: Thông số Telemetry DJI Style -->
+        <div class="flex flex-row items-center gap-3">
+            <div
+                class="pointer-events-auto flex items-center gap-4 glass-panel rounded-full px-5 py-2 shadow-lg text-xs font-mono">
+                <div class="flex items-center gap-1.5" title="RTK Status & Satellites">
+                    <svg id="rtk-icon"
+                        class="w-5 h-5 text-red-500 drop-shadow-[0_0_6px_rgba(239,68,68,0.8)] transition-colors"
+                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7 9 3 5 7l4 4" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m17 11 4 4-4 4-4-4" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m8 12 4 4 6-6-4-4Z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m16 8 3-3" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 21a6 6 0 0 0-6-6" />
+                    </svg>
+                    <span id="data-num-sv" class="font-bold text-white text-sm">--</span>
+                </div>
+            </div>
+
+            <!-- Nhóm Nút Công cụ -->
+            <div class="flex items-center gap-2">
+                <!-- Nút Đổi Bản Đồ (Map Source) -->
+                <button onclick="toggleMapSource()"
+                    class="pointer-events-auto glass-panel hover:bg-white/10 p-2.5 rounded-full shadow-lg transition active:scale-90 flex items-center gap-1.5"
+                    data-i18n-title="btn-switch-map" title="Switch Map Source">
+                    <svg class="w-5 h-5 text-gray-300 drop-shadow-md" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7">
+                        </path>
+                    </svg>
+                    <!-- <span id="map-source-text" class="text-xs font-bold text-gray-300 hidden sm:block">NLSC</span> -->
+                </button>
+
+                <!-- Nút Toàn Màn Hình (Fullscreen) -->
+                <button onclick="toggleFullScreen()"
+                    class="pointer-events-auto glass-panel hover:bg-white/10 p-2.5 rounded-full shadow-lg transition active:scale-90"
+                    title="Full Screen">
+                    <svg class="w-5 h-5 text-gray-300 drop-shadow-md" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4">
+                        </path>
+                    </svg>
+                </button>
+
+                <!-- Nút Mở Cài Đặt (Hình Bánh Răng) -->
+                <button onclick="toggleSettings()"
+                    class="pointer-events-auto glass-panel hover:bg-white/10 p-2.5 rounded-full shadow-lg transition active:scale-90"
+                    title="Settings & Monitoring">
+                    <svg class="w-5 h-5 text-gray-300 drop-shadow-md" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd"
+                            d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z"
+                            clip-rule="evenodd"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LEFT PANEL: Deviation Radar 2D View -->
+    <div id="deviation-panel"
+        class="absolute left-4 top-20 bottom-56 w-[30%] min-w-[220px] max-w-[320px] bg-white/90 backdrop-blur-md border border-gray-200 rounded-2xl shadow-2xl transition-all duration-500 hidden md:flex flex-col overflow-hidden opacity-0 pointer-events-none -translate-x-10">
+        <!-- Header -->
+        <div id="xte-header"
+            class="bg-gray-100/90 transition-colors duration-300 p-3 border-b border-gray-200 flex justify-center items-center z-10 shadow-sm">
+            <span id="xte-value" class="text-xl font-mono font-bold text-gray-400">-- m</span>
+        </div>
+        <!-- Radar Canvas -->
+        <div class="flex-1 relative bg-[#f8fafc]">
+            <!-- Radar Grid lines background -->
+            <div class="absolute inset-0 pointer-events-none"
+                style="background-image: linear-gradient(rgba(0,0,0,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.06) 1px, transparent 1px); background-size: 20px 20px; background-position: center bottom;">
+            </div>
+            <canvas id="devCanvas" class="absolute inset-0 w-full h-full"></canvas>
+        </div>
+    </div>
+
+    <!-- RIGHT CONTROLS: Tinh chỉnh bẻ lái & Chuyển luống -->
+    <div id="right-controls-panel"
+        class="absolute right-4 top-1/2 -translate-y-1/2 z-10 flex flex-col gap-6 transition-all duration-500 opacity-0 translate-x-10 pointer-events-none">
+
+        <!-- Fine Tune -->
+        <div class="glass-panel p-2 rounded-2xl flex flex-col gap-2 pointer-events-none">
+            <div class="text-[10px] text-gray-400 text-center uppercase tracking-wider font-bold mb-1"
+                data-i18n="ctrl-fine-tune">Fine Tune</div>
+            <button onclick="callService('/steer_pc_node/rotate_ref_left')"
+                class="bg-white/5 hover:bg-white/15 p-3 rounded-xl transition active:scale-90 flex justify-center items-center"
+                title="Rotate Left">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
+                </svg>
+            </button>
+            <button onclick="callService('/steer_pc_node/rotate_ref_right')"
+                class="bg-white/5 hover:bg-white/15 p-3 rounded-xl transition active:scale-90 flex justify-center items-center"
+                title="Rotate Right">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M21 10h-10a8 8 0 00-8 8v2M21 10l-6 6m6-6l-6-6"></path>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Swath -->
+        <div class="glass-panel p-2 rounded-2xl flex flex-col gap-2 pointer-events-none">
+            <div class="text-[10px] text-gray-400 text-center uppercase tracking-wider font-bold mb-1"
+                data-i18n="ctrl-swath">Swath</div>
+            <button onclick="callService('/swath_planner/swath_left')"
+                class="bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 border border-indigo-500/30 p-3 rounded-xl transition active:scale-90 flex justify-center items-center"
+                title="Swath Left">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path>
+                </svg>
+            </button>
+            <button onclick="callService('/swath_planner/swath_right')"
+                class="bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 border border-indigo-500/30 p-3 rounded-xl transition active:scale-90 flex justify-center items-center"
+                title="Swath Right">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7">
+                    </path>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- BOTTOM CONTROLS: Field2Cover & Record Switcher -->
+    <div
+        class="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 pointer-events-none w-full px-2 sm:px-4 flex flex-col items-center gap-3">
+
+        <!-- Toggle Switch -->
+        <div
+            class="glass-panel p-1 rounded-full flex items-center pointer-events-auto shadow-lg backdrop-blur-md bg-black/40">
+            <button onclick="setControlMode('record')" id="toggle-record"
+                class="px-4 py-1.5 rounded-full text-xs font-bold transition-all bg-blue-500/80 text-white shadow-md cursor-default"
+                data-i18n="mode-record">Record Mode</button>
+            <button onclick="setControlMode('path')" id="toggle-path"
+                class="px-4 py-1.5 rounded-full text-xs font-bold transition-all text-gray-400 hover:text-white cursor-pointer"
+                data-i18n="mode-path">Path Mode</button>
+        </div>
+
+        <div
+            class="glass-panel p-2 md:p-3 rounded-2xl flex justify-between items-center gap-2 pointer-events-auto shadow-2xl w-full max-w-[45vw] sm:w-auto sm:min-w-[300px] md:min-w-[400px] transition-all duration-300">
+
+            <button id="btn-record-vertex"
+                class="relative overflow-hidden select-none flex-1 flex flex-col items-center justify-center bg-blue-500/20 hover:bg-blue-500/40 border border-blue-500/30 py-2 rounded-xl transition active:scale-95 group">
+                <div class="hold-progress absolute left-0 bottom-0 top-0 w-0 bg-blue-500/50 pointer-events-none"></div>
+                <span class="relative z-10 text-xl mb-1 group-hover:scale-110 transition-transform">📍</span>
+                <span class="relative z-10 text-xs font-bold text-blue-100" data-i18n="btn-record-vertex">Record
+                    Vertex</span>
+            </button>
+
+            <div id="divider-path" class="w-px h-10 bg-white/10 mx-1"></div>
+
+            <button id="btn-generate-path"
+                class="relative overflow-hidden select-none flex-1 flex flex-col items-center justify-center bg-green-500/20 hover:bg-green-500/40 border border-green-500/30 py-2 rounded-xl transition active:scale-95 group">
+                <div class="hold-progress absolute left-0 bottom-0 top-0 w-0 bg-green-500/50 pointer-events-none"></div>
+                <span class="relative z-10 text-xl mb-1 group-hover:scale-110 transition-transform">🗺️</span>
+                <span class="relative z-10 text-xs font-bold text-green-100" data-i18n="btn-generate-path">Generate
+                    Path</span>
+            </button>
+
+            <button id="btn-record-line"
+                class="relative overflow-hidden select-none flex-1 flex flex-col items-center justify-center bg-red-500/20 hover:bg-red-500/40 border border-red-500/30 py-2 rounded-xl transition active:scale-95 group">
+                <div class="hold-progress absolute left-0 bottom-0 top-0 w-0 bg-white/30 pointer-events-none"></div>
+                <span
+                    class="relative z-10 text-xl mb-1 group-hover:scale-110 transition-transform text-red-400">⏺</span>
+                <span class="relative z-10 text-xs font-bold text-red-100" data-i18n="btn-record-line">Record
+                    Line</span>
+            </button>
+
+        </div>
+    </div>
+
+    <!-- BOTTOM LEFT: Minimap & Recenter -->
+    <div class="absolute bottom-6 left-4 z-20 flex flex-col gap-3 pointer-events-none">
+
+        <!-- Nút Trở Về Vị Trí Xe (Recenter) - Mặc định ẩn -->
+        <button id="btn-recenter"
+            class="opacity-0 pointer-events-none translate-y-4 w-10 h-10 glass-panel rounded-full flex items-center justify-center hover:bg-white/20 transition-all duration-300 active:scale-90 shadow-[0_0_10px_rgba(0,0,0,0.5)] group self-start"
+            data-i18n-title="btn-recenter" title="Recenter Map">
+            <svg class="w-5 h-5 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="#3b82f6"
+                stroke="white" stroke-width="1.5" xmlns="http://www.w3.org/2000/svg">
+                <polygon points="12,2 22,20 12,17 2,20" />
+            </svg>
+        </button>
+
+        <!-- Minimap Container -->
+        <div id="minimap-container"
+            class="w-32 h-32 md:w-48 md:h-48 rounded-2xl border-2 border-white/20 shadow-2xl overflow-hidden cursor-pointer pointer-events-auto transition-transform hover:scale-105 group"
+            title="Click to switch map">
+            <div id="minimap" class="w-full h-full pointer-events-none"></div>
+            <!-- Icon hoán đổi hiện lên khi hover -->
+            <div
+                class="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-[1001]">
+                <svg class="w-8 h-8 text-white drop-shadow-md" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- BOTTOM RIGHT: Coordinates Display -->
+    <div class="absolute bottom-6 right-12 z-20 pointer-events-none hidden sm:block">
+        <div
+            class="glass-panel px-4 py-2 rounded-full shadow-lg text-[10px] sm:text-xs font-mono text-gray-300 flex flex-row items-center gap-3">
+            <div> <span id="data-lat" class="text-white font-bold tracking-wider">--.------</span></div>
+            <div class="w-px h-3 bg-white/20"></div>
+            <div> <span id="data-lon" class="text-white font-bold tracking-wider">--.------</span></div>
+        </div>
+    </div>
+
+
+    <!-- LỚP 2: CỬA SỔ CÀI ĐẶT (SETTINGS MODAL) -->
+    <div id="settings-modal"
+        class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex justify-center items-center opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-gray-900 border border-gray-700 w-full max-w-4xl max-h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden transform scale-95 transition-transform duration-300"
+            id="settings-content">
+
+            <!-- Modal Header -->
+            <div class="flex justify-between items-center p-4 border-b border-gray-800 bg-gray-800/50">
+                <h2 class="text-lg font-bold flex items-center gap-2"><span>⚙️</span> <span
+                        data-i18n="set-title">Settings & Monitoring</span></h2>
+                <div class="flex items-center gap-4">
+                    <!-- Language Toggle Button -->
+                    <button id="lang-toggle"
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-full text-xs font-bold transition shadow-md">繁體中文</button>
+
+                    <button onclick="toggleSettings()"
+                        class="text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 p-2 rounded-full transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Modal Body (Scrollable) -->
+            <div class="p-6 overflow-y-auto flex-1 space-y-6">
+
+                <!-- Kết nối ROS -->
+                <div class="bg-gray-800/50 p-5 rounded-xl border border-gray-700/50">
+                    <h3 class="text-sm font-bold text-gray-300 mb-3 uppercase tracking-wider" data-i18n="set-ros-conn">
+                        ROSBridge Connection</h3>
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <input type="text" id="ws-url" value="ws://100.68.175.35:9090"
+                            class="flex-1 bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500 font-mono text-sm"
+                            placeholder="ws://IP_JETSON:9090">
+                        <button id="btn-connect"
+                            class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg text-sm font-semibold transition shadow-md whitespace-nowrap"
+                            data-i18n="btn-connect">Connect</button>
+                    </div>
+                </div>
+
+                <!-- Cấu hình Tham số ROS 2 (ROS 2 Parameters) -->
+                <div class="bg-gray-800/50 p-5 rounded-xl border border-gray-700/50">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-sm font-bold text-gray-300 uppercase tracking-wider" data-i18n="set-params-exp">
+                            ROS 2 Parameter Explorer</h3>
+                        <button onclick="refreshNodes()"
+                            class="text-blue-400 hover:text-blue-300 text-xs flex items-center gap-1 transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                                </path>
+                            </svg>
+                            <span data-i18n="btn-refresh">Refresh Nodes</span>
+                        </button>
+                    </div>
+
+                    <select id="node-selector" onchange="loadParamsForNode()"
+                        class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500 mb-4 font-mono text-sm">
+                        <option value="" data-i18n="opt-connect-ros">-- Connect ROS to load Nodes --</option>
+                    </select>
+
+                    <div id="params-list"
+                        class="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[400px] overflow-y-auto pr-1">
+                        <div class="col-span-full text-xs text-gray-500 italic text-center py-4"
+                            data-i18n="msg-select-node">Select a Node to explore its parameters...</div>
+                    </div>
+                </div>
+
+                <!-- Điều khiển thủ công -->
+                <div class="bg-gray-800/50 p-5 rounded-xl border border-gray-700/50">
+                    <h3 class="text-sm font-bold text-gray-300 mb-3 uppercase tracking-wider"
+                        data-i18n="set-manual-pub">Manual Publish (/steering_command)</h3>
+                    <div class="flex items-center gap-3">
+                        <input type="number" id="steer-input" step="0.1" value="-1.0"
+                            class="bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500 w-32 font-mono text-center">
+                        <button onclick="publishSteering()"
+                            class="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded-lg font-semibold transition shadow-sm active:scale-95"
+                            data-i18n="btn-send-cmd">Send Command</button>
+                    </div>
+                </div>
+
+                <!-- Biểu đồ -->
+                <div class="bg-gray-800/50 p-5 rounded-xl border border-gray-700/50">
+                    <h3 class="text-sm font-bold text-gray-300 mb-3 uppercase tracking-wider" data-i18n="set-chart">
+                        Telemetry Chart</h3>
+                    <div class="relative h-56 w-full">
+                        <canvas id="steerChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Giám sát Topic (Topic Explorer) -->
+                <div class="bg-gray-800/50 p-5 rounded-xl border border-gray-700/50">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-sm font-bold text-gray-300 uppercase tracking-wider" data-i18n="set-topic-exp">
+                            Topic Explorer</h3>
+                        <button onclick="refreshTopics()"
+                            class="text-blue-400 hover:text-blue-300 text-xs flex items-center gap-1 transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                                </path>
+                            </svg>
+                            <span data-i18n="btn-refresh">Refresh</span>
+                        </button>
+                    </div>
+
+                    <select id="topic-selector"
+                        class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500 mb-3 font-mono text-sm">
+                        <option value="" data-i18n="opt-connect-ros">-- Connect ROS to load Topics --</option>
+                    </select>
+
+                    <pre id="topic-raw-data"
+                        class="h-64 overflow-auto text-xs text-green-400 bg-gray-900 p-4 rounded-lg border border-gray-700 font-mono whitespace-pre-wrap"
+                        data-i18n="msg-select-topic">Please select a Topic above to view data...</pre>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. Global Variables & DOM Elements ---
+        const btnConnect = document.getElementById('btn-connect');
+        const statusText = document.getElementById('status-text');
+        const statusDot = document.getElementById('status-dot');
+        const nodeSelector = document.getElementById('node-selector');
+        const topicSelector = document.getElementById('topic-selector');
+        const topicRawData = document.getElementById('topic-raw-data');
+        const wsUrlInput = document.getElementById('ws-url');
+        const paramsList = document.getElementById('params-list');
+        const latDisplay = document.getElementById('data-lat');
+        const lonDisplay = document.getElementById('data-lon');
+        const numSvDisplay = document.getElementById('data-num-sv');
+        const rtkIcon = document.getElementById('rtk-icon');
+        const modal = document.getElementById('settings-modal');
+        const modalContent = document.getElementById('settings-content');
+
+        let isSettingsOpen = false;
+        let latestLat = 22.644689395509474, latestLon = 120.35725482912399;
+        let mapOriginLat = null, mapOriginLon = null;
+        let isRecordingLine = false, hasReferenceLine = false, firstGpsFix = false;
+
+        let odomX = 0, odomY = 0, tractorMathYaw = 0, tractorCssAngle = 0;
+        let refLinePoints = [];
+        let currentTopicSub = null;
+
+        // --- Hàm kiểm tra bảo mật (Canvas Web chặn WS) ---
+        function isSecureContextBlockingWs(url) {
+            // Nhận diện đang ở trong iFrame hoặc đang dùng giao thức bảo mật (https, blob)
+            const isCanvasOrSecure = window.location.protocol.includes('blob') || window.location.protocol === 'https:' || window.self !== window.top;
+            return isCanvasOrSecure && url.startsWith('ws://');
+        }
+
+        // --- Initialize ROSLibJS ---
+        let ros = new ROSLIB.Ros();
+        window.ros = ros;
+
+        // --- Audio Context ---
+        let audioCtx = null;
+        function playSuccessSound() {
+            try {
+                if (!audioCtx) return;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(1760, audioCtx.currentTime + 0.1);
+
+                gain.gain.setValueAtTime(0, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.15);
+            } catch (e) { console.warn("Audio not supported", e); }
+        }
+
+        // --- Translations ---
+        const translations = {
+            en: {
+                "hud-disconnected": "Disconnected",
+                "hud-connected": "Connected",
+                "hud-error": "Error",
+                "ctrl-fine-tune": "Fine Tune",
+                "ctrl-swath": "Swath",
+                "mode-record": "Record Mode",
+                "mode-path": "Path Mode",
+                "btn-record-vertex": "Record Vertex",
+                "btn-generate-path": "Generate Path",
+                "btn-record-line": "Record Line",
+                "set-title": "Settings & Monitoring",
+                "set-ros-conn": "ROSBridge Connection",
+                "set-params-exp": "ROS 2 Parameter Explorer",
+                "btn-refresh": "Refresh",
+                "btn-refresh-nodes": "Refresh Nodes",
+                "btn-connect": "Connect",
+                "btn-disconnect": "Disconnect",
+                "set-manual-pub": "Manual Publish (/steering_command)",
+                "btn-send-cmd": "Send Command",
+                "set-chart": "Telemetry Chart",
+                "set-topic-exp": "Topic Explorer",
+                "opt-connect-ros": "-- Connect ROS to load items --",
+                "opt-loading": "-- Loading... --",
+                "opt-select-topic": "-- Select a Topic to view data --",
+                "opt-select-node": "-- Select a Node --",
+                "msg-select-topic": "Please select a Topic above to view data...",
+                "msg-select-node": "Select a Node to explore its parameters...",
+                "msg-connect-ros": "Please connect ROS before loading.",
+                "msg-listening": "Listening to data from {topic}...",
+                "btn-recenter": "Recenter Map",
+                "btn-switch-map": "Switch Map Source",
+                "splash-desc": "Ready to connect to ROSBridge",
+                "splash-btn": "Connect System",
+                "splash-connecting": "Connecting..."
+            },
+            zh: {
+                "hud-disconnected": "已斷開",
+                "hud-connected": "已連接",
+                "hud-error": "錯誤",
+                "ctrl-fine-tune": "微調",
+                "ctrl-swath": "切換路徑",
+                "mode-record": "記錄模式",
+                "mode-path": "路徑模式",
+                "btn-record-vertex": "記錄頂點",
+                "btn-generate-path": "生成路徑",
+                "btn-record-line": "記錄路線",
+                "set-title": "設置與監控",
+                "set-ros-conn": "ROSBridge 連接",
+                "set-params-exp": "ROS 2 參數管理",
+                "btn-refresh": "刷新",
+                "btn-refresh-nodes": "刷新 Node",
+                "btn-connect": "連接",
+                "btn-disconnect": "斷開",
+                "set-manual-pub": "手提發佈 (/steering_command)",
+                "btn-send-cmd": "發送指令",
+                "set-chart": "遙測圖表",
+                "set-topic-exp": "Topic 瀏覽器",
+                "opt-connect-ros": "-- 連接 ROS 以加載項目 --",
+                "opt-loading": "-- 正在加載... --",
+                "opt-select-topic": "-- 選擇一個 Topic 以查看數據 --",
+                "opt-select-node": "-- 選擇一個 Node --",
+                "msg-select-topic": "請在上方選擇一個 Topic 以查看數據...",
+                "msg-select-node": "請選擇一個 Node 以管理其參數...",
+                "msg-connect-ros": "請在加載之前連接 ROS。",
+                "msg-listening": "正在監聽 {topic} 的數據...",
+                "btn-recenter": "回到車輛位置",
+                "btn-switch-map": "切換地圖來源",
+                "splash-desc": "準備連接到 ROSBridge",
+                "splash-btn": "連接系統",
+                "splash-connecting": "連線中..."
+            }
+        };
+
+        let currentLang = localStorage.getItem('app-lang') || 'en';
+
+        function t(key) {
+            return translations[currentLang][key] || key;
+        }
+
+        function applyLanguage() {
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[currentLang][key]) {
+                    el.innerText = translations[currentLang][key];
+                }
+            });
+
+            document.querySelectorAll('[data-i18n-title]').forEach(el => {
+                const key = el.getAttribute('data-i18n-title');
+                if (translations[currentLang][key]) {
+                    el.title = translations[currentLang][key];
+                }
+            });
+
+            document.getElementById('lang-toggle').innerText = currentLang === 'en' ? '繁體中文' : 'English';
+
+            if (ros.isConnected) {
+                btnConnect.innerText = t('btn-disconnect');
+                statusText.innerText = t('hud-connected');
+            } else {
+                btnConnect.innerText = t('btn-connect');
+                statusText.innerText = t('hud-disconnected');
+            }
+        }
+
+        document.getElementById('lang-toggle').addEventListener('click', () => {
+            currentLang = currentLang === 'en' ? 'zh' : 'en';
+            localStorage.setItem('app-lang', currentLang);
+            applyLanguage();
+        });
+
+
+        // --- Splash Screen Auto-Steer Simulation Logic ---
+        const SPLASH_STATE_IDLE = 0;
+        const SPLASH_STATE_MANUAL = 1;
+        const SPLASH_STATE_CALCULATING = 2;
+        const SPLASH_STATE_AUTO = 3;
+
+        let splashState = SPLASH_STATE_IDLE;
+        let splashAnimFrame;
+        let splashProgress = 0;
+        const SPLASH_MANUAL_END = 300;
+        const SPLASH_CALC_END = 450;
+        const SPLASH_TOTAL_DIST = 1000;
+
+        let splashTractorY = 0;
+        let splashTractorX = 0;
+        let splashPathHistory = [];
+        let splashRefLine = [];
+
+        const outOverlay = document.getElementById('outOverlay');
+        const inOverlay = document.getElementById('inOverlay');
+        const canvasOut = document.getElementById('viewOutCanvas');
+        const ctxOut = canvasOut ? canvasOut.getContext('2d') : null;
+        const canvasIn = document.getElementById('viewInCanvas');
+        const ctxIn = canvasIn ? canvasIn.getContext('2d') : null;
+
+        function resizeSplashCanvases() {
+            if (canvasOut && canvasIn) {
+                canvasOut.width = canvasOut.clientWidth;
+                canvasOut.height = canvasOut.clientHeight;
+                canvasIn.width = canvasIn.clientWidth;
+                canvasIn.height = canvasIn.clientHeight;
+                renderOutView();
+                renderInView();
+            }
+        }
+        window.addEventListener('resize', resizeSplashCanvases);
+
+        function startSplashSimulation() {
+            splashState = SPLASH_STATE_MANUAL;
+            splashProgress = 0;
+            splashTractorY = 0;
+            splashTractorX = 0;
+            splashPathHistory = [];
+            splashRefLine = [];
+            updateSplashUI();
+        }
+
+        let splashLastTime = 0;
+        function splashAnimationLoop(time) {
+            if (!splashLastTime) splashLastTime = time;
+            const dt = time - splashLastTime;
+            splashLastTime = time;
+
+            updateSplashSimulation(dt);
+            if (canvasOut && canvasIn) {
+                renderOutView();
+                renderInView();
+            }
+
+            splashAnimFrame = requestAnimationFrame(splashAnimationLoop);
+        }
+
+        function updateSplashSimulation(dt) {
+            let speed = 0.15 * dt;
+
+            if (splashState === SPLASH_STATE_MANUAL) {
+                splashProgress += speed;
+                splashTractorY = splashProgress;
+                // Add slight wobble for manual driving
+                splashTractorX = Math.sin(splashProgress * 0.05) * 5;
+                splashPathHistory.push({ x: splashTractorX, y: splashTractorY });
+
+                if (splashProgress >= SPLASH_MANUAL_END) {
+                    splashState = SPLASH_STATE_CALCULATING;
+
+                    // Generate reference line immediately when entering calculating state
+                    let startPoint = splashPathHistory[0];
+                    let endPoint = splashPathHistory[splashPathHistory.length - 1];
+                    splashRefLine = [
+                        { x: endPoint.x, y: endPoint.y },
+                        { x: endPoint.x, y: SPLASH_TOTAL_DIST } // Straight line forward
+                    ];
+                    updateSplashUI();
+                }
+            }
+            else if (splashState === SPLASH_STATE_CALCULATING) {
+                // Pause movement, simulate calculation time
+                splashProgress += speed * 0.5; // virtual progress for timing
+                if (splashProgress >= SPLASH_CALC_END) {
+                    splashState = SPLASH_STATE_AUTO;
+                    updateSplashUI();
+                }
+            }
+            else if (splashState === SPLASH_STATE_AUTO) {
+                splashProgress += speed;
+                splashTractorY = splashProgress;
+                // Smoothly snap to reference line
+                splashTractorX = splashRefLine[0].x;
+                splashPathHistory.push({ x: splashTractorX, y: splashTractorY });
+
+                if (splashProgress >= SPLASH_TOTAL_DIST) {
+                    // Tự động lặp lại từ đầu
+                    startSplashSimulation();
+                }
+            }
+        }
+
+        function updateSplashUI() {
+            const statusInd = document.getElementById('statusIndicator');
+
+            switch (splashState) {
+                case SPLASH_STATE_IDLE:
+                    if (statusInd) {
+                        statusInd.innerText = "Hoàn thành";
+                        statusInd.className = "px-6 py-2 rounded-full text-sm font-bold bg-green-900 text-green-300 border border-green-500 shadow-lg";
+                    }
+                    if (outOverlay) outOverlay.innerText = "Sẵn sàng!";
+                    if (inOverlay) inOverlay.innerText = "Đã dừng!";
+                    break;
+                case SPLASH_STATE_MANUAL:
+                    if (statusInd) {
+                        statusInd.innerText = "Bước 1: Lái thủ công";
+                        statusInd.className = "px-6 py-2 rounded-full text-sm font-bold bg-yellow-900 text-yellow-300 border border-yellow-500 shadow-lg";
+                    }
+                    if (outOverlay) outOverlay.innerText = "Recording trajectory...";
+                    if (inOverlay) inOverlay.innerText = "Keep your hands on the steering wheel!";
+                    break;
+                case SPLASH_STATE_CALCULATING:
+                    if (statusInd) {
+                        statusInd.innerText = "Bước 2: Tạo đường tham chiếu";
+                        statusInd.className = "px-6 py-2 rounded-full text-sm font-bold bg-blue-900 text-blue-300 border border-blue-500 shadow-lg";
+                    }
+                    if (outOverlay) outOverlay.innerText = "Calculating...";
+                    if (inOverlay) inOverlay.innerText = "Almost there...";
+                    break;
+                case SPLASH_STATE_AUTO:
+                    if (statusInd) {
+                        statusInd.innerText = "Bước 3: Tự động lái";
+                        statusInd.className = "px-6 py-2 rounded-full text-sm font-bold bg-green-900 text-green-300 border border-green-500 shadow-lg";
+                    }
+                    if (outOverlay) outOverlay.innerText = "Following the red line!";
+                    if (inOverlay) inOverlay.innerText = "So easy! Let the machine handle it!";
+                    break;
+            }
+        }
+
+        // --- Render Splash View 1: Top-Down ---
+        function renderOutView() {
+            if (!canvasOut || !ctxOut) return;
+            const w = canvasOut.width;
+            const h = canvasOut.height;
+
+            // Clear & Draw Field Background
+            ctxOut.fillStyle = '#5c4033'; // Dark dirt brown
+            ctxOut.fillRect(0, 0, w, h);
+
+            // Draw field lines (plowed ridges)
+            ctxOut.strokeStyle = '#4a3225';
+            ctxOut.lineWidth = 15;
+            for (let i = -5; i < 5; i++) {
+                ctxOut.beginPath();
+                ctxOut.moveTo(w / 2 + i * 60, 0);
+                ctxOut.lineTo(w / 2 + i * 60, h);
+                ctxOut.stroke();
+            }
+
+            // Coordinate mapping: map virtual Y [0, 1000] to canvas Y [h-50, 50]
+            const mapY = (y) => h - 50 - (y / SPLASH_TOTAL_DIST) * (h - 100);
+            const mapX = (x) => w / 2 + x;
+
+            // Draw Path History (Manual path)
+            if (splashPathHistory.length > 0) {
+                ctxOut.beginPath();
+                ctxOut.strokeStyle = '#facc15'; // Yellow manual path
+                ctxOut.lineWidth = 4;
+                ctxOut.setLineDash([]);
+                ctxOut.moveTo(mapX(splashPathHistory[0].x), mapY(splashPathHistory[0].y));
+                for (let i = 1; i < splashPathHistory.length; i++) {
+                    ctxOut.lineTo(mapX(splashPathHistory[i].x), mapY(splashPathHistory[i].y));
+                }
+                ctxOut.stroke();
+            }
+
+            // Draw Reference Line (Projected straight line)
+            if ((splashState === SPLASH_STATE_CALCULATING || splashState === SPLASH_STATE_AUTO) && splashRefLine.length >= 2) {
+                let p1 = splashRefLine[0];
+                let p2 = splashRefLine[1];
+
+                // Animate dashed line calculating
+                ctxOut.beginPath();
+                ctxOut.strokeStyle = '#fa0000'; // Red ref line
+                ctxOut.lineWidth = 4;
+                ctxOut.setLineDash([10, 10]);
+                ctxOut.lineDashOffset = -performance.now() / 20; // moving dash effect
+                ctxOut.moveTo(mapX(p1.x), mapY(p1.y));
+
+                // If calculating, draw line progressively
+                let drawTargetY = p2.y;
+                if (splashState === SPLASH_STATE_CALCULATING) {
+                    let calcProg = (splashProgress - SPLASH_MANUAL_END) / (SPLASH_CALC_END - SPLASH_MANUAL_END);
+                    drawTargetY = p1.y + (p2.y - p1.y) * calcProg;
+                }
+                ctxOut.lineTo(mapX(p2.x), mapY(drawTargetY));
+                ctxOut.stroke();
+                ctxOut.setLineDash([]); // reset
+            }
+
+            // Draw Tractor
+            drawTractorTopDown(ctxOut, mapX(splashTractorX), mapY(splashTractorY));
+        }
+
+        function drawTractorTopDown(ctx, x, y) {
+            ctx.save();
+            ctx.translate(x, y);
+
+            // Add shadow
+            ctx.fillStyle = 'rgba(0,0,0,0.4)';
+            ctx.fillRect(-18, -25, 40, 60);
+
+            // Back wheels
+            ctx.fillStyle = '#111';
+            ctx.fillRect(-25, 5, 10, 25);
+            ctx.fillRect(15, 5, 10, 25);
+
+            // Front wheels
+            ctx.fillRect(-20, -25, 8, 15);
+            ctx.fillRect(12, -25, 8, 15);
+
+            // Body
+            ctx.fillStyle = '#dc2626'; // Red
+            ctx.fillRect(-15, -30, 30, 60);
+
+            // Engine details
+            ctx.fillStyle = '#991b1b';
+            ctx.fillRect(-10, -25, 20, 20);
+
+            // Cab / Roof
+            ctx.fillStyle = '#f8fafc'; // White roof
+            ctx.fillRect(-16, 5, 32, 22);
+            // Glass
+            ctx.fillStyle = '#38bdf8';
+            ctx.fillRect(-14, 7, 28, 18);
+
+            // Plow attachment at back
+            ctx.fillStyle = '#475569';
+            ctx.fillRect(-25, 30, 50, 10);
+
+            ctx.restore();
+        }
+
+        // --- Render Splash View 2: First Person ---
+        function renderInView() {
+            if (!canvasIn || !ctxIn) return;
+            const w = canvasIn.width;
+            const h = canvasIn.height;
+
+            // Clear Background (Sky)
+            let gradientSky = ctxIn.createLinearGradient(0, 0, 0, h / 2);
+            gradientSky.addColorStop(0, '#87CEEB'); // Sky blue
+            gradientSky.addColorStop(1, '#e0f6ff');
+            ctxIn.fillStyle = gradientSky;
+            ctxIn.fillRect(0, 0, w, h / 2);
+
+            // Horizon & Ground
+            let gradientGround = ctxIn.createLinearGradient(0, h / 2, 0, h);
+            gradientGround.addColorStop(0, '#6d4c41');
+            gradientGround.addColorStop(1, '#3e2723');
+            ctxIn.fillStyle = gradientGround;
+            ctxIn.fillRect(0, h / 2, w, h / 2);
+
+            // Simulated perspective field lines moving
+            ctxIn.strokeStyle = 'rgba(0,0,0,0.3)';
+            ctxIn.lineWidth = 2;
+
+            ctxIn.beginPath();
+            for (let i = -5; i <= 5; i++) {
+                // Horizon point
+                let hx = w / 2 + i * 20;
+                let hy = h / 2;
+                // Bottom screen point
+                let bx = w / 2 + i * 150 + (splashTractorX * -2); // Adjust based on tractor X steering
+                let by = h;
+
+                ctxIn.moveTo(hx, hy);
+                ctxIn.lineTo(bx, by);
+            }
+            ctxIn.stroke();
+
+            // Draw Reference Line (Projected from front of tractor to horizon)
+            if ((splashState === SPLASH_STATE_CALCULATING || splashState === SPLASH_STATE_AUTO) && splashRefLine.length >= 2) {
+                ctxIn.beginPath();
+                ctxIn.strokeStyle = 'rgba(255, 0, 10, 0.8)'; // Glowing RED
+                ctxIn.lineWidth = 6;
+                ctxIn.setLineDash([20, 20]);
+                ctxIn.lineDashOffset = -performance.now() / 15;
+
+                let startX = w / 2 + (splashRefLine[0].x - splashTractorX) * 5;
+
+                ctxIn.moveTo(startX, h); // Bottom of screen
+                ctxIn.lineTo(w / 2, h / 2);  // Horizon
+                ctxIn.stroke();
+                ctxIn.setLineDash([]);
+            }
+
+            // Draw Tractor Hood
+            ctxIn.fillStyle = '#b91c1c'; // Dark red hood
+            ctxIn.beginPath();
+            ctxIn.moveTo(w / 2 - 150, h);
+            ctxIn.lineTo(w / 2 - 80, h / 2 + 50);
+            ctxIn.lineTo(w / 2 + 80, h / 2 + 50);
+            ctxIn.lineTo(w / 2 + 150, h);
+            ctxIn.fill();
+
+            // Exhaust pipe
+            ctxIn.fillStyle = '#333';
+            ctxIn.fillRect(w / 2 + 60, h / 2 + 10, 15, 60);
+
+            // Draw Steering Wheel
+            ctxIn.save();
+            ctxIn.translate(w / 2, h - 30); // Position at bottom center
+
+            // Auto-steer wheel rotation effect
+            let wheelRotation = 0;
+            if (splashState === SPLASH_STATE_MANUAL) {
+                wheelRotation = Math.sin(splashProgress * 0.1) * 0.1; // manual wiggle
+            } else if (splashState === SPLASH_STATE_AUTO) {
+                wheelRotation = Math.sin(splashProgress * 0.2) * 0.05; // auto-steer micro corrections
+            }
+            ctxIn.rotate(wheelRotation);
+
+            // Wheel shadow/base
+            ctxIn.fillStyle = '#111';
+            ctxIn.beginPath();
+            ctxIn.arc(0, 0, 105, 0, Math.PI * 2);
+            ctxIn.fill();
+
+            // Wheel rim
+            ctxIn.strokeStyle = '#222';
+            ctxIn.lineWidth = 15;
+            ctxIn.beginPath();
+            ctxIn.arc(0, 0, 100, 0, Math.PI * 2);
+            ctxIn.stroke();
+
+            // Wheel spokes
+            ctxIn.lineWidth = 10;
+            ctxIn.beginPath();
+            ctxIn.moveTo(0, 0); ctxIn.lineTo(-80, 40);
+            ctxIn.moveTo(0, 0); ctxIn.lineTo(80, 40);
+            ctxIn.moveTo(0, 0); ctxIn.lineTo(0, -90);
+            ctxIn.stroke();
+
+            // Center horn
+            ctxIn.fillStyle = '#333';
+            ctxIn.beginPath();
+            ctxIn.arc(0, 0, 25, 0, Math.PI * 2);
+            ctxIn.fill();
+
+            // Draw Hands
+            if (splashState === SPLASH_STATE_MANUAL || splashState === SPLASH_STATE_CALCULATING) {
+                // Hands on wheel (10 and 2 o'clock)
+                ctxIn.fillStyle = '#dcb494'; // Skin tone
+
+                // Left Hand
+                ctxIn.beginPath();
+                ctxIn.ellipse(-70, -70, 25, 15, Math.PI / 4, 0, Math.PI * 2);
+                ctxIn.fill();
+
+                // Right Hand
+                ctxIn.beginPath();
+                ctxIn.ellipse(70, -70, 25, 15, -Math.PI / 4, 0, Math.PI * 2);
+                ctxIn.fill();
+
+                // Arms (simplified)
+                ctxIn.strokeStyle = '#475569'; // Sleeve color
+                ctxIn.lineWidth = 30;
+                ctxIn.lineCap = 'round';
+                ctxIn.beginPath();
+                ctxIn.moveTo(-80, -60);
+                ctxIn.lineTo(-150, 50);
+                ctxIn.stroke();
+
+                ctxIn.beginPath();
+                ctxIn.moveTo(80, -60);
+                ctxIn.lineTo(150, 50);
+                ctxIn.stroke();
+            } else if (splashState === SPLASH_STATE_AUTO) {
+                // Hands moving away
+                let dropAmount = Math.min((splashProgress - SPLASH_CALC_END) * 2, 100);
+                ctxIn.globalAlpha = Math.max(1 - (dropAmount / 100), 0);
+
+                // Left Hand (dropping)
+                ctxIn.fillStyle = '#dcb494';
+                ctxIn.beginPath();
+                ctxIn.ellipse(-70 - dropAmount, -70 + dropAmount, 25, 15, Math.PI / 4, 0, Math.PI * 2);
+                ctxIn.fill();
+
+                // Right Hand (dropping)
+                ctxIn.beginPath();
+                ctxIn.ellipse(70 + dropAmount, -70 + dropAmount, 25, 15, -Math.PI / 4, 0, Math.PI * 2);
+                ctxIn.fill();
+                ctxIn.globalAlpha = 1.0;
+
+                // Overlay UI indicator for Auto Steer
+                ctxIn.rotate(-wheelRotation); // Unrotate for text
+                ctxIn.fillStyle = 'rgba(0, 0, 0, 0.6)';
+                ctxIn.fillRect(-90, -160, 180, 40);
+                ctxIn.fillStyle = '#4ade80';
+                ctxIn.font = 'bold 16px sans-serif';
+                ctxIn.textAlign = 'center';
+                ctxIn.fillText('AUTO STEER: ON', 0, -135);
+            }
+
+            ctxIn.restore();
+
+            // Dashboard detail
+            ctxIn.fillStyle = '#0f172a';
+            ctxIn.fillRect(w / 2 - 200, h - 15, 400, 15);
+        }
+
+        // --- Splash Screen WebSocket Connection ---
+        const splashScreen = document.getElementById('splash-screen');
+        const splashBtnConnect = document.getElementById('splash-btn-connect');
+
+        function checkWsUrlValidity() {
+            const url = wsUrlInput.value.trim();
+            if (url.startsWith('ws://') || url.startsWith('wss://')) {
+                splashBtnConnect.classList.remove('bg-gray-800/90', 'text-gray-500', 'border-gray-700');
+                splashBtnConnect.classList.add('bg-green-600', 'text-white', 'hover:bg-green-500', 'shadow-[0_0_30px_rgba(22,163,74,0.5)]', 'border-green-400/50');
+            } else {
+                splashBtnConnect.classList.add('bg-gray-800/90', 'text-gray-500', 'border-gray-700');
+                splashBtnConnect.classList.remove('bg-green-600', 'text-white', 'hover:bg-green-500', 'shadow-[0_0_30px_rgba(22,163,74,0.5)]', 'border-green-400/50');
+            }
+        }
+
+        wsUrlInput.addEventListener('input', checkWsUrlValidity);
+
+        function resetSplashBtn() {
+            splashBtnConnect.innerHTML = `<span data-i18n="splash-btn">${t('splash-btn')}</span>`;
+            checkWsUrlValidity();
+        }
+
+        splashBtnConnect.addEventListener('click', () => {
+            if (!splashBtnConnect.classList.contains('bg-green-600')) return;
+            const url = wsUrlInput.value.trim();
+            const loadingTemplate = document.getElementById('loading-spinner').innerHTML;
+            splashBtnConnect.innerHTML = `${loadingTemplate} <span data-i18n="splash-connecting">${t('splash-connecting')}</span>`;
+
+            // Ngăn lỗi SecurityError khi chạy trên Canvas preview do chặn ws://
+            if (isSecureContextBlockingWs(url)) {
+                console.warn("Môi trường duyệt web đã chặn kết nối ws://");
+                splashBtnConnect.innerHTML = `<span class="text-red-400 text-xs font-bold text-center px-2 py-1">Lỗi bảo mật (Trình duyệt chặn ws://)<br>Vui lòng tải tệp HTML về máy tính để chạy</span>`;
+                setTimeout(() => resetSplashBtn(), 4500);
+                return;
+            }
+
+            try {
+                ros.connect(url);
+            } catch (e) {
+                console.error("Lỗi khi khởi tạo kết nối ROS:", e);
+                splashBtnConnect.innerHTML = `<span class="text-red-400 text-xs font-bold px-2">Lỗi kết nối. Kiểm tra console.</span>`;
+                setTimeout(() => resetSplashBtn(), 4000);
+            }
+        });
+
+        // Nút kết nối ở cửa sổ Cài đặt
+        btnConnect.addEventListener('click', () => {
+            if (ros.isConnected) {
+                ros.close();
+            } else {
+                const url = document.getElementById('ws-url').value.trim();
+
+                if (isSecureContextBlockingWs(url)) {
+                    console.warn("Trình duyệt web bảo mật/Canvas đã chặn kết nối ws://");
+                    alert("Lỗi bảo mật (Trình duyệt chặn ws://)\n\nVui lòng tải tệp HTML về máy tính để chạy ứng dụng với WebSocket không bảo mật.");
+                    return;
+                }
+
+                try {
+                    ros.connect(url);
+                } catch (e) {
+                    console.error("Lỗi khi khởi tạo kết nối ROS:", e);
+                }
+            }
+        });
+
+
+        // --- 3. UI Control & Navigation ---
+        function setControlMode(mode) {
+            const toggleRecord = document.getElementById('toggle-record');
+            const togglePath = document.getElementById('toggle-path');
+            const btnVertex = document.getElementById('btn-record-vertex');
+            const btnGen = document.getElementById('btn-generate-path');
+            const btnLine = document.getElementById('btn-record-line');
+            const divider = document.getElementById('divider-path');
+
+            if (mode === 'record') {
+                toggleRecord.className = "px-4 py-1.5 rounded-full text-xs font-bold transition-all bg-blue-500/80 text-white shadow-md cursor-default";
+                togglePath.className = "px-4 py-1.5 rounded-full text-xs font-bold transition-all text-gray-400 hover:text-white cursor-pointer";
+                btnVertex.style.display = 'none';
+                divider.style.display = 'none';
+                btnGen.style.display = 'none';
+                btnLine.style.display = 'flex';
+            } else {
+                togglePath.className = "px-4 py-1.5 rounded-full text-xs font-bold transition-all bg-blue-500/80 text-white shadow-md cursor-default";
+                toggleRecord.className = "px-4 py-1.5 rounded-full text-xs font-bold transition-all text-gray-400 hover:text-white cursor-pointer";
+                btnLine.style.display = 'none';
+                btnVertex.style.display = 'flex';
+                divider.style.display = 'block';
+                btnGen.style.display = 'flex';
+            }
+        }
+
+        function toggleRecordLine() {
+            callService('/steer_pc_node/toggle_line_recording');
+            isRecordingLine = !isRecordingLine;
+            updateRecordLineButtonUI();
+        }
+
+        function updateRecordLineButtonUI() {
+            const btn = document.getElementById('btn-record-line');
+            if (!btn) return;
+            const icon = btn.querySelectorAll('span')[0];
+            const text = btn.querySelectorAll('span')[1];
+            btn.className = "relative overflow-hidden select-none flex-1 flex flex-col items-center justify-center py-2 rounded-xl transition active:scale-95 group border";
+
+            if (isRecordingLine) {
+                btn.classList.add('bg-orange-500/20', 'hover:bg-orange-500/40', 'border-orange-500/30');
+                icon.className = "relative z-10 text-xl mb-1 group-hover:scale-110 transition-transform text-orange-400 animate-pulse";
+                text.className = "relative z-10 text-xs font-bold text-orange-100";
+            } else if (hasReferenceLine) {
+                btn.classList.add('bg-green-500/20', 'hover:bg-green-500/40', 'border-green-500/30');
+                icon.className = "relative z-10 text-xl mb-1 group-hover:scale-110 transition-transform text-green-400";
+                text.className = "relative z-10 text-xs font-bold text-green-100";
+            } else {
+                btn.classList.add('bg-red-500/20', 'hover:bg-red-500/40', 'border-red-500/30');
+                icon.className = "relative z-10 text-xl mb-1 group-hover:scale-110 transition-transform text-red-400";
+                text.className = "relative z-10 text-xs font-bold text-red-100";
+            }
+        }
+
+        function updateDynamicPanelsVisibility() {
+            const devPanel = document.getElementById('deviation-panel');
+            const rightPanel = document.getElementById('right-controls-panel');
+
+            if (hasReferenceLine) {
+                if (devPanel) {
+                    devPanel.classList.remove('opacity-0', 'pointer-events-none', '-translate-x-10');
+                    devPanel.classList.add('opacity-100', 'pointer-events-auto', 'translate-x-0');
+                }
+                if (rightPanel) {
+                    rightPanel.classList.remove('opacity-0', 'pointer-events-none', 'translate-x-10');
+                    rightPanel.classList.add('opacity-100', 'translate-x-0');
+                    rightPanel.querySelectorAll('.glass-panel').forEach(el => {
+                        el.classList.add('pointer-events-auto');
+                        el.classList.remove('pointer-events-none');
+                    });
+                }
+            } else {
+                if (devPanel) {
+                    devPanel.classList.add('opacity-0', 'pointer-events-none', '-translate-x-10');
+                    devPanel.classList.remove('opacity-100', 'pointer-events-auto', 'translate-x-0');
+                }
+                if (rightPanel) {
+                    rightPanel.classList.add('opacity-0', 'pointer-events-none', 'translate-x-10');
+                    rightPanel.classList.remove('opacity-100', 'translate-x-0');
+                    rightPanel.querySelectorAll('.glass-panel').forEach(el => {
+                        el.classList.remove('pointer-events-auto');
+                        el.classList.add('pointer-events-none');
+                    });
+                }
+            }
+        }
+
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.warn(`Error attempting to enable fullscreen: ${err.message}`);
+                });
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        function toggleSettings() {
+            isSettingsOpen = !isSettingsOpen;
+            if (isSettingsOpen) {
+                modal.classList.remove('opacity-0', 'pointer-events-none');
+                modalContent.classList.replace('scale-95', 'scale-100');
+                if (ros.isConnected) refreshNodes();
+                setTimeout(() => { if (chart) chart.resize(); }, 300);
+            } else {
+                modal.classList.add('opacity-0', 'pointer-events-none');
+                modalContent.classList.replace('scale-100', 'scale-95');
+            }
+        }
+
+        // --- 4. Map & Markers ---
+        const nlscSatUrl = 'https://wmts.nlsc.gov.tw/wmts/PHOTO2/default/GoogleMapsCompatible/{z}/{y}/{x}';
+        const googleSatUrl = 'http://mt0.google.com/vt/lyrs=s&hl=en&x={x}&y={y}&z={z}';
+        const osmUrl = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+        const googleStreetUrl = 'http://mt0.google.com/vt/lyrs=m&hl=en&x={x}&y={y}&z={z}';
+
+        let currentMapSource = 'nlsc';
+
+        let mainSatLayer = L.tileLayer(nlscSatUrl, { maxNativeZoom: 19, maxZoom: 22, attribution: '&copy; NLSC' });
+        let mainStreetLayer = L.tileLayer(osmUrl, { maxNativeZoom: 19, maxZoom: 22, attribution: '&copy; OSM' });
+        let miniSatLayer = L.tileLayer(nlscSatUrl, { maxNativeZoom: 19, maxZoom: 22 });
+        let miniStreetLayer = L.tileLayer(osmUrl, { maxNativeZoom: 19, maxZoom: 22 });
+
+        let isSatelliteMain = true;
+
+        const map = L.map('map', { zoomControl: false, maxZoom: 22 }).setView([22.644689, 120.357255], 7);
+        mainSatLayer.addTo(map);
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+        const minimap = L.map('minimap', {
+            zoomControl: false, attributionControl: false, dragging: false, touchZoom: false,
+            scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false, keyboard: false, maxZoom: 22
+        }).setView([22.644689, 120.357255], 3);
+        miniStreetLayer.addTo(minimap);
+
+        function toggleMapSource() {
+            if (currentMapSource === 'nlsc') {
+                currentMapSource = 'google';
+                mainSatLayer.setUrl(googleSatUrl);
+                miniSatLayer.setUrl(googleSatUrl);
+                mainStreetLayer.setUrl(googleStreetUrl);
+                miniStreetLayer.setUrl(googleStreetUrl);
+            } else {
+                currentMapSource = 'nlsc';
+                mainSatLayer.setUrl(nlscSatUrl);
+                miniSatLayer.setUrl(nlscSatUrl);
+                mainStreetLayer.setUrl(osmUrl);
+                miniStreetLayer.setUrl(osmUrl);
+            }
+        }
+
+        function checkRecenterVisibility() {
+            if (!firstGpsFix) return;
+            const centerPoint = map.latLngToContainerPoint(map.getCenter());
+            const tractorPoint = map.latLngToContainerPoint([latestLat, latestLon]);
+            const distance = centerPoint.distanceTo(tractorPoint);
+            const btn = document.getElementById('btn-recenter');
+            if (distance > 30) {
+                btn.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-4');
+                btn.classList.add('pointer-events-auto');
+            } else {
+                btn.classList.add('opacity-0', 'pointer-events-none', 'translate-y-4');
+                btn.classList.remove('pointer-events-auto');
+            }
+        }
+
+        map.on('move', function () {
+            minimap.setView(map.getCenter(), Math.max(1, map.getZoom() - 4));
+            checkRecenterVisibility();
+        });
+
+        document.getElementById('minimap-container').addEventListener('click', function () {
+            if (isSatelliteMain) {
+                map.removeLayer(mainSatLayer);
+                minimap.removeLayer(miniStreetLayer);
+                mainStreetLayer.addTo(map);
+                miniSatLayer.addTo(minimap);
+                isSatelliteMain = false;
+            } else {
+                map.removeLayer(mainStreetLayer);
+                minimap.removeLayer(miniSatLayer);
+                mainSatLayer.addTo(map);
+                miniStreetLayer.addTo(minimap);
+                isSatelliteMain = true;
+            }
+        });
+
+        document.getElementById('btn-recenter').addEventListener('click', function () {
+            map.setView([latestLat, latestLon], map.getZoom() < 16 ? 19 : map.getZoom(), { animate: true });
+        });
+
+        const tractorHtml = `
+            <div class="relative flex flex-col items-center justify-center w-full h-full">
+                <div class="absolute bottom-full mb-2 bg-gray-900/80 backdrop-blur border border-white/20 px-2 py-1 rounded text-[10px] font-mono text-center shadow-lg pointer-events-none whitespace-nowrap">
+                    <div class="text-orange-400 font-bold tracking-wide">CMD: <span id="marker-cmd">--</span></div>
+                    <div class="text-purple-400 font-bold tracking-wide">YAW: <span id="marker-yaw">--</span></div>
+                </div>
+                <div id="marker-arrow" class="w-6 h-6 flex items-center justify-center transition-transform duration-100 drop-shadow-[0_0_8px_rgba(37,99,235,0.6)]" style="transform: rotate(0rad);">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
+                        <rect x="2" y="12" width="5" height="10" rx="1.5" fill="#1f2937"/><rect x="17" y="12" width="5" height="10" rx="1.5" fill="#1f2937"/>
+                        <rect x="3" y="3" width="4" height="6" rx="1" fill="#374151"/><rect x="17" y="3" width="4" height="6" rx="1" fill="#374151"/>
+                        <rect x="6.5" y="1" width="11" height="20" rx="2" fill="#2563eb"/><rect x="8" y="2" width="8" height="6" rx="1" fill="#1d4ed8"/>
+                        <path d="M7.5 10 L16.5 10 L15.5 17 L8.5 17 Z" fill="#93c5fd"/><rect x="8" y="11" width="8" height="5" rx="1" fill="#1e3a8a"/>
+                    </svg>
+                </div>
+            </div>`;
+
+        const tractorIcon = L.divIcon({ className: 'custom-tractor-icon', html: tractorHtml, iconSize: [30, 30], iconAnchor: [15, 15] });
+        const miniTractorHtml = `
+            <div id="mini-marker-arrow" class="w-5 h-5 flex items-center justify-center transition-transform duration-100" style="transform: rotate(0rad);">
+                <svg viewBox="0 0 24 24" fill="#ef4444" stroke="white" stroke-width="2" xmlns="http://www.w3.org/2000/svg" class="w-full h-full drop-shadow-md"><polygon points="12,2 22,20 12,17 2,20" /></svg>
+            </div>`;
+        const miniTractorIcon = L.divIcon({ className: 'custom-mini-tractor-icon', html: miniTractorHtml, iconSize: [20, 20], iconAnchor: [10, 10] });
+
+        let tractorMarker = L.marker([22.644689, 120.357255], { icon: tractorIcon }).addTo(map);
+        let miniTractorMarker = L.marker([22.644689, 120.357255], { icon: miniTractorIcon }).addTo(minimap);
+        let referencePathLayer = L.polyline([], { color: '#ef4444', weight: 4, opacity: 0.9, lineJoin: 'round' }).addTo(map);
+
+        window.addEventListener('resize', () => { map.invalidateSize(); minimap.invalidateSize(); });
+        setTimeout(() => { map.invalidateSize(); minimap.invalidateSize(); }, 500);
+
+        // --- 5. Deviation 2D Radar ---
+        function drawDeviation() {
+            const canvas = document.getElementById('devCanvas');
+            if (!canvas) {
+                requestAnimationFrame(drawDeviation);
+                return;
+            }
+            const ctx = canvas.getContext('2d');
+            if (canvas.width !== canvas.clientWidth) canvas.width = canvas.clientWidth;
+            if (canvas.height !== canvas.clientHeight) canvas.height = canvas.clientHeight;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const cx = canvas.width / 2;
+            const cy = canvas.height * 0.75;
+            const scale = 30; // Zoom scale (Pixels / Met)
+
+            if (refLinePoints && refLinePoints.length > 1) {
+                let minDist = Infinity;
+                let bestIdx = 0;
+
+                // Find closest line segment
+                let bestU = { x: 0, y: 0 }, bestN = { x: 0, y: 0 }, bestP1 = { x: 0, y: 0 };
+                let bestPathMathYaw = 0;
+                let closestS = 0;
+
+                for (let i = 0; i < refLinePoints.length - 1; i++) {
+                    let p1 = refLinePoints[i];
+                    let p2 = refLinePoints[i + 1];
+                    let vx = p2.x - p1.x;
+                    let vy = p2.y - p1.y;
+                    let len = Math.sqrt(vx * vx + vy * vy);
+                    if (len === 0) continue;
+
+                    let ux = vx / len;
+                    let uy = vy / len;
+
+                    let wx = odomX - p1.x;
+                    let wy = odomY - p1.y;
+
+                    let s = wx * ux + wy * uy; // Along-track
+                    let clamp_s = Math.max(0, Math.min(len, s));
+
+                    let projX = p1.x + clamp_s * ux;
+                    let projY = p1.y + clamp_s * uy;
+
+                    let dx = odomX - projX;
+                    let dy = odomY - projY;
+                    let distSq = dx * dx + dy * dy;
+
+                    if (distSq < minDist) {
+                        minDist = distSq;
+                        bestIdx = i;
+                        bestU = { x: ux, y: uy };
+                        bestN = { x: -uy, y: ux }; // Normal pointing LEFT
+                        bestP1 = p1;
+                        bestPathMathYaw = Math.atan2(vy, vx);
+                        closestS = s;
+                    }
+                }
+
+                // Reference origin is the projection point on the line segment
+                let originX = bestP1.x + closestS * bestU.x;
+                let originY = bestP1.y + closestS * bestU.y;
+
+                // 2. Vẽ Đường Path
+                ctx.beginPath();
+                ctx.strokeStyle = '#ef4444'; // Red-500
+                ctx.lineWidth = 4;
+
+                for (let i = 0; i < refLinePoints.length; i++) {
+                    let p = refLinePoints[i];
+                    let wx = p.x - originX;
+                    let wy = p.y - originY;
+
+                    let s = wx * bestU.x + wy * bestU.y;
+                    let d = wx * bestN.x + wy * bestN.y;
+
+                    let drawX = cx - d * scale;
+                    let drawY = cy - s * scale;
+
+                    if (i === 0) ctx.moveTo(drawX, drawY);
+                    else ctx.lineTo(drawX, drawY);
+                }
+                ctx.stroke();
+
+                // Tractor position
+                let twx = odomX - originX;
+                let twy = odomY - originY;
+                let t_s = twx * bestU.x + twy * bestU.y; // Should be ~0 since origin is projection
+                let t_d = twx * bestN.x + twy * bestN.y;
+
+                // 3. Cập nhật Text XTE và Màu nền thanh tiêu đề
+                const xteEl = document.getElementById('xte-value');
+                const xteHeader = document.getElementById('xte-header');
+                if (xteEl && xteHeader) {
+                    const err = Math.abs(t_d);
+                    xteEl.innerText = err.toFixed(2) + ' m';
+                    xteEl.className = 'text-xl font-mono font-bold text-white drop-shadow-md';
+
+                    if (err > 0.5) {
+                        xteHeader.className = 'transition-colors duration-300 p-3 border-b flex justify-center items-center z-10 shadow-sm bg-red-500 border-red-600';
+                    } else if (err > 0.2) {
+                        xteHeader.className = 'transition-colors duration-300 p-3 border-b flex justify-center items-center z-10 shadow-sm bg-orange-500 border-orange-600';
+                    } else {
+                        xteHeader.className = 'transition-colors duration-300 p-3 border-b flex justify-center items-center z-10 shadow-sm bg-green-500 border-green-600';
+                    }
+                }
+
+                // 4. Vẽ Tractor
+                let tractorDrawX = cx - t_d * scale;
+                let tractorDrawY = cy - t_s * scale;
+
+                ctx.save();
+                ctx.translate(tractorDrawX, tractorDrawY);
+
+                let relYaw = tractorMathYaw - bestPathMathYaw;
+                ctx.rotate(-relYaw);
+
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = 'rgba(37, 99, 235, 0.4)';
+
+                // Thân xe
+                ctx.fillStyle = '#2563eb';
+                ctx.beginPath();
+                ctx.roundRect(-10, -20, 20, 40, 4);
+                ctx.fill();
+
+                // Bánh xe
+                ctx.fillStyle = '#1f2937';
+                ctx.shadowBlur = 0;
+                ctx.fillRect(-14, -14, 4, 10);
+                ctx.fillRect(10, -14, 4, 10);
+                ctx.fillRect(-16, 8, 6, 12);
+                ctx.fillRect(10, 8, 6, 12);
+
+                // Kính chắn gió
+                ctx.fillStyle = '#93c5fd';
+                ctx.fillRect(-6, -4, 12, 10);
+
+                ctx.restore();
+
+            } else {
+                // Không có quỹ đạo
+                const xteEl = document.getElementById('xte-value');
+                const xteHeader = document.getElementById('xte-header');
+                if (xteEl && xteHeader) {
+                    xteEl.innerText = '-- m';
+                    xteEl.className = 'text-xl font-mono font-bold text-gray-400';
+                    xteHeader.className = 'transition-colors duration-300 p-3 border-b border-gray-200 flex justify-center items-center z-10 shadow-sm bg-gray-100/90';
+                }
+            }
+
+            requestAnimationFrame(drawDeviation);
+        }
+
+        requestAnimationFrame(drawDeviation);
+
+        // --- 6. Chart.js Setup ---
+        const ctxChart = document.getElementById('steerChart').getContext('2d');
+        const chart = new Chart(ctxChart, {
+            type: 'line',
+            data: {
+                labels: Array(30).fill(''),
+                datasets: [
+                    { label: 'IMU Z', borderColor: '#a855f7', data: Array(30).fill(0), tension: 0.1, borderWidth: 2, pointRadius: 0 },
+                    { label: 'Odom Z', borderColor: '#3b82f6', data: Array(30).fill(0), tension: 0.1, borderWidth: 2, pointRadius: 0 },
+                    { label: 'Steer Cmd', borderColor: '#f97316', data: Array(30).fill(0), tension: 0.1, borderWidth: 2, pointRadius: 0 }
+                ]
+            },
+            options: { responsive: true, maintainAspectRatio: false, animation: false, scales: { y: { grid: { color: '#374151' } }, x: { grid: { display: false } } }, plugins: { legend: { labels: { color: '#D1D5DB' } } } }
+        });
+
+        function updateChart(datasetIndex, value) {
+            const data = chart.data.datasets[datasetIndex].data;
+            data.push(value);
+            data.shift();
+            chart.update();
+        }
+
+        // --- 7. ROS 2 Parameter Logic ---
+        function refreshNodes() {
+            if (!ros.isConnected) {
+                nodeSelector.innerHTML = `<option value="">${t('opt-connect-ros')}</option>`;
+                return;
+            }
+            nodeSelector.innerHTML = `<option value="">${t('opt-loading')}</option>`;
+            ros.getNodes((nodes) => {
+                nodeSelector.innerHTML = `<option value="">${t('opt-select-node')}</option>`;
+                nodes.sort().forEach(node => {
+                    const opt = document.createElement('option');
+                    opt.value = node;
+                    opt.textContent = node;
+                    nodeSelector.appendChild(opt);
+                });
+            }, (err) => console.error(err));
+        }
+
+        function loadParamsForNode() {
+            const nodeName = document.getElementById('node-selector').value;
+            if (!nodeName) {
+                paramsList.innerHTML = `<div class="text-xs text-gray-500 italic text-center py-4">${t('msg-select-node')}</div>`;
+                return;
+            }
+
+            paramsList.innerHTML = `<div class="text-xs text-blue-400 animate-pulse text-center py-4">${t('opt-loading')}</div>`;
+
+            // Gọi trực tiếp Service list_parameters chuẩn của ROS 2 để lấy danh sách
+            const listClient = new ROSLIB.Service({
+                ros: ros,
+                name: nodeName + '/list_parameters',
+                serviceType: 'rcl_interfaces/srv/ListParameters'
+            });
+
+            const request = new ROSLIB.ServiceRequest({
+                prefixes: [],
+                depth: 0
+            });
+
+            listClient.callService(request, (result) => {
+                let paramNames = result.result.names;
+
+                // Lọc bỏ những param hệ thống mặc định (qos_overrides) để UI gọn hơn
+                paramNames = paramNames.filter(p => !p.startsWith('qos_overrides'));
+
+                if (!paramNames || paramNames.length === 0) {
+                    paramsList.innerHTML = `<div class="text-xs text-gray-500 text-center py-4">No parameters found for ${nodeName}</div>`;
+                    return;
+                }
+
+                paramsList.innerHTML = '';
+                paramNames.sort().forEach(paramName => {
+                    renderParamUI_ROS2(nodeName, paramName);
+                });
+            }, (error) => {
+                console.error("ListParameters error:", error);
+                paramsList.innerHTML = `<div class="text-xs text-red-500 text-center py-4">Failed to load parameters. Ensure node is active.</div>`;
+            });
+        }
+
+        function renderParamUI_ROS2(nodeName, paramName) {
+            const item = document.createElement('div');
+            item.className = "glass-panel p-3 rounded-xl border border-gray-700 bg-gray-900/40 flex flex-col gap-2";
+
+            const titleDiv = document.createElement('div');
+            titleDiv.className = "text-[10px] font-mono text-blue-400 break-all font-bold";
+            titleDiv.innerText = paramName;
+
+            const inputContainer = document.createElement('div');
+            inputContainer.className = "flex gap-2";
+
+            const inputEl = document.createElement('input');
+            inputEl.type = "text";
+            inputEl.value = "Loading...";
+            inputEl.disabled = true;
+            inputEl.className = "flex-1 bg-black/50 border border-gray-700 rounded-lg px-3 py-1.5 text-xs font-mono text-gray-500 focus:outline-none focus:border-blue-500";
+
+            const btnEl = document.createElement('button');
+            btnEl.innerText = "SET";
+            btnEl.disabled = true;
+            btnEl.className = "bg-gray-600 text-white px-4 py-1.5 rounded-lg text-[10px] font-bold transition-all opacity-50 cursor-not-allowed";
+
+            inputContainer.appendChild(inputEl);
+            inputContainer.appendChild(btnEl);
+            item.appendChild(titleDiv);
+            item.appendChild(inputContainer);
+            paramsList.appendChild(item);
+
+            // Gọi Service get_parameters để lấy giá trị hiện tại
+            const getClient = new ROSLIB.Service({
+                ros: ros,
+                name: nodeName + '/get_parameters',
+                serviceType: 'rcl_interfaces/srv/GetParameters'
+            });
+
+            const getReq = new ROSLIB.ServiceRequest({
+                names: [paramName]
+            });
+
+            getClient.callService(getReq, (res) => {
+                if (res.values && res.values.length > 0) {
+                    const pVal = res.values[0];
+                    let valStr = '';
+                    let pType = pVal.type;
+
+                    // Giải mã dựa trên type của rcl_interfaces/msg/ParameterType
+                    if (pType === 1) valStr = pVal.bool_value.toString();
+                    else if (pType === 2) valStr = pVal.integer_value.toString();
+                    else if (pType === 3) valStr = pVal.double_value.toString();
+                    else if (pType === 4) valStr = pVal.string_value;
+                    else valStr = "Unsupported Array/Type";
+
+                    inputEl.value = valStr;
+                    inputEl.disabled = false;
+                    inputEl.classList.remove('text-gray-500');
+                    inputEl.classList.add('text-white');
+
+                    btnEl.disabled = false;
+                    btnEl.classList.remove('bg-gray-600', 'opacity-50', 'cursor-not-allowed');
+                    btnEl.classList.add('bg-blue-600', 'hover:bg-blue-700', 'active:scale-95');
+
+                    // Gắn sự kiện ghi param với đúng type được nhận diện
+                    btnEl.onclick = () => setParamValue_ROS2(nodeName, paramName, pType, inputEl, btnEl);
+                }
+            }, (err) => {
+                inputEl.value = "Error";
+                inputEl.classList.replace('text-gray-500', 'text-red-400');
+            });
+        }
+
+        function setParamValue_ROS2(nodeName, paramName, pType, inputEl, btnEl) {
+            const rawVal = inputEl.value.trim();
+
+            // Xây dựng ParameterValue message theo cấu trúc ROS 2
+            let paramValueObj = {
+                type: pType,
+                bool_value: false,
+                integer_value: 0,
+                double_value: 0.0,
+                string_value: "",
+                byte_array_value: [],
+                bool_array_value: [],
+                integer_array_value: [],
+                double_array_value: [],
+                string_array_value: []
+            };
+
+            if (pType === 1) paramValueObj.bool_value = (rawVal.toLowerCase() === 'true');
+            else if (pType === 2) paramValueObj.integer_value = parseInt(rawVal, 10) || 0;
+            else if (pType === 3) paramValueObj.double_value = parseFloat(rawVal) || 0.0;
+            else if (pType === 4) paramValueObj.string_value = rawVal;
+
+            const setClient = new ROSLIB.Service({
+                ros: ros,
+                name: nodeName + '/set_parameters',
+                serviceType: 'rcl_interfaces/srv/SetParameters'
+            });
+
+            const setReq = new ROSLIB.ServiceRequest({
+                parameters: [{
+                    name: paramName,
+                    value: paramValueObj
+                }]
+            });
+
+            const originalText = btnEl.innerText;
+            btnEl.innerText = '...';
+
+            setClient.callService(setReq, (res) => {
+                let success = res.results && res.results[0] && res.results[0].successful;
+                if (success) {
+                    btnEl.innerText = 'OK';
+                    btnEl.classList.add('btn-set-active');
+                } else {
+                    btnEl.innerText = 'FAIL';
+                    btnEl.classList.replace('bg-blue-600', 'bg-red-600');
+                }
+                setTimeout(() => {
+                    btnEl.innerText = originalText;
+                    btnEl.classList.remove('btn-set-active', 'bg-red-600');
+                    btnEl.classList.add('bg-blue-600');
+                }, 1500);
+            }, (err) => {
+                console.error("SetParameter error:", err);
+                btnEl.innerText = 'ERR';
+                btnEl.classList.replace('bg-blue-600', 'bg-red-600');
+                setTimeout(() => {
+                    btnEl.innerText = originalText;
+                    btnEl.classList.replace('bg-red-600', 'bg-blue-600');
+                }, 1500);
+            });
+        }
+
+        // --- 8. ROS Topics & Services ---
+        function refreshTopics() {
+            if (!ros.isConnected) { topicRawData.innerText = t('msg-connect-ros'); return; }
+            topicSelector.innerHTML = `<option value="">${t('opt-loading')}</option>`;
+            ros.getTopics((result) => {
+                topicSelector.innerHTML = `<option value="">${t('opt-select-topic')}</option>`;
+                result.topics.forEach((topic, index) => {
+                    let option = document.createElement('option'); option.value = topic; option.dataset.type = result.types[index];
+                    option.text = `${topic} (${result.types[index]})`; topicSelector.appendChild(option);
+                });
+            });
+        }
+
+        topicSelector.addEventListener('change', (e) => {
+            if (currentTopicSub) currentTopicSub.unsubscribe();
+            const selectedTopic = e.target.value;
+            if (!selectedTopic) { topicRawData.innerText = t('msg-select-topic'); return; }
+            const topicType = e.target.options[e.target.selectedIndex].dataset.type;
+            topicRawData.innerText = t('msg-listening').replace('{topic}', selectedTopic);
+            currentTopicSub = new ROSLIB.Topic({ ros: ros, name: selectedTopic, messageType: topicType });
+            currentTopicSub.subscribe((message) => topicRawData.innerText = JSON.stringify(message, null, 2));
+        });
+
+        ros.on('connection', () => {
+            applyLanguage();
+            statusText.className = 'text-xs font-semibold text-green-400 uppercase';
+            statusDot.className = 'w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_6px_#22c55e]';
+            btnConnect.classList.replace('bg-blue-600', 'bg-red-600');
+            refreshTopics();
+            if (isSettingsOpen) refreshNodes();
+
+            // Ẩn Splash Screen khi kết nối thành công và dừng Animation nền
+            splashScreen.classList.add('opacity-0', 'pointer-events-none');
+            cancelAnimationFrame(splashAnimFrame);
+            setTimeout(() => { if (ros.isConnected) splashScreen.classList.add('hidden'); }, 700);
+            resetSplashBtn();
+        });
+
+        ros.on('error', (error) => {
+            statusText.innerText = t('hud-error');
+            statusDot.className = 'w-2.5 h-2.5 rounded-full bg-yellow-500 shadow-[0_0_6px_#eab308]';
+
+            // Hiển thị lại Splash Screen khi lỗi và khởi động lại Animation
+            if (splashScreen.classList.contains('hidden')) {
+                splashScreen.classList.remove('hidden');
+                void splashScreen.offsetWidth; // Force reflow
+                splashScreen.classList.remove('opacity-0', 'pointer-events-none');
+                splashLastTime = performance.now();
+                splashAnimFrame = requestAnimationFrame(splashAnimationLoop);
+            }
+
+            // Nếu đang trong cửa sổ Canvas/Iframe và gặp lỗi WebSocket, hiển thị thông báo thay vì spam.
+            if (isSecureContextBlockingWs(wsUrlInput.value.trim())) {
+                splashBtnConnect.innerHTML = `<span class="text-red-400 text-xs font-bold text-center px-2 py-1">Lỗi bảo mật (Trình duyệt chặn ws://)<br>Vui lòng tải tệp HTML về máy chạy.</span>`;
+            } else {
+                splashBtnConnect.innerHTML = `<span class="text-red-400 text-xs font-bold text-center px-2">Kết nối thất bại.<br>Vui lòng kiểm tra lại URL.</span>`;
+            }
+            setTimeout(() => resetSplashBtn(), 4000);
+        });
+
+        ros.on('close', () => {
+            applyLanguage();
+            statusText.className = 'text-xs font-semibold text-red-400 uppercase';
+            statusDot.className = 'w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_6px_#ef4444] animate-pulse';
+            btnConnect.classList.replace('bg-red-600', 'bg-blue-600');
+
+            numSvDisplay.innerText = '--';
+            rtkIcon.setAttribute('class', 'w-5 h-5 text-red-500 drop-shadow-[0_0_6px_rgba(239,68,68,0.8)] transition-colors');
+            latDisplay.innerText = '--.------';
+            lonDisplay.innerText = '--.------';
+
+            referencePathLayer.setLatLngs([]);
+            refLinePoints = [];
+            hasReferenceLine = false;
+            isRecordingLine = false;
+            updateRecordLineButtonUI();
+            updateDynamicPanelsVisibility();
+
+            if (currentTopicSub) currentTopicSub.unsubscribe();
+            topicSelector.innerHTML = `<option value="">${t('opt-connect-ros')}</option>`;
+            topicRawData.innerText = t('msg-select-topic');
+
+            nodeSelector.innerHTML = `<option value="">${t('opt-connect-ros')}</option>`;
+            paramsList.innerHTML = `<div class="text-xs text-gray-500 italic text-center py-4">${t('msg-select-node')}</div>`;
+
+            // Hiển thị lại Splash Screen khi mất kết nối và chạy Animation
+            if (splashScreen.classList.contains('hidden') || splashScreen.classList.contains('opacity-0')) {
+                splashScreen.classList.remove('hidden');
+                void splashScreen.offsetWidth; // Force reflow
+                splashScreen.classList.remove('opacity-0', 'pointer-events-none');
+                splashLastTime = performance.now();
+                splashAnimFrame = requestAnimationFrame(splashAnimationLoop);
+            }
+            resetSplashBtn();
+        });
+
+        function callService(name) {
+            if (!ros.isConnected) return;
+            new ROSLIB.Service({ ros: ros, name: name, serviceType: 'std_srvs/Empty' }).callService(new ROSLIB.ServiceRequest({}), () => console.log('Called ' + name));
+        }
+
+        const cmdPub = new ROSLIB.Topic({ ros: ros, name: '/steering_command', messageType: 'std_msgs/Float64' });
+        function publishSteering() {
+            if (!ros.isConnected) return;
+            cmdPub.publish(new ROSLIB.Message({ data: parseFloat(document.getElementById('steer-input').value) }));
+        }
+
+        function subscribeToTopic(name, type, callback) {
+            new ROSLIB.Topic({ ros: ros, name: name, messageType: type }).subscribe(callback);
+        }
+
+        // --- 9. Subscribe to specific topics ---
+        ros.on('connection', () => {
+            subscribeToTopic('/f9r/num_sv', 'std_msgs/Int32', (m) => numSvDisplay.innerText = m.data);
+
+            subscribeToTopic('/f9r/rtk_status', 'std_msgs/Int32', (m) => {
+                if (m.data === 2 || m.data === 4) rtkIcon.setAttribute('class', 'w-5 h-5 text-green-400 drop-shadow-[0_0_6px_rgba(74,222,128,0.8)] transition-colors');
+                else if (m.data === 1 || m.data === 5) rtkIcon.setAttribute('class', 'w-5 h-5 text-yellow-400 drop-shadow-[0_0_6px_rgba(250,204,21,0.8)] transition-colors');
+                else rtkIcon.setAttribute('class', 'w-5 h-5 text-red-500 drop-shadow-[0_0_6px_rgba(239,68,68,0.8)] transition-colors');
+            });
+
+            subscribeToTopic('/gps/fix', 'sensor_msgs/NavSatFix', (m) => {
+                if (m.latitude !== 0) {
+                    tractorMarker.setLatLng([m.latitude, m.longitude]);
+                    miniTractorMarker.setLatLng([m.latitude, m.longitude]);
+
+                    if (mapOriginLat === null) { mapOriginLat = m.latitude; mapOriginLon = m.longitude; }
+
+                    latDisplay.innerText = m.latitude.toFixed(6);
+                    lonDisplay.innerText = m.longitude.toFixed(6);
+                    latestLat = m.latitude; latestLon = m.longitude;
+
+                    if (!firstGpsFix) {
+                        map.setView([m.latitude, m.longitude], 19);
+                        firstGpsFix = true;
+                    }
+                    checkRecenterVisibility();
+                }
+            });
+
+            subscribeToTopic('/steering_command', 'std_msgs/Float64', (m) => {
+                const markerCmdDisplay = document.getElementById('marker-cmd');
+                if (markerCmdDisplay) markerCmdDisplay.innerText = m.data.toFixed(3);
+                updateChart(2, m.data);
+            });
+
+            subscribeToTopic('/imu', 'sensor_msgs/Imu', (m) => {
+                const markerYawDisplay = document.getElementById('marker-yaw');
+                if (markerYawDisplay) markerYawDisplay.innerText = m.orientation.z.toFixed(4);
+                updateChart(0, m.orientation.z);
+            });
+
+            subscribeToTopic('/odom/absolute', 'nav_msgs/Odometry', (m) => {
+                odomX = m.pose.pose.position.x;
+                odomY = m.pose.pose.position.y;
+
+                // Get Quaternion
+                let q = m.pose.pose.orientation;
+
+                // Quaternion to Yaw (Z-axis rotation)
+                let siny_cosp = 2 * (q.w * q.z + q.x * q.y);
+                let cosy_cosp = 1 - 2 * (q.y * q.y + q.z * q.z);
+                let yaw = Math.atan2(siny_cosp, cosy_cosp);
+
+                tractorMathYaw = yaw;
+
+                // Chuyển sang góc hệ tọa độ CSS (0 = Bắc, tăng theo chiều kim đồng hồ)
+                tractorCssAngle = (Math.PI / 2) - tractorMathYaw;
+
+                const markerArrow = document.getElementById('marker-arrow');
+                if (markerArrow) markerArrow.style.transform = `rotate(${tractorCssAngle}rad)`;
+
+                const miniMarkerArrow = document.getElementById('mini-marker-arrow');
+                if (miniMarkerArrow) miniMarkerArrow.style.transform = `rotate(${tractorCssAngle}rad)`;
+
+                updateChart(1, yaw);
+            });
+
+            subscribeToTopic('/reference_line', 'nav_msgs/msg/Path', (m) => {
+                if (m.poses && m.poses.length > 0) {
+                    hasReferenceLine = true;
+                    const r_earth = 6378137.0;
+                    const originLat = mapOriginLat || latestLat;
+                    const originLon = mapOriginLon || latestLon;
+
+                    // Lưu tọa độ thô vào biến refLinePoints để Canvas 2D vẽ
+                    refLinePoints = m.poses.map(p => ({
+                        x: p.pose.position.x,
+                        y: p.pose.position.y
+                    }));
+
+                    // Map LatLng cho bản đồ vệ tinh lớn
+                    const latlngs = refLinePoints.map(p => {
+                        let dLat = (p.y / r_earth) * (180 / Math.PI);
+                        let dLon = (p.x / r_earth) * (180 / Math.PI) / Math.cos(originLat * Math.PI / 180);
+                        return [originLat + dLat, originLon + dLon];
+                    });
+
+                    referencePathLayer.setLatLngs(latlngs);
+                } else {
+                    hasReferenceLine = false;
+                    referencePathLayer.setLatLngs([]);
+                    refLinePoints = []; // Xoá tọa độ trên Radar 2D
+                }
+                updateRecordLineButtonUI();
+                updateDynamicPanelsVisibility();
+            });
+        });
+
+        // --- 10. Long Press / Hold Logic ---
+        function setupHoldButton(btnId, actionFn, duration = 800) {
+            const btn = document.getElementById(btnId);
+            if (!btn) return;
+
+            const progress = btn.querySelector('.hold-progress');
+            let holdTimer = null;
+            let isHolding = false;
+
+            const startHold = (e) => {
+                if (e.type === 'mousedown' && e.button !== 0) return; // Chỉ nhận chuột trái
+                e.preventDefault();
+                isHolding = true;
+
+                // Khởi tạo AudioContext khi có tương tác đầu tiên để tránh trình duyệt block âm thanh
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+
+                if (holdTimer) clearTimeout(holdTimer);
+
+                if (progress) {
+                    progress.style.transition = 'none';
+                    progress.style.width = '0%';
+                    void progress.offsetWidth; // Force reflow để reset css
+                    progress.style.transition = `width ${duration}ms linear`;
+                    progress.style.width = '100%';
+                }
+
+                holdTimer = setTimeout(() => {
+                    if (isHolding) {
+                        actionFn();
+
+                        // Rung mạnh thiết bị nếu hỗ trợ (Haptic Feedback)
+                        if (navigator.vibrate) navigator.vibrate([100, 30, 100]);
+
+                        // Phát âm thanh báo hiệu
+                        playSuccessSound();
+
+                        // Hiệu ứng nảy nút (Visual Pop)
+                        btn.classList.add('animate-pop-bounce');
+                        setTimeout(() => btn.classList.remove('animate-pop-bounce'), 300);
+
+                        resetHold();
+                    }
+                }, duration);
+            };
+
+            const resetHold = () => {
+                isHolding = false;
+                if (holdTimer) {
+                    clearTimeout(holdTimer);
+                    holdTimer = null;
+                }
+                if (progress) {
+                    progress.style.transition = 'width 0.2s ease-out';
+                    progress.style.width = '0%';
+                }
+            };
+
+            btn.addEventListener('mousedown', startHold);
+            btn.addEventListener('touchstart', startHold, { passive: false });
+
+            btn.addEventListener('mouseup', resetHold);
+            btn.addEventListener('mouseleave', resetHold);
+            btn.addEventListener('touchend', resetHold);
+            btn.addEventListener('touchcancel', resetHold);
+
+            // Chặn menu chuột phải / menu bôi đen khi giữ lâu trên mobile
+            btn.addEventListener('contextmenu', e => e.preventDefault());
+        }
+
+        // --- Final Initialization ---
+        checkWsUrlValidity(); // Check URL ban đầu cho Splash Screen
+        applyLanguage();
+        setControlMode('record');
+        updateRecordLineButtonUI();
+        updateDynamicPanelsVisibility();
+
+        // Đăng ký sự kiện nhấn giữ cho 3 nút (Thời gian 800ms)
+        setupHoldButton('btn-record-vertex', () => callService('/record_vertex'), 800);
+        setupHoldButton('btn-generate-path', () => callService('/generate_path'), 800);
+        setupHoldButton('btn-record-line', toggleRecordLine, 800);
+
+        // Chạy ngay lập tức Animation nền của màn hình chờ
+        setTimeout(() => {
+            resizeSplashCanvases();
+            startSplashSimulation();
+            splashLastTime = performance.now();
+            splashAnimFrame = requestAnimationFrame(splashAnimationLoop);
+
+            // Thử tự động kết nối ngầm nếu URL đã xanh (và nếu không bị web bảo mật chặn ws://)
+            if (!ros.isConnected && splashBtnConnect.classList.contains('bg-green-600')) {
+                if (!isSecureContextBlockingWs(wsUrlInput.value.trim())) {
+                    splashBtnConnect.click();
+                }
+            }
+        }, 100);
+
+    </script>
+</body>
+
+</html>
