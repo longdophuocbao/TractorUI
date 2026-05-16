@@ -202,7 +202,8 @@
                         </svg>
                     </div>
                     <div>
-                        <h1 class="text-2xl font-bold text-white tracking-widest uppercase drop-shadow-md">Straight Driving Assist Tractor
+                        <h1 class="text-2xl font-bold text-white tracking-widest uppercase drop-shadow-md">Straight
+                            Driving Assist Tractor
                         </h1>
                         <p class="text-gray-400 text-xs mt-1" data-i18n="splash-desc">Ready to connect to ROSBridge</p>
                     </div>
@@ -644,7 +645,7 @@
         let currentTopicSub = null;
 
         // ROS Planner State (1: IDLE, 2: RECORDING, 3: ACTIVE)
-        let plannerState = 1; 
+        let plannerState = 1;
 
         // Theo dõi các điểm Vertex Markers trên bản đồ để không vẽ đè
         let activeVertexMarkers = {};
@@ -1528,10 +1529,22 @@
 
         let tractorMarker = L.marker([22.644689, 120.357255], { icon: tractorIcon }).addTo(map);
         let miniTractorMarker = L.marker([22.644689, 120.357255], { icon: miniTractorIcon }).addTo(minimap);
-        let referencePathLayer = L.polyline([], { color: '#ef4444', weight: 4, opacity: 0.9, lineJoin: 'round' }).addTo(map);
+        let referencePathLayer = L.polyline([], { color: '#ef4444', weight: 2, opacity: 0.95, lineJoin: 'round' }).addTo(map);
 
-        let plannedPathLayer = L.polyline([], { color: '#ef4444', weight: 2, opacity: 0.9, lineJoin: 'round' }).addTo(map);
+        let plannedPathLayer = L.polyline([], { color: '#ef4444', weight: 2, opacity: 0.95, lineJoin: 'round' }).addTo(map);
         let fieldBoundaryLayer = L.polygon([], { color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 0.2, weight: 3 }).addTo(map);
+
+        // --- BỔ SUNG: Layer vệt cày (Coverage Trail) ---
+        let trailSegments = []; // Mảng chứa các đoạn đường đã đi
+        let currentTrailSegment = null; // Đoạn đường hiện tại
+        let trailLayer = L.polyline([], {
+            color: '#8b4513', // Màu xanh lục (hoặc #8b4513 nếu muốn màu đất)
+            weight: 30,       // Kích thước 30px bằng đúng bề ngang icon máy cày
+            opacity: 0.4,
+            lineCap: 'butt',
+            lineJoin: 'round'
+        }).addTo(map);
+        // ------------------------------------------------
 
         let vertexMarkersLayer = L.layerGroup().addTo(map); // Lớp chứa các điểm đánh dấu (vertices, endpoints)
 
@@ -1947,7 +1960,7 @@
             cancelAnimationFrame(splashAnimFrame);
             setTimeout(() => { if (ros.isConnected) splashScreen.classList.add('hidden'); }, 700);
             resetSplashBtn();
-            
+
             // Lắng nghe State Machine từ ROS để update nút Record Line
             subscribeToTopic('/steer_planner_node/state_machine', 'std_msgs/Int32', (m) => {
                 plannerState = m.data;
@@ -1964,12 +1977,12 @@
                 splashScreen.classList.remove('hidden');
                 void splashScreen.offsetWidth; // Force reflow
                 splashScreen.classList.remove('opacity-0', 'pointer-events-none');
-                
+
                 // Khôi phục lại kích thước Canvas sau khi bị ẩn (display: none -> width/height = 0)
                 resizeSplashCanvases();
                 // Dọn dẹp vòng lặp cũ để tránh bị kẹt khung hình
                 cancelAnimationFrame(splashAnimFrame);
-                
+
                 splashLastTime = performance.now();
                 splashAnimFrame = requestAnimationFrame(splashAnimationLoop);
             }
@@ -1999,6 +2012,11 @@
             plannedPathLayer.setLatLngs([]);
             fieldBoundaryLayer.setLatLngs([]);
 
+            // --- BỔ SUNG: Xóa vệt cày khi mất kết nối ---
+            trailSegments = [];
+            currentTrailSegment = null;
+            trailLayer.setLatLngs([]);
+
             // Xóa rỗng các điểm Vertex khi mất kết nối
             vertexMarkersLayer.clearLayers();
             activeVertexMarkers = {};
@@ -2022,12 +2040,12 @@
                 splashScreen.classList.remove('hidden');
                 void splashScreen.offsetWidth; // Force reflow
                 splashScreen.classList.remove('opacity-0', 'pointer-events-none');
-                
+
                 // Khôi phục lại kích thước Canvas sau khi bị ẩn
                 resizeSplashCanvases();
                 // Dọn dẹp vòng lặp cũ
                 cancelAnimationFrame(splashAnimFrame);
-                
+
                 splashLastTime = performance.now();
                 splashAnimFrame = requestAnimationFrame(splashAnimationLoop);
             }
@@ -2105,6 +2123,30 @@
                     // Di chuyển Icon xe
                     tractorMarker.setLatLng([tractorLat, tractorLon]);
                     miniTractorMarker.setLatLng([tractorLat, tractorLon]);
+
+                    // --- BỔ SUNG: Ghi lại vệt cày khi ACTIVE ---
+                    if (plannerState === 3) {
+                        if (!currentTrailSegment) {
+                            currentTrailSegment = [];
+                            trailSegments.push(currentTrailSegment);
+                        }
+
+                        // Lọc khoảng cách để tránh mảng quá lớn nếu xe đứng yên
+                        if (currentTrailSegment.length === 0) {
+                            currentTrailSegment.push([tractorLat, tractorLon]);
+                        } else {
+                            let lastPt = currentTrailSegment[currentTrailSegment.length - 1];
+                            // Chỉ lưu thêm điểm nếu xe đã di chuyển một đoạn nhỏ (~10cm)
+                            if (Math.abs(lastPt[0] - tractorLat) > 0.000001 || Math.abs(lastPt[1] - tractorLon) > 0.000001) {
+                                currentTrailSegment.push([tractorLat, tractorLon]);
+                            }
+                        }
+                        trailLayer.setLatLngs(trailSegments);
+                    } else {
+                        // Ngắt đoạn khi thoát chế độ ACTIVE
+                        currentTrailSegment = null;
+                    }
+                    // -------------------------------------------
 
                     // Cập nhật tọa độ hiển thị trên màn hình
                     latDisplay.innerText = tractorLat.toFixed(6);
@@ -2218,7 +2260,7 @@
                     let markerKey = marker.ns + '_' + marker.id;
 
                     // Xử lý Xóa (DELETE / DELETEALL)
-                    if (marker.action === 2) { 
+                    if (marker.action === 2) {
                         if (activeVertexMarkers[markerKey]) {
                             vertexMarkersLayer.removeLayer(activeVertexMarkers[markerKey]);
                             delete activeVertexMarkers[markerKey];
@@ -2227,6 +2269,12 @@
                     } else if (marker.action === 3) {
                         vertexMarkersLayer.clearLayers();
                         activeVertexMarkers = {};
+
+                        // --- BỔ SUNG: Xóa vệt cày khi gọi Clear All ---
+                        trailSegments = [];
+                        currentTrailSegment = null;
+                        trailLayer.setLatLngs([]);
+                        // ----------------------------------------------
                         return;
                     }
 
@@ -2242,7 +2290,7 @@
                             let dLon = (pt.x / r_earth) * (180 / Math.PI) / Math.cos(mapOriginLat * Math.PI / 180);
                             return [mapOriginLat + dLat, mapOriginLon + dLon];
                         });
-                        
+
                         let r = Math.round(marker.color.r * 255);
                         let g = Math.round(marker.color.g * 255);
                         let b = Math.round(marker.color.b * 255);
@@ -2253,7 +2301,7 @@
                             weight: marker.scale.x * 6, // Hiệu chỉnh bề dày hiển thị tuỳ độ zoom
                             opacity: a
                         }).addTo(vertexMarkersLayer);
-                        
+
                         activeVertexMarkers[markerKey] = coverageLine;
                         return;
                     }
@@ -2267,30 +2315,30 @@
                         let lon = mapOriginLon + dLon;
 
                         let leafletMarker;
-                        
+
                         // Nếu là điểm bắt đầu (Start - ARROW)
                         if (marker.ns === "endpoints" && marker.id === 0) {
-                            let customIcon = L.divIcon({ 
-                                className: 'custom-start-icon', 
-                                html: `<div style="font-size: 24px; filter: drop-shadow(0px 0px 4px rgba(0,0,0,0.8));">🟢</div>`, 
-                                iconSize: [24, 24], iconAnchor: [12, 12] 
+                            let customIcon = L.divIcon({
+                                className: 'custom-start-icon',
+                                html: `<div style="font-size: 24px; filter: drop-shadow(0px 0px 4px rgba(0,0,0,0.8));">🟢</div>`,
+                                iconSize: [24, 24], iconAnchor: [12, 12]
                             });
-                            leafletMarker = L.marker([lat, lon], {icon: customIcon}).addTo(vertexMarkersLayer);
-                        } 
+                            leafletMarker = L.marker([lat, lon], { icon: customIcon }).addTo(vertexMarkersLayer);
+                        }
                         // Nếu là điểm kết thúc (End - CUBE)
                         else if (marker.ns === "endpoints" && marker.id === 1) {
-                            let customIcon = L.divIcon({ 
-                                className: 'custom-end-icon', 
-                                html: `<div style="font-size: 24px; filter: drop-shadow(0px 0px 4px rgba(0,0,0,0.8));">🛑</div>`, 
-                                iconSize: [24, 24], iconAnchor: [12, 12] 
+                            let customIcon = L.divIcon({
+                                className: 'custom-end-icon',
+                                html: `<div style="font-size: 24px; filter: drop-shadow(0px 0px 4px rgba(0,0,0,0.8));">🛑</div>`,
+                                iconSize: [24, 24], iconAnchor: [12, 12]
                             });
-                            leafletMarker = L.marker([lat, lon], {icon: customIcon}).addTo(vertexMarkersLayer);
-                        } 
+                            leafletMarker = L.marker([lat, lon], { icon: customIcon }).addTo(vertexMarkersLayer);
+                        }
                         // Mặc định là điểm đánh dấu góc thửa ruộng (Vertices)
                         else {
                             leafletMarker = L.circleMarker([lat, lon], {
                                 radius: 6, fillColor: "#eab308", color: "#ffffff", weight: 2, opacity: 1, fillOpacity: 0.9
-                        }).addTo(vertexMarkersLayer);
+                            }).addTo(vertexMarkersLayer);
                         }
 
                         activeVertexMarkers[markerKey] = leafletMarker;
@@ -2304,7 +2352,7 @@
                 mapOriginLon = m.longitude;
                 console.log("✅ Đã nhận mốc gốc đồng bộ: ", mapOriginLat, mapOriginLon);
             });
-        }); 
+        });
 
         // --- 10. Long Press / Hold Logic ---
         function setupHoldButton(btnId, actionFn, duration = 800) {
