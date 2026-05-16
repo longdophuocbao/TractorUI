@@ -1530,7 +1530,7 @@
         let miniTractorMarker = L.marker([22.644689, 120.357255], { icon: miniTractorIcon }).addTo(minimap);
         let referencePathLayer = L.polyline([], { color: '#ef4444', weight: 4, opacity: 0.9, lineJoin: 'round' }).addTo(map);
 
-        let plannedPathLayer = L.polyline([], { color: '#10b981', weight: 4, opacity: 0.9, lineJoin: 'round', dashArray: '10, 10' }).addTo(map);
+        let plannedPathLayer = L.polyline([], { color: '#ef4444', weight: 2, opacity: 0.9, lineJoin: 'round' }).addTo(map);
         let fieldBoundaryLayer = L.polygon([], { color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 0.2, weight: 3 }).addTo(map);
 
         let vertexMarkersLayer = L.layerGroup().addTo(map); // Lớp chứa các điểm đánh dấu (vertices, endpoints)
