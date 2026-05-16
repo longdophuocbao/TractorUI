@@ -724,7 +724,10 @@
                 "btn-switch-map": "Switch Map Source",
                 "splash-desc": "Ready to connect to ROSBridge",
                 "splash-btn": "Connect System",
-                "splash-connecting": "Connecting..."
+                "splash-connecting": "Connecting...",
+                "voice-auto-active": "Auto steer active",
+                "voice-auto-recording": "Line recording active", 
+                "voice-auto-idle": "Manual control active"                 
             },
             zh: {
                 "hud-disconnected": "已斷開",
@@ -763,7 +766,10 @@
                 "btn-switch-map": "切換地圖來源",
                 "splash-desc": "準備連接到 ROSBridge",
                 "splash-btn": "連接系統",
-                "splash-connecting": "連線中..."
+                "splash-connecting": "連線中...",
+                "voice-auto-active": "自動駕駛已啟動",
+                "voice-auto-recording": "路線記錄已啟動",       
+                "voice-auto-idle": "系統閒置"
             }
         };
 
@@ -800,6 +806,32 @@
 
             // Gọi lại UI cập nhật sau khi dịch để áp dụng đúng trạng thái động (Record/Recording/Cancel)
             updateRecordLineButtonUI();
+        }
+
+        function speakAnnouncement(key) {
+            // Kiểm tra xem trình duyệt có hỗ trợ Text-to-Speech không
+            if (!('speechSynthesis' in window)) return;
+            
+            const text = translations[currentLang][key];
+            if (!text) return;
+
+            // Hủy các câu đang đọc dở (nếu có) để đọc ngay câu mới
+            window.speechSynthesis.cancel();
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            
+            // Thiết lập ngôn ngữ tùy thuộc vào UI hiện tại
+            if (currentLang === 'en') {
+                utterance.lang = 'en-US';
+            } else if (currentLang === 'zh') {
+                utterance.lang = 'zh-TW'; // Tiếng Trung Phồn Thể (Đài Loan)
+            }
+            
+            // Tốc độ và cao độ (có thể tùy chỉnh nếu muốn)
+            utterance.rate = 1.0; 
+            utterance.pitch = 1.0;
+
+            window.speechSynthesis.speak(utterance);
         }
 
         document.getElementById('lang-toggle').addEventListener('click', () => {
@@ -1963,6 +1995,21 @@
 
             // Lắng nghe State Machine từ ROS để update nút Record Line
             subscribeToTopic('/steer_planner_node/state_machine', 'std_msgs/Int32', (m) => {
+               
+                if (m.data !== plannerState) {
+                    if (m.data === 3) {
+                        speakAnnouncement('voice-auto-active');
+                    } else if (m.data === 2) {
+                        speakAnnouncement('voice-auto-recording');
+                    } else if (m.data === 1) {
+                        // Chỉ phát thông báo hiệu khi hệ thống ngắt từ trạng thái khác về IDLE
+                        // Tránh phát âm thanh ngay lúc vừa kết nối WebSocket ban đầu
+                        if (plannerState !== undefined && plannerState !== 1) {
+                            speakAnnouncement('voice-auto-idle');
+                        }
+                    }
+                }
+               
                 plannerState = m.data;
                 updateRecordLineButtonUI();
             });
