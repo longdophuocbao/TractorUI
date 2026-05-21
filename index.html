@@ -1588,6 +1588,14 @@
             lineJoin: 'round'
         }).addTo(map);
         // ------------------------------------------------
+        // BỔ SUNG MỚI: Vệt tâm đậm để so sánh với Reference Line
+        let centerTrailLayer = L.polyline([], { 
+            color: '#111827', // Xám đậm / Đen
+            weight: 2,        // Nét mỏng, sắc nét
+            opacity: 1.0, 
+            lineJoin: 'round' 
+        }).addTo(map);
+        // ------------------------------------------------
 
         let vertexMarkersLayer = L.layerGroup().addTo(map); // Lớp chứa các điểm đánh dấu (vertices, endpoints)
 
@@ -2074,6 +2082,7 @@
             trailSegments = [];
             currentTrailSegment = null;
             trailLayer.setLatLngs([]);
+            centerTrailLayer.setLatLngs([]);
 
             // Xóa rỗng các điểm Vertex khi mất kết nối
             vertexMarkersLayer.clearLayers();
@@ -2215,6 +2224,7 @@
                             }
                         }
                         trailLayer.setLatLngs(trailSegments);
+                        centerTrailLayer.setLatLngs(trailSegments); // BỔ SUNG DÒNG NÀY
                     } else {
                         // Ngắt đoạn khi thoát chế độ ACTIVE
                         currentTrailSegment = null;
@@ -2348,6 +2358,7 @@
                         trailSegments = [];
                         currentTrailSegment = null;
                         trailLayer.setLatLngs([]);
+                        centerTrailLayer.setLatLngs([]); // BỔ SUNG DÒNG NÀY
                         // ----------------------------------------------
                         return;
                     }
