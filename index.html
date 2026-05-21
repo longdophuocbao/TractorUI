@@ -289,6 +289,17 @@
                     </svg>
                     <span id="data-num-sv" class="font-bold text-white text-sm">--</span>
                 </div>
+
+                <div class="w-px h-6 bg-white/20 mx-1"></div>
+                <div class="flex items-center gap-1.5" title="Network Latency to Jetson">
+                    <svg id="ping-icon" class="w-5 h-5 text-gray-400 transition-colors" fill="none"
+                        stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    <span id="data-ping" class="font-bold text-white text-sm">-- ms</span>
+                </div>
+
             </div>
 
             <!-- Nhóm Nút Công cụ -->
@@ -529,7 +540,7 @@
                     <h3 class="text-sm font-bold text-gray-300 mb-3 uppercase tracking-wider" data-i18n="set-ros-conn">
                         ROSBridge Connection</h3>
                     <div class="flex flex-col sm:flex-row gap-3">
-                        <input type="text" id="ws-url" value="ws://100.68.175.35:9090"
+                        <input type="text" id="ws-url" value="ws://172.20.10.7:9090"
                             class="flex-1 bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500 font-mono text-sm"
                             placeholder="ws://IP_JETSON:9090">
                         <button id="btn-connect"
@@ -726,8 +737,8 @@
                 "splash-btn": "Connect System",
                 "splash-connecting": "Connecting...",
                 "voice-auto-active": "Auto-steering engaged.",
-                "voice-auto-recording": "Recording path.", 
-                "voice-auto-idle": "Switched to manual control."                 
+                "voice-auto-recording": "Recording path.",
+                "voice-auto-idle": "Switched to manual control."
             },
             zh: {
                 "hud-disconnected": "已斷開",
@@ -768,7 +779,7 @@
                 "splash-btn": "連接系統",
                 "splash-connecting": "連線中...",
                 "voice-auto-active": "自動轉向已啟動",
-                "voice-auto-recording": "正在記錄路徑",       
+                "voice-auto-recording": "正在記錄路徑",
                 "voice-auto-idle": "已切換為手動駕駛"
             }
         };
@@ -811,7 +822,7 @@
         function speakAnnouncement(key) {
             // Kiểm tra xem trình duyệt có hỗ trợ Text-to-Speech không
             if (!('speechSynthesis' in window)) return;
-            
+
             const text = translations[currentLang][key];
             if (!text) return;
 
@@ -819,16 +830,16 @@
             window.speechSynthesis.cancel();
 
             const utterance = new SpeechSynthesisUtterance(text);
-            
+
             // Thiết lập ngôn ngữ tùy thuộc vào UI hiện tại
             if (currentLang === 'en') {
                 utterance.lang = 'en-US';
             } else if (currentLang === 'zh') {
                 utterance.lang = 'zh-TW'; // Tiếng Trung Phồn Thể (Đài Loan)
             }
-            
+
             // Tốc độ và cao độ (có thể tùy chỉnh nếu muốn)
-            utterance.rate = 1.0; 
+            utterance.rate = 1.0;
             utterance.pitch = 1.0;
 
             window.speechSynthesis.speak(utterance);
@@ -1571,7 +1582,7 @@
         let currentTrailSegment = null; // Đoạn đường hiện tại
         let trailLayer = L.polyline([], {
             color: '#8b4513', // Màu xanh lục (hoặc #8b4513 nếu muốn màu đất)
-            weight: 30,       // Kích thước 30px bằng đúng bề ngang icon máy cày
+            weight: 18,       // Kích thước 30px bằng đúng bề ngang icon máy cày
             opacity: 0.4,
             lineCap: 'butt',
             lineJoin: 'round'
@@ -1995,7 +2006,7 @@
 
             // Lắng nghe State Machine từ ROS để update nút Record Line
             subscribeToTopic('/steer_planner_node/state_machine', 'std_msgs/Int32', (m) => {
-               
+
                 if (m.data !== plannerState) {
                     if (m.data === 3) {
                         speakAnnouncement('voice-auto-active');
@@ -2009,7 +2020,7 @@
                         }
                     }
                 }
-               
+
                 plannerState = m.data;
                 updateRecordLineButtonUI();
             });
@@ -2059,7 +2070,7 @@
             plannedPathLayer.setLatLngs([]);
             fieldBoundaryLayer.setLatLngs([]);
 
-            // --- BỔ SUNG: Xóa vệt cày khi mất kết nối ---
+            // Xóa vệt cày khi mất kết nối
             trailSegments = [];
             currentTrailSegment = null;
             trailLayer.setLatLngs([]);
@@ -2122,6 +2133,21 @@
                 if (m.data === 2 || m.data === 4) rtkIcon.setAttribute('class', 'w-5 h-5 text-green-400 drop-shadow-[0_0_6px_rgba(74,222,128,0.8)] transition-colors');
                 else if (m.data === 1 || m.data === 5) rtkIcon.setAttribute('class', 'w-5 h-5 text-yellow-400 drop-shadow-[0_0_6px_rgba(250,204,21,0.8)] transition-colors');
                 else rtkIcon.setAttribute('class', 'w-5 h-5 text-red-500 drop-shadow-[0_0_6px_rgba(239,68,68,0.8)] transition-colors');
+            });
+            subscribeToTopic('/f9r/rtk_status', 'std_msgs/msg/String', (m) => {
+                // Lưu ý: m.data lúc này là một String (ví dụ: "2", "4", "float", "fix"...)
+                // Nếu topic vẫn gửi số nhưng dưới dạng chuỗi, ta dùng ép kiểu hoặc so sánh chuỗi
+                const status = m.data;
+
+                if (status === 'RTK Fix' || status === '4') {
+                    rtkIcon.setAttribute('class', 'w-5 h-5 text-green-400 drop-shadow-[0_0_6px_rgba(74,222,128,0.8)] transition-colors');
+                }
+                else if (status === 'RTK Float' || status === '5') {
+                    rtkIcon.setAttribute('class', 'w-5 h-5 text-yellow-400 drop-shadow-[0_0_6px_rgba(250,204,21,0.8)] transition-colors');
+                }
+                else {
+                    rtkIcon.setAttribute('class', 'w-5 h-5 text-red-500 drop-shadow-[0_0_6px_rgba(239,68,68,0.8)] transition-colors');
+                }
             });
 
             subscribeToTopic('/gps/fix', 'sensor_msgs/NavSatFix', (m) => {
@@ -2256,6 +2282,7 @@
                     hasReferenceLine = false;
                     referencePathLayer.setLatLngs([]);
                     refLinePoints = []; // Xoá tọa độ trên Radar 2D
+                    trailSegments = []; //Xóa vệt cày 
                 }
                 updateRecordLineButtonUI();
                 updateDynamicPanelsVisibility();
@@ -2471,6 +2498,41 @@
             // Chặn menu chuột phải / menu bôi đen khi giữ lâu trên mobile
             btn.addEventListener('contextmenu', e => e.preventDefault());
         }
+
+        // --- Tự động Fetch Ping mỗi 2 giây ---
+        function updatePing() {
+            fetch('/api/ping')
+                .then(res => res.json())
+                .then(data => {
+                    const pingEl = document.getElementById('data-ping');
+                    const iconEl = document.getElementById('ping-icon');
+                    
+                    if (data.status === 'ok') {
+                        pingEl.innerText = data.ping.toFixed(0) + ' ms';
+                        // Đổi màu theo độ trễ
+                        if (data.ping < 50) {
+                            pingEl.className = 'font-bold text-green-400 text-sm';
+                            iconEl.className = 'w-5 h-5 text-green-400 drop-shadow-[0_0_6px_rgba(74,222,128,0.8)]';
+                        } else if (data.ping < 150) {
+                            pingEl.className = 'font-bold text-yellow-400 text-sm';
+                            iconEl.className = 'w-5 h-5 text-yellow-400 drop-shadow-[0_0_6px_rgba(250,204,21,0.8)]';
+                        } else {
+                            pingEl.className = 'font-bold text-red-500 text-sm';
+                            iconEl.className = 'w-5 h-5 text-red-500 drop-shadow-[0_0_6px_rgba(239,68,68,0.8)] animate-pulse';
+                        }
+                    } else {
+                        pingEl.innerText = 'ERR';
+                        pingEl.className = 'font-bold text-red-500 text-sm';
+                        iconEl.className = 'w-5 h-5 text-red-500 animate-pulse';
+                    }
+                })
+                .catch(err => {
+                    document.getElementById('data-ping').innerText = 'DISC';
+                });
+        }
+        
+        // Cứ 2000ms (2 giây) gọi lại hàm ping một lần
+        setInterval(updatePing, 1000);
 
         // --- Final Initialization ---
         checkWsUrlValidity(); // Check URL ban đầu cho Splash Screen
