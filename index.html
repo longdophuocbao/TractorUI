@@ -2161,23 +2161,19 @@
         ros.on('connection', () => {
             subscribeToTopic('/f9r/num_sv', 'std_msgs/Int32', (m) => numSvDisplay.innerText = m.data);
 
-            // subscribeToTopic('/f9r/rtk_status', 'std_msgs/Int32', (m) => {
-            //     if (m.data === 2 || m.data === 4) rtkIcon.setAttribute('class', 'w-5 h-5 text-green-400 drop-shadow-[0_0_6px_rgba(74,222,128,0.8)] transition-colors');
-            //     else if (m.data === 1 || m.data === 5) rtkIcon.setAttribute('class', 'w-5 h-5 text-yellow-400 drop-shadow-[0_0_6px_rgba(250,204,21,0.8)] transition-colors');
-            //     else rtkIcon.setAttribute('class', 'w-5 h-5 text-red-500 drop-shadow-[0_0_6px_rgba(239,68,68,0.8)] transition-colors');
-            // });
-            subscribeToTopic('/f9r/rtk_status', 'std_msgs/msg/String', (m) => {
-                // Lưu ý: m.data lúc này là một String (ví dụ: "2", "4", "float", "fix"...)
-                // Nếu topic vẫn gửi số nhưng dưới dạng chuỗi, ta dùng ép kiểu hoặc so sánh chuỗi
+            subscribeToTopic('/f9r/rtk_status', 'std_msgs/String', (m) => {
                 const status = m.data;
 
-                if (status === 'RTK Fix' || status === '4') {
+                if (status === 'RTK Fixed') {
+                    // Màu Xanh lá (Hoạt động hoàn hảo)
                     rtkIcon.setAttribute('class', 'w-5 h-5 text-green-400 drop-shadow-[0_0_6px_rgba(74,222,128,0.8)] transition-colors');
                 }
-                else if (status === 'RTK Float' || status === '5') {
+                else if (status === 'RTK Float'){
+                    // Màu Vàng (Đang nhận corrections nhưng chưa fix)
                     rtkIcon.setAttribute('class', 'w-5 h-5 text-yellow-400 drop-shadow-[0_0_6px_rgba(250,204,21,0.8)] transition-colors');
                 }
                 else {
+                    // Màu Đỏ (No RTK)
                     rtkIcon.setAttribute('class', 'w-5 h-5 text-red-500 drop-shadow-[0_0_6px_rgba(239,68,68,0.8)] transition-colors');
                 }
             });
