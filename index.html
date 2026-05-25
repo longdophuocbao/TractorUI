@@ -252,7 +252,7 @@
 
     <!-- LỚP 0: BẢN ĐỒ TRÀN VIỀN (Có hỗ trợ xoay khung hình 150%) -->
     <div id="map-wrapper"
-        class="absolute top-1/2 left-1/2 w-[150vmax] h-[150vmax] -translate-x-1/2 -translate-y-1/2 z-0 transition-transform duration-100 ease-linear">
+        class="absolute top-1/2 left-1/2 w-[150vmax] h-[150vmax] -translate-x-1/2 -translate-y-1/2 z-0 transition-transform duration-500 ease-linear">
         <div id="map" class="w-full h-full"></div>
     </div>
 
@@ -660,6 +660,18 @@
         let odomX = 0, odomY = 0, tractorMathYaw = 0, tractorCssAngle = 0;
         let refLinePoints = [];
         let currentTopicSub = null;
+
+        // --- Biến và Hàm hỗ trợ Smooth Rotation ---
+        let displayMapAngle = 0;
+        let displayTractorAngle = 0;
+
+        // Hàm giúp góc xoay tiếp diễn liên tục (Vd: vượt qua 180 độ sẽ lên 181 độ thay vì giật về -179 độ)
+        function getContinuousAngle(target, current) {
+            let diff = target - (current % (2 * Math.PI));
+            while (diff > Math.PI) diff -= 2 * Math.PI;
+            while (diff < -Math.PI) diff += 2 * Math.PI;
+            return current + diff;
+        }
 
         // --- BỔ SUNG: Biến toàn cục lưu góc của đường thẳng (Path Yaw) ---
         let globalPathMathYaw = null;
@@ -1403,6 +1415,9 @@
                 if (compassText) compassText.classList.replace('text-green-400', 'text-blue-400');
                 if (compassIcon) compassIcon.classList.replace('text-green-400', 'text-blue-400');
 
+                // BỔ SUNG: Trả về hướng Bắc (0 độ) nhưng chọn vòng quay gần nhất
+                displayMapAngle = getContinuousAngle(0, displayMapAngle);
+
                 // Trả bản đồ về hướng Bắc (North Up)
                 mapWrapper.style.transform = `translate(-50%, -50%) rotate(0rad)`;
                 if (compassIcon) compassIcon.style.transform = `rotate(0rad)`;
@@ -1590,12 +1605,12 @@
         });
 
         const tractorHtml = `
-            <div class="relative flex flex-col items-center justify-center w-full h-full">
+            <div id="tractor-wrapper" class="relative flex flex-col items-center justify-center w-full h-full transition-transform duration-500">
                 <div class="absolute bottom-full mb-2 bg-gray-900/80 backdrop-blur border border-white/20 px-2 py-1 rounded text-[10px] font-mono text-center shadow-lg pointer-events-none whitespace-nowrap">
                     <div class="text-orange-400 font-bold tracking-wide">CMD: <span id="marker-cmd">--</span></div>
                     <div class="text-purple-400 font-bold tracking-wide">YAW: <span id="marker-yaw">--</span></div>
                 </div>
-                <div id="marker-arrow" class="w-6 h-6 flex items-center justify-center transition-transform duration-100 drop-shadow-[0_0_8px_rgba(37,99,235,0.6)]" style="transform: rotate(0rad);">
+                <div id="marker-arrow" class="w-6 h-6 flex items-center justify-center transition-transform duration-500 drop-shadow-[0_0_8px_rgba(37,99,235,0.6)]" style="transform: rotate(0rad);">
                     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
                         <rect x="2" y="12" width="5" height="10" rx="1.5" fill="#1f2937"/><rect x="17" y="12" width="5" height="10" rx="1.5" fill="#1f2937"/>
                         <rect x="3" y="3" width="4" height="6" rx="1" fill="#374151"/><rect x="17" y="3" width="4" height="6" rx="1" fill="#374151"/>
@@ -2302,6 +2317,7 @@
 
                 // Tính toán góc xoay của map và xoay mũi tên xe trên N-UP/H-UP/P-UP mode
                 const markerArrow = document.getElementById('marker-arrow');
+                const tractorWrapper = document.getElementById('tractor-wrapper'); // Thêm biến này
                 const miniMarkerArrow = document.getElementById('mini-marker-arrow');
                 const mapWrapper = document.getElementById('map-wrapper');
                 const compassIcon = document.getElementById('compass-icon');
@@ -2309,18 +2325,18 @@
 
                 if (isHeadingUp) {
                     let mapRotationAngle = 0;
-
+                    
                     if (hasReferenceLine && globalPathMathYaw !== null) {
                         // Tính toán độ lệch hướng giữa xe và đường line
                         let relYaw = tractorMathYaw - globalPathMathYaw;
                         relYaw = Math.atan2(Math.sin(relYaw), Math.cos(relYaw));
-
+                        
                         let activePathMathYaw = globalPathMathYaw;
                         // Nếu xe đang đi ngược chiều (quá 90 độ), lật hướng map lại 180 độ để xe luôn hướng lên
                         if (Math.abs(relYaw) > Math.PI / 2) {
                             activePathMathYaw += Math.PI;
                         }
-
+                        
                         let pathCssAngle = (Math.PI / 2) - activePathMathYaw;
                         mapRotationAngle = -pathCssAngle;
                         if (compassText && compassText.innerText !== 'P-UP') compassText.innerText = 'P-UP';
@@ -2330,15 +2346,31 @@
                         if (compassText && compassText.innerText !== 'H-UP') compassText.innerText = 'H-UP';
                     }
 
-                    // Bản đồ sẽ xoay ngược hướng xe hoặc đường line
+                    // --- BỔ SUNG: Áp dụng góc xoay liên tục ---
+                    displayMapAngle = getContinuousAngle(mapRotationAngle, displayMapAngle);
+                    displayTractorAngle = getContinuousAngle(tractorCssAngle, displayTractorAngle);
+
+                    // 1. Xoay toàn bộ bản đồ
                     if (mapWrapper) mapWrapper.style.transform = `translate(-50%, -50%) rotate(${mapRotationAngle}rad)`;
                     if (compassIcon) compassIcon.style.transform = `rotate(${mapRotationAngle}rad)`;
-
-                    // Mũi tên xe luôn xoay theo góc thực của xe trên bản đồ
-                    if (markerArrow) markerArrow.style.transform = `rotate(${tractorCssAngle}rad)`;
+                    
+                    // 2. Chống lật (Counter-rotate) cho bảng text để nó luôn nằm ngang trên màn hình
+                    if (tractorWrapper) tractorWrapper.style.transform = `rotate(${-mapRotationAngle}rad)`;
+                    
+                    // 3. Xoay mũi tên xe bằng góc nhìn thực tế trên màn hình (Góc xe + Góc bù của map)
+                    let visualAngle = mapRotationAngle + tractorCssAngle;
+                    if (markerArrow) markerArrow.style.transform = `rotate(${visualAngle}rad)`;
+                    
                     if (miniMarkerArrow) miniMarkerArrow.style.transform = `rotate(${tractorCssAngle}rad)`;
                 } else {
                     if (compassText && compassText.innerText !== 'N-UP') compassText.innerText = 'N-UP';
+                    
+                    // --- BỔ SUNG: Áp dụng góc xoay liên tục cho xe ---
+                    displayTractorAngle = getContinuousAngle(tractorCssAngle, displayTractorAngle);
+                    
+                    // Reset trạng thái chống lật khi ở N-UP
+                    if (tractorWrapper) tractorWrapper.style.transform = `rotate(0rad)`;
+                    
                     if (markerArrow) markerArrow.style.transform = `rotate(${tractorCssAngle}rad)`;
                     if (miniMarkerArrow) miniMarkerArrow.style.transform = `rotate(${tractorCssAngle}rad)`;
                 }
