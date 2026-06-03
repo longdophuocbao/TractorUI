@@ -252,7 +252,7 @@
 
     <!-- LỚP 0: BẢN ĐỒ TRÀN VIỀN (Có hỗ trợ xoay khung hình 150%) -->
     <div id="map-wrapper"
-        class="absolute top-1/2 left-1/2 w-[150vmax] h-[150vmax] -translate-x-1/2 -translate-y-1/2 z-0 transition-transform duration-500 ease-linear">
+        class="absolute top-1/2 left-1/2 w-[150vmax] h-[150vmax] -translate-x-1/2 -translate-y-1/2 z-0 transition-transform duration-[1500ms] ease-linear">
         <div id="map" class="w-full h-full"></div>
     </div>
 
@@ -392,7 +392,7 @@
         </div>
 
         <!-- Swath -->
-        <div class="glass-panel p-2 rounded-2xl flex flex-col gap-2 pointer-events-none">
+        <!-- <div class="glass-panel p-2 rounded-2xl flex flex-col gap-2 pointer-events-none">
             <div class="text-[10px] text-gray-400 text-center uppercase tracking-wider font-bold mb-1"
                 data-i18n="ctrl-swath">Swath</div>
             <button onclick="callService('/steer_planner_node/swath_left')"
@@ -409,6 +409,29 @@
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7">
                     </path>
+                </svg>
+            </button>
+        </div> -->
+
+        <div class="glass-panel p-2 rounded-2xl flex flex-col gap-2 pointer-events-none">
+            <div class="text-[10px] text-gray-400 text-center uppercase tracking-wider font-bold mb-1"
+                data-i18n="ctrl-swath">Swath</div>
+                
+            <button id="btn-swath-left"
+                class="relative overflow-hidden group select-none bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 border border-indigo-500/30 p-3 rounded-xl transition active:scale-95 flex justify-center items-center"
+                title="Swath Left">
+                <div class="hold-progress absolute left-0 bottom-0 top-0 w-0 bg-indigo-500/50 pointer-events-none"></div>
+                <svg class="relative z-10 w-6 h-6 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path>
+                </svg>
+            </button>
+            
+            <button id="btn-swath-right"
+                class="relative overflow-hidden group select-none bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 border border-indigo-500/30 p-3 rounded-xl transition active:scale-95 flex justify-center items-center"
+                title="Swath Right">
+                <div class="hold-progress absolute left-0 bottom-0 top-0 w-0 bg-indigo-500/50 pointer-events-none"></div>
+                <svg class="relative z-10 w-6 h-6 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path>
                 </svg>
             </button>
         </div>
@@ -546,7 +569,7 @@
                     <h3 class="text-sm font-bold text-gray-300 mb-3 uppercase tracking-wider" data-i18n="set-ros-conn">
                         ROSBridge Connection</h3>
                     <div class="flex flex-col sm:flex-row gap-3">
-                        <input type="text" id="ws-url" value="ws://172.20.10.7:9090"
+                        <input type="text" id="ws-url"
                             class="flex-1 bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500 font-mono text-sm"
                             placeholder="ws://IP_JETSON:9090">
                         <button id="btn-connect"
@@ -587,12 +610,21 @@
                 <div class="bg-gray-800/50 p-5 rounded-xl border border-gray-700/50">
                     <h3 class="text-sm font-bold text-gray-300 mb-3 uppercase tracking-wider"
                         data-i18n="set-manual-pub">Manual Publish (/steering_command)</h3>
-                    <div class="flex items-center gap-3">
-                        <input type="number" id="steer-input" step="0.1" value="-1.0"
-                            class="bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500 w-32 font-mono text-center">
-                        <button onclick="publishSteering()"
-                            class="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded-lg font-semibold transition shadow-sm active:scale-95"
-                            data-i18n="btn-send-cmd">Send Command</button>
+                    <div class="flex flex-col gap-4">
+                        <div class="flex items-center gap-3">
+                            <input type="range" id="steer-input" min="-1.8" max="1.8" step="0.01" value="0.0"
+                                class="flex-1 accent-orange-600 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                            <span id="steer-value" class="text-white font-mono w-12 text-center">0.00</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <input type="checkbox" id="auto-publish" class="w-4 h-4 rounded border-gray-600 bg-gray-700 text-orange-600 focus:ring-orange-500">
+                                <label for="auto-publish" class="text-xs text-gray-400 uppercase font-bold cursor-pointer">Auto</label>
+                            </div>
+                            <button onclick="publishSteering()"
+                                class="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded-lg font-semibold transition shadow-sm active:scale-95"
+                                data-i18n="btn-send-cmd">Send Command</button>
+                        </div>
                     </div>
                 </div>
 
@@ -602,6 +634,14 @@
                         Telemetry Chart</h3>
                     <div class="relative h-56 w-full">
                         <canvas id="steerChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="bg-gray-800/50 p-5 rounded-xl border border-gray-700/50 mt-4">
+                    <h3 class="text-sm font-bold text-gray-300 mb-3 uppercase tracking-wider">
+                        PID Components Analysis</h3>
+                    <div class="relative h-64 w-full">
+                        <canvas id="pidChart"></canvas>
                     </div>
                 </div>
 
@@ -644,6 +684,10 @@
         const topicSelector = document.getElementById('topic-selector');
         const topicRawData = document.getElementById('topic-raw-data');
         const wsUrlInput = document.getElementById('ws-url');
+        
+        const currentHost = window.location.hostname;
+        wsUrlInput.value = `ws://${currentHost}:9090`;
+        
         const paramsList = document.getElementById('params-list');
         const latDisplay = document.getElementById('data-lat');
         const lonDisplay = document.getElementById('data-lon');
@@ -1608,7 +1652,7 @@
             <div id="tractor-wrapper" class="relative flex flex-col items-center justify-center w-full h-full transition-transform duration-500">
                 <div class="absolute bottom-full mb-2 bg-gray-900/80 backdrop-blur border border-white/20 px-2 py-1 rounded text-[10px] font-mono text-center shadow-lg pointer-events-none whitespace-nowrap">
                     <div class="text-orange-400 font-bold tracking-wide">CMD: <span id="marker-cmd">--</span></div>
-                    <div class="text-purple-400 font-bold tracking-wide">YAW: <span id="marker-yaw">--</span></div>
+                    <div class="text-purple-400 font-bold tracking-wide">Speed: <span id="marker-speed">--</span></div>
                 </div>
                 <div id="marker-arrow" class="w-6 h-6 flex items-center justify-center transition-transform duration-500 drop-shadow-[0_0_8px_rgba(37,99,235,0.6)]" style="transform: rotate(0rad);">
                     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
@@ -1629,7 +1673,7 @@
 
         let tractorMarker = L.marker([22.644689, 120.357255], { icon: tractorIcon }).addTo(map);
         let miniTractorMarker = L.marker([22.644689, 120.357255], { icon: miniTractorIcon }).addTo(minimap);
-        let referencePathLayer = L.polyline([], { color: '#ef4444', weight: 2, opacity: 0.95, lineJoin: 'round' }).addTo(map);
+        let referencePathLayer = L.polyline([], { color: '#ef4444', weight: 5, opacity: 0.95, lineJoin: 'round' }).addTo(map);
 
         let plannedPathLayer = L.polyline([], { color: '#ef4444', weight: 2, opacity: 0.95, lineJoin: 'round' }).addTo(map);
         let fieldBoundaryLayer = L.polygon([], { color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 0.2, weight: 3 }).addTo(map);
@@ -1648,7 +1692,7 @@
         // BỔ SUNG MỚI: Vệt tâm đậm để so sánh với Reference Line
         let centerTrailLayer = L.polyline([], {
             color: '#111827', // Xám đậm / Đen
-            weight: 2,        // Nét mỏng, sắc nét
+            weight: 3,        // Nét mỏng, sắc nét
             opacity: 1.0,
             lineJoin: 'round'
         }).addTo(map);
@@ -1730,7 +1774,7 @@
                 // 2. Vẽ Đường Path
                 ctx.beginPath();
                 ctx.strokeStyle = '#ef4444'; // Red-500
-                ctx.lineWidth = 4;
+                ctx.lineWidth = 5;
 
                 for (let i = 0; i < refLinePoints.length; i++) {
                     let p = refLinePoints[i];
@@ -1822,6 +1866,7 @@
         requestAnimationFrame(drawDeviation);
 
         // --- 6. Chart.js Setup ---
+        // --- 6. Chart.js Setup (Đã thêm Plugin hiển thị số realtime) ---
         const ctxChart = document.getElementById('steerChart').getContext('2d');
         const chart = new Chart(ctxChart, {
             type: 'line',
@@ -1833,7 +1878,47 @@
                     { label: 'Steer Cmd', borderColor: '#f97316', data: Array(30).fill(0), tension: 0.1, borderWidth: 2, pointRadius: 0 }
                 ]
             },
-            options: { responsive: true, maintainAspectRatio: false, animation: false, scales: { y: { grid: { color: '#374151' } }, x: { grid: { display: false } } }, plugins: { legend: { labels: { color: '#D1D5DB' } } } }
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false, 
+                animation: false, 
+                // 1. Chừa khoảng trống bên phải để chữ không bị cắt mép
+                layout: {
+                    padding: {
+                        right: 45 
+                    }
+                },
+                scales: { 
+                    y: { grid: { color: '#374151' } }, 
+                    x: { grid: { display: false } } 
+                }, 
+                plugins: { legend: { labels: { color: '#D1D5DB' } } } 
+            },
+            // 2. Gắn Custom Plugin vẽ chữ bám theo đầu mút của đồ thị
+            plugins: [{
+                id: 'realtimeLabelsSteer',
+                afterDatasetsDraw(chart) {
+                    const { ctx } = chart;
+                    ctx.save();
+                    ctx.font = 'bold 11px monospace'; 
+                    ctx.textBaseline = 'middle';
+
+                    chart.data.datasets.forEach((dataset, index) => {
+                        const meta = chart.getDatasetMeta(index);
+                        
+                        if (!meta.hidden && meta.data.length > 0) {
+                            const lastPoint = meta.data[meta.data.length - 1]; 
+                            const lastValue = dataset.data[dataset.data.length - 1]; 
+
+                            if (lastPoint && !isNaN(lastValue)) {
+                                ctx.fillStyle = dataset.borderColor; 
+                                ctx.fillText(lastValue.toFixed(3), lastPoint.x + 6, lastPoint.y);
+                            }
+                        }
+                    });
+                    ctx.restore();
+                }
+            }]
         });
 
         function updateChart(datasetIndex, value) {
@@ -1841,6 +1926,86 @@
             data.push(value);
             data.shift();
             chart.update();
+        }
+
+        // --- Cấu hình PID Chart ---
+        // --- Cấu hình PID Chart có hiển thị số trực tiếp ---
+        const ctxPidChart = document.getElementById('pidChart').getContext('2d');
+        const pidChart = new Chart(ctxPidChart, {
+            type: 'line',
+            data: {
+                labels: Array(50).fill(''),
+                datasets: [
+                    { label: 'Yaw P', borderColor: '#ef4444', data: Array(50).fill(0), tension: 0.2, borderWidth: 2, pointRadius: 0 },
+                    { label: 'Yaw I', borderColor: '#f97316', data: Array(50).fill(0), tension: 0.2, borderWidth: 2, pointRadius: 0, borderDash: [5, 5] },
+                    { label: 'Yaw D', borderColor: '#eab308', data: Array(50).fill(0), tension: 0.2, borderWidth: 2, pointRadius: 0 },
+                    { label: 'Pos P', borderColor: '#3b82f6', data: Array(50).fill(0), tension: 0.2, borderWidth: 2, pointRadius: 0 },
+                    { label: 'Pos I', borderColor: '#06b6d4', data: Array(50).fill(0), tension: 0.2, borderWidth: 2, pointRadius: 0, borderDash: [5, 5] },
+                    { label: 'Pos D', borderColor: '#8b5cf6', data: Array(50).fill(0), tension: 0.2, borderWidth: 2, pointRadius: 0 }
+                ]
+            },
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false, 
+                animation: false,
+                layout: {
+                    padding: {
+                        right: 45 // CHÚ Ý: Chừa khoảng trống bên phải để hiển thị chữ không bị che mất
+                    }
+                },
+                scales: { 
+                    y: { grid: { color: '#374151' } }, 
+                    x: { grid: { display: false } } 
+                }, 
+                plugins: { legend: { labels: { color: '#D1D5DB', font: { size: 10 } } } } 
+            },
+            // Gắn mã Custom Plugin vẽ chữ vào đây
+            plugins: [{
+                id: 'realtimeLabels',
+                afterDatasetsDraw(chart) {
+                    const { ctx } = chart;
+                    ctx.save();
+                    ctx.font = 'bold 11px monospace'; // Định dạng phông chữ kiểu số kỹ thuật
+                    ctx.textBaseline = 'middle';
+
+                    chart.data.datasets.forEach((dataset, index) => {
+                        const meta = chart.getDatasetMeta(index);
+                        
+                        // Chỉ vẽ nếu đường đồ thị đó đang được bật (không bị nhấn ẩn đi ở Legend)
+                        if (!meta.hidden && meta.data.length > 0) {
+                            const lastPoint = meta.data[meta.data.length - 1]; // Điểm pixel cuối cùng trên canvas
+                            const lastValue = dataset.data[dataset.data.length - 1]; // Giá trị số thực tế
+
+                            if (lastPoint && !isNaN(lastValue)) {
+                                ctx.fillStyle = dataset.borderColor; // Lấy màu chữ trùng màu đường line
+                                
+                                // Vẽ giá trị số cách điểm cuối 6 pixel về phía bên phải
+                                ctx.fillText(lastValue.toFixed(3), lastPoint.x + 6, lastPoint.y);
+                            }
+                        }
+                    });
+                    ctx.restore();
+                }
+            }]
+        });
+
+        // Hàm cập nhật dữ liệu cho biểu đồ PID
+        function updatePidChart(componentsArray) {
+            // 1. Đẩy dữ liệu vào đồ thị Chart.js như cũ
+            for (let i = 0; i < 6; i++) {
+                const dataArr = pidChart.data.datasets[i].data;
+                dataArr.push(componentsArray[i]);
+                dataArr.shift();
+            }
+            pidChart.update();
+
+            // 2. Cập nhật giá trị ra các thẻ số ngoài màn hình HTML
+            document.getElementById('num-yp').innerText = componentsArray[0].toFixed(3);
+            document.getElementById('num-yi').innerText = componentsArray[1].toFixed(3);
+            document.getElementById('num-yd').innerText = componentsArray[2].toFixed(3);
+            document.getElementById('num-pp').innerText = componentsArray[3].toFixed(3);
+            document.getElementById('num-pi').innerText = componentsArray[4].toFixed(3);
+            document.getElementById('num-pd').innerText = componentsArray[5].toFixed(3);
         }
 
         // --- 7. ROS 2 Parameter Logic ---
@@ -1929,6 +2094,16 @@
             inputContainer.appendChild(btnEl);
             item.appendChild(titleDiv);
             item.appendChild(inputContainer);
+
+            // Container cho slider (ẩn mặc định)
+            const sliderContainer = document.createElement('div');
+            sliderContainer.className = "hidden mt-1";
+            const sliderEl = document.createElement('input');
+            sliderEl.type = "range";
+            sliderEl.className = "w-full accent-blue-500 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer";
+            sliderContainer.appendChild(sliderEl);
+            item.appendChild(sliderContainer);
+
             paramsList.appendChild(item);
 
             // Gọi Service get_parameters để lấy giá trị hiện tại
@@ -1950,8 +2125,14 @@
 
                     // Giải mã dựa trên type của rcl_interfaces/msg/ParameterType
                     if (pType === 1) valStr = pVal.bool_value.toString();
-                    else if (pType === 2) valStr = pVal.integer_value.toString();
-                    else if (pType === 3) valStr = pVal.double_value.toString();
+                    else if (pType === 2) {
+                        valStr = pVal.integer_value.toString();
+                        setupSlider(pType, pVal.integer_value);
+                    }
+                    else if (pType === 3) {
+                        valStr = pVal.double_value.toString();
+                        setupSlider(pType, pVal.double_value);
+                    }
                     else if (pType === 4) valStr = pVal.string_value;
                     else valStr = "Unsupported Array/Type";
 
@@ -1966,6 +2147,40 @@
 
                     // Gắn sự kiện ghi param với đúng type được nhận diện
                     btnEl.onclick = () => setParamValue_ROS2(nodeName, paramName, pType, inputEl, btnEl);
+
+                    function setupSlider(type, currentVal) {
+                        sliderContainer.classList.remove('hidden');
+                        let min = (type === 2) ? 0 : -1.0;
+                        let max = (type === 2) ? 100 : 1.0;
+                        let step = (type === 2) ? 1 : 0.01;
+
+                        // Tự điều chỉnh nếu giá trị hiện tại nằm ngoài range mặc định
+                        if (currentVal < min) min = currentVal - Math.abs(currentVal * 0.5);
+                        if (currentVal > max) max = currentVal + Math.abs(currentVal * 0.5);
+                        
+                        // Đảm bảo min < max cho input type range
+                        if (min >= max) max = min + 10;
+
+                        sliderEl.min = min;
+                        sliderEl.max = max;
+                        sliderEl.step = step;
+                        sliderEl.value = currentVal;
+
+                        sliderEl.oninput = () => {
+                            inputEl.value = sliderEl.value;
+                            inputEl.classList.remove('text-gray-500');
+                            inputEl.classList.add('text-white');
+                        };
+
+                        inputEl.addEventListener('input', () => {
+                            const v = parseFloat(inputEl.value);
+                            if (!isNaN(v)) {
+                                if (v < parseFloat(sliderEl.min)) sliderEl.min = v - Math.abs(v * 0.2) - 1;
+                                if (v > parseFloat(sliderEl.max)) sliderEl.max = v + Math.abs(v * 0.2) + 1;
+                                sliderEl.value = v;
+                            }
+                        });
+                    }
                 }
             }, (err) => {
                 inputEl.value = "Error";
@@ -2188,8 +2403,30 @@
         const cmdPub = new ROSLIB.Topic({ ros: ros, name: '/steering_command', messageType: 'std_msgs/Float64' });
         function publishSteering() {
             if (!ros.isConnected) return;
-            cmdPub.publish(new ROSLIB.Message({ data: parseFloat(document.getElementById('steer-input').value) }));
+            const steerInput = document.getElementById('steer-input');
+            if (!steerInput) return;
+            const val = parseFloat(steerInput.value);
+            cmdPub.publish(new ROSLIB.Message({ data: val }));
+
+            // Cập nhật text hiển thị ngay lập tức khi gửi
+            const valDisplay = document.getElementById('steer-value');
+            if (valDisplay) valDisplay.innerText = val.toFixed(2);
         }
+
+        // Lắng nghe sự kiện kéo thanh trượt (Cập nhật UI & Auto Publish)
+        document.addEventListener('input', (e) => {
+            if (e.target.id === 'steer-input') {
+                const val = parseFloat(e.target.value);
+                const valDisplay = document.getElementById('steer-value');
+                if (valDisplay) valDisplay.innerText = val.toFixed(2);
+
+                // Nếu checkbox "Auto" đang tích, gửi lệnh liên tục khi kéo
+                const autoPub = document.getElementById('auto-publish');
+                if (autoPub && autoPub.checked) {
+                    publishSteering();
+                }
+            }
+        });
 
         function subscribeToTopic(name, type, callback) {
             new ROSLIB.Topic({ ros: ros, name: name, messageType: type }).subscribe(callback);
@@ -2231,9 +2468,15 @@
                 }
             });
 
+            subscribeToTopic('/f9r/ground_speed', 'std_msgs/Float64', (m) => {
+                const markerCmdDisplay = document.getElementById('marker-speed');
+                if (markerCmdDisplay) markerCmdDisplay.innerText = m.data.toFixed(1);
+                // updateChart(3, m.data);
+            });
+
             subscribeToTopic('/steering_command', 'std_msgs/Float64', (m) => {
                 const markerCmdDisplay = document.getElementById('marker-cmd');
-                if (markerCmdDisplay) markerCmdDisplay.innerText = m.data.toFixed(3);
+                if (markerCmdDisplay) markerCmdDisplay.innerText = m.data.toFixed(2);
                 updateChart(2, m.data);
             });
 
@@ -2325,18 +2568,18 @@
 
                 if (isHeadingUp) {
                     let mapRotationAngle = 0;
-                    
+
                     if (hasReferenceLine && globalPathMathYaw !== null) {
                         // Tính toán độ lệch hướng giữa xe và đường line
                         let relYaw = tractorMathYaw - globalPathMathYaw;
                         relYaw = Math.atan2(Math.sin(relYaw), Math.cos(relYaw));
-                        
+
                         let activePathMathYaw = globalPathMathYaw;
                         // Nếu xe đang đi ngược chiều (quá 90 độ), lật hướng map lại 180 độ để xe luôn hướng lên
                         if (Math.abs(relYaw) > Math.PI / 2) {
                             activePathMathYaw += Math.PI;
                         }
-                        
+
                         let pathCssAngle = (Math.PI / 2) - activePathMathYaw;
                         mapRotationAngle = -pathCssAngle;
                         if (compassText && compassText.innerText !== 'P-UP') compassText.innerText = 'P-UP';
@@ -2353,29 +2596,36 @@
                     // 1. Xoay toàn bộ bản đồ
                     if (mapWrapper) mapWrapper.style.transform = `translate(-50%, -50%) rotate(${mapRotationAngle}rad)`;
                     if (compassIcon) compassIcon.style.transform = `rotate(${mapRotationAngle}rad)`;
-                    
+
                     // 2. Chống lật (Counter-rotate) cho bảng text để nó luôn nằm ngang trên màn hình
                     if (tractorWrapper) tractorWrapper.style.transform = `rotate(${-mapRotationAngle}rad)`;
-                    
+
                     // 3. Xoay mũi tên xe bằng góc nhìn thực tế trên màn hình (Góc xe + Góc bù của map)
                     let visualAngle = mapRotationAngle + tractorCssAngle;
                     if (markerArrow) markerArrow.style.transform = `rotate(${visualAngle}rad)`;
-                    
+
                     if (miniMarkerArrow) miniMarkerArrow.style.transform = `rotate(${tractorCssAngle}rad)`;
                 } else {
                     if (compassText && compassText.innerText !== 'N-UP') compassText.innerText = 'N-UP';
-                    
+
                     // --- BỔ SUNG: Áp dụng góc xoay liên tục cho xe ---
                     displayTractorAngle = getContinuousAngle(tractorCssAngle, displayTractorAngle);
-                    
+
                     // Reset trạng thái chống lật khi ở N-UP
                     if (tractorWrapper) tractorWrapper.style.transform = `rotate(0rad)`;
-                    
+
                     if (markerArrow) markerArrow.style.transform = `rotate(${tractorCssAngle}rad)`;
                     if (miniMarkerArrow) miniMarkerArrow.style.transform = `rotate(${tractorCssAngle}rad)`;
                 }
 
                 updateChart(1, yaw);
+            });
+
+            // Theo dõi thành phần PID
+            subscribeToTopic('/pid_components', 'std_msgs/Float64MultiArray', (m) => {
+                if (m.data && m.data.length === 6) {
+                    updatePidChart(m.data);
+                }
             });
 
             subscribeToTopic('/reference_line', 'nav_msgs/msg/Path', (m) => {
@@ -2657,7 +2907,7 @@
         }
 
         // Cứ 2000ms (2 giây) gọi lại hàm ping một lần
-        setInterval(updatePing, 1000);
+        //setInterval(updatePing, 1000);
 
         // --- Final Initialization ---
         checkWsUrlValidity(); // Check URL ban đầu cho Splash Screen
@@ -2673,6 +2923,9 @@
 
         // BỔ SUNG: Nhấn giữ nút Thùng rác 1 giây để xóa toàn bộ
         setupHoldButton('btn-clear-all', () => callService('/clear_all'), 500);
+
+        setupHoldButton('btn-swath-left', () => callService('/steer_planner_node/swath_left'), 300);
+        setupHoldButton('btn-swath-right', () => callService('/steer_planner_node/swath_right'), 300);
 
         // Chạy ngay lập tức Animation nền của màn hình chờ
         setTimeout(() => {
