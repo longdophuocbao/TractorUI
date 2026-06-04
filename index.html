@@ -708,6 +708,8 @@
         // --- Biến và Hàm hỗ trợ Smooth Rotation ---
         let displayMapAngle = 0;
         let displayTractorAngle = 0;
+        let displayVisualAngle = 0;
+        let displayMiniTractorAngle = 0;
 
         // Hàm giúp góc xoay tiếp diễn liên tục (Vd: vượt qua 180 độ sẽ lên 181 độ thay vì giật về -179 độ)
         function getContinuousAngle(target, current) {
@@ -1463,8 +1465,8 @@
                 displayMapAngle = getContinuousAngle(0, displayMapAngle);
 
                 // Trả bản đồ về hướng Bắc (North Up)
-                mapWrapper.style.transform = `translate(-50%, -50%) rotate(0rad)`;
-                if (compassIcon) compassIcon.style.transform = `rotate(0rad)`;
+                mapWrapper.style.transform = `translate(-50%, -50%) rotate(${displayMapAngle}rad)`;
+                if (compassIcon) compassIcon.style.transform = `rotate(${displayMapAngle}rad)`;
                 // Bật lại tính năng kéo thả bản đồ
                 map.dragging.enable();
             }
@@ -2468,7 +2470,7 @@
                 }
             });
 
-            subscribeToTopic('/f9r/ground_speed', 'std_msgs/Float64', (m) => {
+            subscribeToTopic('/f9r/speed', 'std_msgs/Float32', (m) => {
                 const markerCmdDisplay = document.getElementById('marker-speed');
                 if (markerCmdDisplay) markerCmdDisplay.innerText = m.data.toFixed(1);
                 // updateChart(3, m.data);
@@ -2594,28 +2596,32 @@
                     displayTractorAngle = getContinuousAngle(tractorCssAngle, displayTractorAngle);
 
                     // 1. Xoay toàn bộ bản đồ
-                    if (mapWrapper) mapWrapper.style.transform = `translate(-50%, -50%) rotate(${mapRotationAngle}rad)`;
-                    if (compassIcon) compassIcon.style.transform = `rotate(${mapRotationAngle}rad)`;
+                    if (mapWrapper) mapWrapper.style.transform = `translate(-50%, -50%) rotate(${displayMapAngle}rad)`;
+                    if (compassIcon) compassIcon.style.transform = `rotate(${displayMapAngle}rad)`;
 
                     // 2. Chống lật (Counter-rotate) cho bảng text để nó luôn nằm ngang trên màn hình
-                    if (tractorWrapper) tractorWrapper.style.transform = `rotate(${-mapRotationAngle}rad)`;
+                    if (tractorWrapper) tractorWrapper.style.transform = `rotate(${-displayMapAngle}rad)`;
 
                     // 3. Xoay mũi tên xe bằng góc nhìn thực tế trên màn hình (Góc xe + Góc bù của map)
                     let visualAngle = mapRotationAngle + tractorCssAngle;
-                    if (markerArrow) markerArrow.style.transform = `rotate(${visualAngle}rad)`;
+                    displayVisualAngle = getContinuousAngle(visualAngle, displayVisualAngle);
+                    if (markerArrow) markerArrow.style.transform = `rotate(${displayVisualAngle}rad)`;
 
-                    if (miniMarkerArrow) miniMarkerArrow.style.transform = `rotate(${tractorCssAngle}rad)`;
+                    // 4. Xoay xe trên minimap (Minimap luôn hướng Bắc nên dùng góc xe thực tế)
+                    displayMiniTractorAngle = getContinuousAngle(tractorCssAngle, displayMiniTractorAngle);
+                    if (miniMarkerArrow) miniMarkerArrow.style.transform = `rotate(${displayMiniTractorAngle}rad)`;
                 } else {
                     if (compassText && compassText.innerText !== 'N-UP') compassText.innerText = 'N-UP';
 
                     // --- BỔ SUNG: Áp dụng góc xoay liên tục cho xe ---
                     displayTractorAngle = getContinuousAngle(tractorCssAngle, displayTractorAngle);
+                    displayMiniTractorAngle = getContinuousAngle(tractorCssAngle, displayMiniTractorAngle);
 
                     // Reset trạng thái chống lật khi ở N-UP
                     if (tractorWrapper) tractorWrapper.style.transform = `rotate(0rad)`;
 
-                    if (markerArrow) markerArrow.style.transform = `rotate(${tractorCssAngle}rad)`;
-                    if (miniMarkerArrow) miniMarkerArrow.style.transform = `rotate(${tractorCssAngle}rad)`;
+                    if (markerArrow) markerArrow.style.transform = `rotate(${displayTractorAngle}rad)`;
+                    if (miniMarkerArrow) miniMarkerArrow.style.transform = `rotate(${displayMiniTractorAngle}rad)`;
                 }
 
                 updateChart(1, yaw);
