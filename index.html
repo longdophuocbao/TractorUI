@@ -1419,6 +1419,8 @@
             const divider = document.getElementById('divider-path');
             const dividerClear = document.getElementById('divider-clear');
 
+            let modeVal = 1; // Default to Manual
+
             if (mode === 'record') {
                 toggleRecord.className = "px-4 py-1.5 rounded-full text-xs font-bold transition-all bg-blue-500/80 text-white shadow-md cursor-default";
                 togglePath.className = "px-4 py-1.5 rounded-full text-xs font-bold transition-all text-gray-400 hover:text-white cursor-pointer";
@@ -1428,6 +1430,7 @@
                 if (dividerClear) dividerClear.style.display = 'none';
                 if (btnClearAll) btnClearAll.style.display = 'none';
                 btnLine.style.display = 'flex';
+                modeVal = 2; // Reference Line (A-B)
             } else {
                 togglePath.className = "px-4 py-1.5 rounded-full text-xs font-bold transition-all bg-blue-500/80 text-white shadow-md cursor-default";
                 toggleRecord.className = "px-4 py-1.5 rounded-full text-xs font-bold transition-all text-gray-400 hover:text-white cursor-pointer";
@@ -1437,6 +1440,11 @@
                 btnGen.style.display = 'flex';
                 if (dividerClear) dividerClear.style.display = 'block';
                 if (btnClearAll) btnClearAll.style.display = 'flex';
+                modeVal = 3; // Fields2Cover
+            }
+
+            if (typeof navModePub !== 'undefined' && ros.isConnected) {
+                navModePub.publish(new ROSLIB.Message({ data: modeVal }));
             }
         }
 
@@ -2290,6 +2298,10 @@
             setTimeout(() => { if (ros.isConnected) splashScreen.classList.add('hidden'); }, 700);
             resetSplashBtn();
 
+            // Sync current UI mode with ROS
+            const isRecord = document.getElementById('toggle-record').classList.contains('bg-blue-500/80');
+            setControlMode(isRecord ? 'record' : 'path');
+
             // Lắng nghe State Machine từ ROS để update nút Record Line
             subscribeToTopic('/steer_planner_node/state_machine', 'std_msgs/Int32', (m) => {
 
@@ -2399,10 +2411,13 @@
 
         function callService(name) {
             if (!ros.isConnected) return;
-            new ROSLIB.Service({ ros: ros, name: name, serviceType: 'std_srvs/Empty' }).callService(new ROSLIB.ServiceRequest({}), () => console.log('Called ' + name));
+            new ROSLIB.Service({ ros: ros, name: name, serviceType: 'std_srvs/Trigger' }).callService(new ROSLIB.ServiceRequest({}), (result) => {
+                console.log('Called ' + name + '. Success: ' + result.success + '. Message: ' + result.message);
+            });
         }
 
         const cmdPub = new ROSLIB.Topic({ ros: ros, name: '/steering_command', messageType: 'std_msgs/Float64' });
+        const navModePub = new ROSLIB.Topic({ ros: ros, name: '/nav_mode', messageType: 'std_msgs/Int32' });
         function publishSteering() {
             if (!ros.isConnected) return;
             const steerInput = document.getElementById('steer-input');
