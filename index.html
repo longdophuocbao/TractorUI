@@ -446,7 +446,7 @@
             class="glass-panel p-1 rounded-full flex items-center pointer-events-auto shadow-lg backdrop-blur-md bg-black/40">
             <button onclick="setControlMode('record')" id="toggle-record"
                 class="px-4 py-1.5 rounded-full text-xs font-bold transition-all bg-blue-500/80 text-white shadow-md cursor-default"
-                data-i18n="mode-record">Record Mode</button>
+                data-i18n="mode-record">A-B Mode</button>
             <button onclick="setControlMode('path')" id="toggle-path"
                 class="px-4 py-1.5 rounded-full text-xs font-bold transition-all text-gray-400 hover:text-white cursor-pointer"
                 data-i18n="mode-path">Path Mode</button>
@@ -471,6 +471,16 @@
                 <span class="relative z-10 text-xl mb-1 group-hover:scale-110 transition-transform">🗺️</span>
                 <span class="relative z-10 text-xs font-bold text-green-100" data-i18n="btn-generate-path">Generate
                     Path</span>
+            </button>
+
+            <!-- Divider và nút Start (hiện khi ở Path mode và đã quy hoạch) -->
+            <div id="divider-start" class="w-px h-10 bg-white/10 mx-1" style="display: none;"></div>
+
+            <button id="btn-start-path"
+                class="relative overflow-hidden select-none flex-1 flex flex-col items-center justify-center bg-blue-500/20 hover:bg-blue-500/40 border border-blue-500/30 py-2 rounded-xl transition active:scale-95 group" style="display: none;">
+                <div class="hold-progress absolute left-0 bottom-0 top-0 w-0 bg-blue-500/50 pointer-events-none"></div>
+                <span class="relative z-10 text-xl mb-1 group-hover:scale-110 transition-transform">🚀</span>
+                <span class="relative z-10 text-xs font-bold text-blue-100" data-i18n="btn-start-path">Start</span>
             </button>
 
             <!-- Divider và nút Clear All nằm chung hàng -->
@@ -728,6 +738,9 @@
         // ROS Planner State (1: IDLE, 2: RECORDING, 3: ACTIVE)
         let plannerState = 1;
 
+        let currentControlMode = 'record';
+        let fieldPlannerState = '';
+
         // Theo dõi các điểm Vertex Markers trên bản đồ để không vẽ đè
         let activeVertexMarkers = {};
 
@@ -774,12 +787,13 @@
                 "hud-error": "Error",
                 "ctrl-fine-tune": "Fine Tune",
                 "ctrl-swath": "Swath",
-                "mode-record": "Record Mode",
+                "mode-record": "A-B Mode",
                 "mode-path": "Path Mode",
                 "btn-record-vertex": "Record Vertex",
                 "btn-generate-path": "Generate Path",
                 "btn-record-line": "Record Line",
                 "btn-clear-all": "Clear All",
+                "btn-start-path": "Start",
                 "btn-recording-line": "Recording...",
                 "btn-cancel": "Cancel",
                 "set-title": "Settings & Monitoring",
@@ -816,7 +830,7 @@
                 "hud-error": "錯誤",
                 "ctrl-fine-tune": "微調",
                 "ctrl-swath": "切換路徑",
-                "mode-record": "記錄模式",
+                "mode-record": "A-B 模式",
                 "mode-path": "路徑模式",
                 "btn-record-vertex": "記錄頂點",
                 "btn-generate-path": "生成路徑",
@@ -1409,7 +1423,29 @@
 
 
         // --- 3. UI Control & Navigation ---
+        function updatePathModeUI() {
+            const btnStart = document.getElementById('btn-start-path');
+            const divStart = document.getElementById('divider-start');
+            if (!btnStart || !divStart) return;
+
+            if (currentControlMode === 'path' && fieldPlannerState === 'PLANNED') {
+                btnStart.style.display = 'flex';
+                divStart.style.display = 'block';
+            } else {
+                btnStart.style.display = 'none';
+                divStart.style.display = 'none';
+            }
+        }
+
         function setControlMode(mode) {
+            // Prevent switching to Path Mode if not in IDLE state (1)
+            if (mode === 'path' && plannerState !== 1) {
+                const msg = currentLang === 'zh' ? "請先停止當前操作 (返回 IDLE 狀態) 再切換模式！" : "Please stop current operation (return to IDLE state) before switching modes!";
+                alert(msg);
+                return;
+            }
+
+            currentControlMode = mode;
             const toggleRecord = document.getElementById('toggle-record');
             const togglePath = document.getElementById('toggle-path');
             const btnVertex = document.getElementById('btn-record-vertex');
@@ -1428,6 +1464,7 @@
                 if (dividerClear) dividerClear.style.display = 'none';
                 if (btnClearAll) btnClearAll.style.display = 'none';
                 btnLine.style.display = 'flex';
+                if (ros.isConnected) selectModePub.publish(new ROSLIB.Message({ data: 1 }));
             } else {
                 togglePath.className = "px-4 py-1.5 rounded-full text-xs font-bold transition-all bg-blue-500/80 text-white shadow-md cursor-default";
                 toggleRecord.className = "px-4 py-1.5 rounded-full text-xs font-bold transition-all text-gray-400 hover:text-white cursor-pointer";
@@ -1437,7 +1474,9 @@
                 btnGen.style.display = 'flex';
                 if (dividerClear) dividerClear.style.display = 'block';
                 if (btnClearAll) btnClearAll.style.display = 'flex';
+                if (ros.isConnected) selectModePub.publish(new ROSLIB.Message({ data: 2 }));
             }
+            updatePathModeUI();
         }
 
         // --- MAP ROTATION FEATURE ---
@@ -2403,6 +2442,7 @@
         }
 
         const cmdPub = new ROSLIB.Topic({ ros: ros, name: '/steering_command', messageType: 'std_msgs/Float64' });
+        const selectModePub = new ROSLIB.Topic({ ros: ros, name: '/target_line_mux/select_mode', messageType: 'std_msgs/Int32' });
         function publishSteering() {
             if (!ros.isConnected) return;
             const steerInput = document.getElementById('steer-input');
@@ -2807,7 +2847,29 @@
                 mapOriginLon = m.longitude;
                 console.log("✅ Đã nhận mốc gốc đồng bộ: ", mapOriginLat, mapOriginLon);
             });
+
+            // BỔ SUNG: Theo dõi trạng thái Path Planner để hiện nút Start
+            subscribeToTopic('/field_planner/state', 'std_msgs/String', (m) => {
+                fieldPlannerState = m.data;
+                updatePathModeUI();
+            });
         });
+
+        // --- Hàm Start Path Following ---
+        function startPathFollowing() {
+            if (!ros.isConnected) return;
+            const srv = new ROSLIB.Service({
+                ros: ros,
+                name: '/path_follower_bridge/start_stop',
+                serviceType: 'std_srvs/SetBool'
+            });
+            const req = new ROSLIB.ServiceRequest({ data: true });
+            srv.callService(req, (res) => {
+                console.log('Path follower started:', res);
+            }, (err) => {
+                console.error('Failed to start path follower:', err);
+            });
+        }
 
         // --- 10. Long Press / Hold Logic ---
         function setupHoldButton(btnId, actionFn, duration = 800) {
@@ -2932,6 +2994,9 @@
 
         setupHoldButton('btn-swath-left', () => callService('/steer_planner_node/swath_left'), 300);
         setupHoldButton('btn-swath-right', () => callService('/steer_planner_node/swath_right'), 300);
+
+        // Nút Start trong Path Mode
+        setupHoldButton('btn-start-path', startPathFollowing, 500);
 
         // Chạy ngay lập tức Animation nền của màn hình chờ
         setTimeout(() => {
