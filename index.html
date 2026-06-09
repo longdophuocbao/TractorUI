@@ -1428,7 +1428,7 @@
             const divStart = document.getElementById('divider-start');
             if (!btnStart || !divStart) return;
 
-            if (currentControlMode === 'path' && fieldPlannerState === 'PLANNED') {
+            if (currentControlMode === 'path' && fieldPlannerState === '3') {
                 btnStart.style.display = 'flex';
                 divStart.style.display = 'block';
             } else {
@@ -2849,7 +2849,7 @@
             });
 
             // BỔ SUNG: Theo dõi trạng thái Path Planner để hiện nút Start
-            subscribeToTopic('/field_planner/state', 'std_msgs/String', (m) => {
+            subscribeToTopic('/field_planner/state', 'std_msgs/Int32', (m) => {
                 fieldPlannerState = m.data;
                 updatePathModeUI();
             });
