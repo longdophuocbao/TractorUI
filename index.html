@@ -794,6 +794,8 @@
                 "btn-record-line": "Record Line",
                 "btn-clear-all": "Clear All",
                 "btn-start-path": "Start",
+                "btn-stop-path": "Stop",
+                "msg-resume-prompt": "Do you want to resume from where you paused?\n\n[OK] Resume\n[Cancel] Restart from beginning",
                 "btn-recording-line": "Recording...",
                 "btn-cancel": "Cancel",
                 "set-title": "Settings & Monitoring",
@@ -836,6 +838,9 @@
                 "btn-generate-path": "生成路徑",
                 "btn-record-line": "記錄路線",
                 "btn-clear-all": "清除所有",
+                "btn-start-path": "開始",
+                "btn-stop-path": "停止",
+                "msg-resume-prompt": "您想從暫停的地方繼續嗎？\n\n[確定] 繼續 (Resume)\n[取消] 重新開始 (Restart)",
                 "btn-recording-line": "記錄中...",
                 "btn-cancel": "取消",
                 "set-title": "設置與監控",
@@ -1428,9 +1433,26 @@
             const divStart = document.getElementById('divider-start');
             if (!btnStart || !divStart) return;
 
-            if (currentControlMode === 'path' && fieldPlannerState === 3) {
+            if (currentControlMode === 'path' && (fieldPlannerState === 3 || fieldPlannerState === 4)) {
                 btnStart.style.display = 'flex';
                 divStart.style.display = 'block';
+
+                const icon = btnStart.querySelectorAll('span')[0];
+                const text = btnStart.querySelectorAll('span')[1];
+
+                if (fieldPlannerState === 4) {
+                    btnStart.className = "relative overflow-hidden select-none flex-1 flex flex-col items-center justify-center bg-red-500/20 hover:bg-red-500/40 border border-red-500/30 py-2 rounded-xl transition active:scale-95 group";
+                    icon.innerText = "🛑";
+                    text.className = "relative z-10 text-xs font-bold text-red-100";
+                    text.innerText = t('btn-stop-path') || "Stop";
+                    text.setAttribute('data-i18n', 'btn-stop-path');
+                } else {
+                    btnStart.className = "relative overflow-hidden select-none flex-1 flex flex-col items-center justify-center bg-blue-500/20 hover:bg-blue-500/40 border border-blue-500/30 py-2 rounded-xl transition active:scale-95 group";
+                    icon.innerText = "🚀";
+                    text.className = "relative z-10 text-xs font-bold text-blue-100";
+                    text.innerText = t('btn-start-path') || "Start";
+                    text.setAttribute('data-i18n', 'btn-start-path');
+                }
             } else {
                 btnStart.style.display = 'none';
                 divStart.style.display = 'none';
@@ -2769,6 +2791,8 @@
                         currentTrailSegment = null;
                         trailLayer.setLatLngs([]);
                         centerTrailLayer.setLatLngs([]); // BỔ SUNG DÒNG NÀY
+                        
+                        isPathPaused = false; // Reset paused state
                         // ----------------------------------------------
                         return;
                     }
@@ -2850,25 +2874,81 @@
 
             // BỔ SUNG: Theo dõi trạng thái Path Planner để hiện nút Start
             subscribeToTopic('/field_planner/state', 'std_msgs/Int32', (m) => {
+                if (m.data === 5 && fieldPlannerState !== 5) {
+                    alert("Trạng thái lỗi khi người dùng yêu cầu bắt đầu nhưng xe đang ở quá xa điểm đầu tiên của lộ trình");
+                }
                 fieldPlannerState = m.data;
                 updatePathModeUI();
             });
         });
 
+        let isPathPaused = false;
+
         // --- Hàm Start Path Following ---
         function startPathFollowing() {
             if (!ros.isConnected) return;
-            const srv = new ROSLIB.Service({
-                ros: ros,
-                name: '/path_follower_bridge/start_stop',
-                serviceType: 'std_srvs/SetBool'
-            });
-            const req = new ROSLIB.ServiceRequest({ data: true });
-            srv.callService(req, (res) => {
-                console.log('Path follower started:', res);
-            }, (err) => {
-                console.error('Failed to start path follower:', err);
-            });
+            
+            if (fieldPlannerState === 4) {
+                // Đang chạy -> Nhấn để Stop
+                const srv = new ROSLIB.Service({
+                    ros: ros,
+                    name: '/path_follower_bridge/start_stop',
+                    serviceType: 'std_srvs/SetBool'
+                });
+                const req = new ROSLIB.ServiceRequest({ data: false });
+                srv.callService(req, (res) => {
+                    console.log('Path follower stopped:', res);
+                    isPathPaused = true;
+                }, (err) => {
+                    console.error('Failed to stop path follower:', err);
+                });
+            } else if (fieldPlannerState === 3) {
+                // Đang dừng -> Nhấn để Start
+                if (isPathPaused) {
+                    const isResume = confirm(t('msg-resume-prompt'));
+                    
+                    if (isResume) {
+                        const srv = new ROSLIB.Service({
+                            ros: ros,
+                            name: '/path_follower_bridge/resume',
+                            serviceType: 'std_srvs/Trigger'
+                        });
+                        const req = new ROSLIB.ServiceRequest({});
+                        srv.callService(req, (res) => {
+                            console.log('Path follower resumed:', res);
+                            isPathPaused = false;
+                        }, (err) => {
+                            console.error('Failed to resume path follower:', err);
+                        });
+                    } else {
+                        const srv = new ROSLIB.Service({
+                            ros: ros,
+                            name: '/path_follower_bridge/start_stop',
+                            serviceType: 'std_srvs/SetBool'
+                        });
+                        const req = new ROSLIB.ServiceRequest({ data: true });
+                        srv.callService(req, (res) => {
+                            console.log('Path follower restarted:', res);
+                            isPathPaused = false;
+                        }, (err) => {
+                            console.error('Failed to restart path follower:', err);
+                        });
+                    }
+                } else {
+                    const srv = new ROSLIB.Service({
+                        ros: ros,
+                        name: '/path_follower_bridge/start_stop',
+                        serviceType: 'std_srvs/SetBool'
+                    });
+                    const req = new ROSLIB.ServiceRequest({ data: true });
+                    srv.callService(req, (res) => {
+                        console.log('Path follower started:', res);
+                        isPathPaused = false;
+                    }, (err) => {
+                        console.error('Failed to start path follower:', err);
+                    });
+                }
+            }
         }
 
         // --- 10. Long Press / Hold Logic ---
