@@ -739,6 +739,15 @@
 
         // ROS Planner State (1: IDLE, 2: RECORDING, 3: ACTIVE)
         let plannerState = 1;
+        let steerMotorState = 0; // 0: Disabled/Idle, 1: Active
+        let lastSteeringCmd = 0;
+
+        function updateMarkerCmdUI() {
+            const markerCmdDisplay = document.getElementById('marker-cmd');
+            if (markerCmdDisplay) {
+                markerCmdDisplay.innerText = (steerMotorState === 1) ? lastSteeringCmd.toFixed(2) : '--';
+            }
+        }
 
         let currentControlMode = 'record';
         let fieldPlannerState = '';
@@ -2550,9 +2559,14 @@
             });
 
             subscribeToTopic('/steering_command', 'std_msgs/Float64', (m) => {
-                const markerCmdDisplay = document.getElementById('marker-cmd');
-                if (markerCmdDisplay) markerCmdDisplay.innerText = m.data.toFixed(2);
+                lastSteeringCmd = m.data;
+                updateMarkerCmdUI();
                 updateChart(2, m.data);
+            });
+
+            subscribeToTopic('/steer_motor_node/state', 'std_msgs/Int32', (m) => {
+                steerMotorState = m.data;
+                updateMarkerCmdUI();
             });
 
             subscribeToTopic('/imu', 'sensor_msgs/Imu', (m) => {
