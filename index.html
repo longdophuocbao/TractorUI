@@ -18,6 +18,7 @@
 
     <!-- ROSLibJS & EventEmitter2 -->
     <script src="https://cdn.jsdelivr.net/npm/eventemitter2@6.4.9/lib/eventemitter2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/cbor-js@0.1.0/cbor.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/roslib@1/build/roslib.min.js"></script>
 
     <!-- Chart.js -->
@@ -397,7 +398,7 @@
             class="bg-white/5 hover:bg-white/15 p-3 rounded-xl transition active:scale-90 flex justify-center items-center"
             title="Rotate Left">
             <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M12 3v18 M18 12a6 6 0 0 0-12 0 M2 8l4 4 4-4"></path>
             </svg>
         </button>
@@ -406,7 +407,7 @@
             class="bg-white/5 hover:bg-white/15 p-3 rounded-xl transition active:scale-90 flex justify-center items-center"
             title="Rotate Right">
             <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M12 3v18 M6 12a6 6 0 0 1 12 0 M22 8l-4 4-4-4"></path>
             </svg>
         </button>
@@ -763,7 +764,8 @@
         }
 
         // --- Initialize ROSLibJS ---
-        let ros = new ROSLIB.Ros();
+        // let ros = new ROSLIB.Ros();
+        let ros = new ROSLIB.Ros({ encoder: 'cbor' });
         window.ros = ros;
 
         // --- Audio Context ---
@@ -2388,7 +2390,7 @@
 
                 plannerState = m.data;
                 updateRecordLineButtonUI();
-            });
+            },100);
         });
 
         ros.on('error', (error) => {
@@ -2512,8 +2514,8 @@
             }
         });
 
-        function subscribeToTopic(name, type, callback) {
-            new ROSLIB.Topic({ ros: ros, name: name, messageType: type }).subscribe(callback);
+        function subscribeToTopic(name, type, callback, throttleRate=0) {
+            new ROSLIB.Topic({ ros: ros, name: name, messageType: type, throttle_rate: throttleRate }).subscribe(callback);
         }
 
         // --- 9. Subscribe to specific topics ---
@@ -2535,7 +2537,7 @@
                     // Màu Đỏ (No RTK)
                     rtkIcon.setAttribute('class', 'w-5 h-5 text-red-500 drop-shadow-[0_0_6px_rgba(239,68,68,0.8)] transition-colors');
                 }
-            });
+            },100);
 
             subscribeToTopic('/gps/fix', 'sensor_msgs/NavSatFix', (m) => {
                 if (m.latitude !== 0) {
@@ -2550,30 +2552,30 @@
                     }
                     checkRecenterVisibility();
                 }
-            });
+            },100);
 
             subscribeToTopic('/f9r/speed', 'std_msgs/Float32', (m) => {
                 const markerCmdDisplay = document.getElementById('marker-speed');
                 if (markerCmdDisplay) markerCmdDisplay.innerText = m.data.toFixed(1);
                 // updateChart(3, m.data);
-            });
+            },100);
 
             subscribeToTopic('/steering_command', 'std_msgs/Float64', (m) => {
                 lastSteeringCmd = m.data;
                 updateMarkerCmdUI();
                 updateChart(2, m.data);
-            });
+            },100);
 
             subscribeToTopic('/steer_motor_node/state', 'std_msgs/Int32', (m) => {
                 steerMotorState = m.data;
                 updateMarkerCmdUI();
-            });
+            },100);
 
             subscribeToTopic('/imu', 'sensor_msgs/Imu', (m) => {
                 const markerYawDisplay = document.getElementById('marker-yaw');
                 if (markerYawDisplay) markerYawDisplay.innerText = m.orientation.z.toFixed(4);
                 updateChart(0, m.orientation.z);
-            });
+            },100);
 
             subscribeToTopic('/odom/absolute', 'nav_msgs/Odometry', (m) => {
                 odomX = m.pose.pose.position.x;
@@ -2712,14 +2714,14 @@
                 }
 
                 updateChart(1, yaw);
-            });
+            },100);
 
             // Theo dõi thành phần PID
             subscribeToTopic('/pid_components', 'std_msgs/Float64MultiArray', (m) => {
                 if (m.data && m.data.length === 6) {
                     updatePidChart(m.data);
                 }
-            });
+            },100);
 
             subscribeToTopic('/reference_line', 'nav_msgs/msg/Path', (m) => {
                 if (m.poses && m.poses.length > 0) {
@@ -2753,7 +2755,7 @@
                 }
                 updateRecordLineButtonUI();
                 updateDynamicPanelsVisibility();
-            });
+            },100);
 
             // -----------------------------------------------------------------
             // 1. Lắng nghe Topic /field_boundary (Vẽ ranh giới ruộng Polygon)
@@ -2770,7 +2772,7 @@
                     });
                 }
                 fieldBoundaryLayer.setLatLngs(latlngs);
-            });
+            },100);
 
             // -----------------------------------------------------------------
             // 2. Lắng nghe Topic /planned_path (Vẽ đường quy hoạch Path)
@@ -2787,7 +2789,7 @@
                     });
                 }
                 plannedPathLayer.setLatLngs(latlngs);
-            });
+            },100);
 
             // -----------------------------------------------------------------
             // 3. CẬP NHẬT Topic /path_endpoints (Hỗ trợ Start/End và Vùng Coverage)
@@ -2888,14 +2890,14 @@
                         activeVertexMarkers[markerKey] = leafletMarker;
                     }
                 });
-            });
+            },100);
 
             // Subscribe để lấy mốc tọa độ chuẩn từ C++
             subscribeToTopic('/map_origin', 'sensor_msgs/NavSatFix', (m) => {
                 mapOriginLat = m.latitude;
                 mapOriginLon = m.longitude;
                 console.log("✅ Đã nhận mốc gốc đồng bộ: ", mapOriginLat, mapOriginLon);
-            });
+            },100);
 
             // BỔ SUNG: Theo dõi trạng thái Path Planner để hiện nút Start
             subscribeToTopic('/field_planner/state', 'std_msgs/Int32', (m) => {
@@ -2904,7 +2906,7 @@
                 }
                 fieldPlannerState = m.data;
                 updatePathModeUI();
-            });
+            },100);
         });
 
         let isPathPaused = false;
