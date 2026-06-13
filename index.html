@@ -281,6 +281,17 @@
         <div class="flex flex-row items-center gap-3">
             <div
                 class="pointer-events-auto flex items-center gap-4 glass-panel rounded-full px-5 py-2 shadow-lg text-xs font-mono">
+                
+                <!-- Ping / Latency Display -->
+                <div class="flex items-center gap-1.5" title="Network Latency (Browser to Server)">
+                    <svg id="ping-icon" class="w-5 h-5 text-green-400 drop-shadow-[0_0_6px_rgba(74,222,128,0.8)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071a9.9 9.9 0 0114.142 0M2.006 8.85a15.373 15.373 0 0121.988 0" />
+                    </svg>
+                    <span id="data-ping" class="font-bold text-white text-sm">-- ms</span>
+                </div>
+
+                <div class="w-px h-4 bg-white/10"></div>
+
                 <div class="flex items-center gap-1.5" title="RTK Status & Satellites">
                     <svg id="rtk-icon"
                         class="w-5 h-5 text-red-500 drop-shadow-[0_0_6px_rgba(239,68,68,0.8)] transition-colors"
@@ -3062,38 +3073,44 @@
 
         // --- Tự động Fetch Ping mỗi 2 giây ---
         function updatePing() {
-            fetch('/api/ping')
-                .then(res => res.json())
-                .then(data => {
+            const startTime = performance.now();
+            fetch('/?ping=' + Date.now(), { method: 'HEAD', cache: 'no-store' })
+                .then(res => {
+                    if (!res.ok) throw new Error('Network response was not ok');
+                    const endTime = performance.now();
+                    const pingTime = endTime - startTime;
+                    
                     const pingEl = document.getElementById('data-ping');
                     const iconEl = document.getElementById('ping-icon');
 
-                    if (data.status === 'ok') {
-                        pingEl.innerText = data.ping.toFixed(0) + ' ms';
+                    if (pingEl && iconEl) {
+                        pingEl.innerText = pingTime.toFixed(0) + ' ms';
                         // Đổi màu theo độ trễ
-                        if (data.ping < 50) {
+                        if (pingTime < 50) {
                             pingEl.className = 'font-bold text-green-400 text-sm';
                             iconEl.className = 'w-5 h-5 text-green-400 drop-shadow-[0_0_6px_rgba(74,222,128,0.8)]';
-                        } else if (data.ping < 150) {
+                        } else if (pingTime < 150) {
                             pingEl.className = 'font-bold text-yellow-400 text-sm';
                             iconEl.className = 'w-5 h-5 text-yellow-400 drop-shadow-[0_0_6px_rgba(250,204,21,0.8)]';
                         } else {
                             pingEl.className = 'font-bold text-red-500 text-sm';
                             iconEl.className = 'w-5 h-5 text-red-500 drop-shadow-[0_0_6px_rgba(239,68,68,0.8)] animate-pulse';
                         }
-                    } else {
-                        pingEl.innerText = 'ERR';
-                        pingEl.className = 'font-bold text-red-500 text-sm';
-                        iconEl.className = 'w-5 h-5 text-red-500 animate-pulse';
                     }
                 })
                 .catch(err => {
-                    document.getElementById('data-ping').innerText = 'DISC';
+                    const pingEl = document.getElementById('data-ping');
+                    const iconEl = document.getElementById('ping-icon');
+                    if (pingEl && iconEl) {
+                        pingEl.innerText = 'DISC';
+                        pingEl.className = 'font-bold text-red-500 text-sm';
+                        iconEl.className = 'w-5 h-5 text-red-500 animate-pulse';
+                    }
                 });
         }
 
-        // Cứ 2000ms (2 giây) gọi lại hàm ping một lần
-        //setInterval(updatePing, 1000);
+        // Cứ 1000ms (1 giây) gọi lại hàm ping một lần
+        setInterval(updatePing, 1000);
 
         // --- Final Initialization ---
         checkWsUrlValidity(); // Check URL ban đầu cho Splash Screen
