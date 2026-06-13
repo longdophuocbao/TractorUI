@@ -2389,6 +2389,17 @@
                 }
 
                 plannerState = m.data;
+                if (plannerState === 1) {
+                    // Force clear reference line and trails when returning to IDLE
+                    hasReferenceLine = false;
+                    referencePathLayer.setLatLngs([]);
+                    refLinePoints = [];
+                    trailSegments = [];
+                    currentTrailSegment = null;
+                    trailLayer.setLatLngs([]);
+                    centerTrailLayer.setLatLngs([]);
+                    updateDynamicPanelsVisibility();
+                }
                 updateRecordLineButtonUI();
             },100);
         });
