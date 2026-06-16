@@ -81,7 +81,8 @@
 
         /* Loại bỏ viền trắng mặc định của Leaflet divIcon */
         .custom-tractor-icon,
-        .custom-mini-tractor-icon {
+        .custom-mini-tractor-icon,
+        .vertex-number-icon {
             background: transparent;
             border: none;
         }
@@ -2871,7 +2872,7 @@
                         return;
                     }
 
-                    // Xử lý các điểm (SPHERE = 7, ARROW = 0, CUBE = 1)
+                    // Xử lý các điểm (SPHERE, ARROW, CUBE, TEXT_VIEW_FACING)
                     if (marker.pose && marker.pose.position) {
                         let pt = marker.pose.position;
                         let dLat = (pt.y / r_earth) * (180 / Math.PI);
@@ -2898,6 +2899,15 @@
                                 iconSize: [24, 24], iconAnchor: [12, 12]
                             });
                             leafletMarker = L.marker([lat, lon], { icon: customIcon }).addTo(vertexMarkersLayer);
+                        }
+                        // Nếu là marker chữ (TEXT_VIEW_FACING = 9)
+                        else if (marker.type === 9) {
+                            let customIcon = L.divIcon({
+                                className: 'vertex-number-icon',
+                                html: `<div style="color: white; font-weight: bold; font-size: 14px; text-shadow: 1px 1px 2px black;">${marker.text}</div>`,
+                                iconSize: [20, 20], iconAnchor: [10, 10]
+                            });
+                            leafletMarker = L.marker([lat, lon], { icon: customIcon, interactive: false }).addTo(vertexMarkersLayer);
                         }
                         // Mặc định là điểm đánh dấu góc thửa ruộng (Vertices)
                         else {
