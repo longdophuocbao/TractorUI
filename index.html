@@ -761,6 +761,7 @@
 
         let currentControlMode = 'record';
         let fieldPlannerState = '';
+        let pathFollowerState = 0;
 
         // Theo dõi các điểm Vertex Markers trên bản đồ để không vẽ đè
         let activeVertexMarkers = {};
@@ -1450,28 +1451,30 @@
 
 
         // --- 3. UI Control & Navigation ---
-        let lastUIState = { mode: null, planner: null, lang: null, steer: null };
+        let lastUIState = { mode: null, planner: null, follower: null, lang: null, steer: null };
         function updatePathModeUI() {
             if (lastUIState.mode === currentControlMode &&
                 lastUIState.planner === fieldPlannerState &&
+                lastUIState.follower === pathFollowerState &&
                 lastUIState.lang === currentLang) return;
 
             lastUIState.mode = currentControlMode;
             lastUIState.planner = fieldPlannerState;
+            lastUIState.follower = pathFollowerState;
             lastUIState.lang = currentLang;
 
             const btnStart = document.getElementById('btn-start-path');
             const divStart = document.getElementById('divider-start');
             if (!btnStart || !divStart) return;
 
-            if (currentControlMode === 'path' && (fieldPlannerState === 3 || fieldPlannerState === 4)) {
+            if (currentControlMode === 'path' && (fieldPlannerState === 3 || pathFollowerState === 4)) {
                 btnStart.style.display = 'flex';
                 divStart.style.display = 'block';
 
                 const icon = btnStart.querySelectorAll('span')[0];
                 const text = btnStart.querySelectorAll('span')[1];
 
-                if (fieldPlannerState === 4) {
+                if (pathFollowerState === 4) {
                     btnStart.className = "relative overflow-hidden select-none flex-1 flex flex-col items-center justify-center bg-red-500/20 hover:bg-red-500/40 border border-red-500/30 py-2 rounded-xl transition active:scale-95 group";
                     icon.innerText = "🛑";
                     text.className = "relative z-10 text-xs font-bold text-red-100";
@@ -2472,6 +2475,7 @@
             isRecordingLine = false;
             plannerState = 1;
             fieldPlannerState = 1; // RESET THIS TOO
+            pathFollowerState = 0;
             updateRecordLineButtonUI();
             updatePathModeUI(); // UPDATE THIS TOO
             updateDynamicPanelsVisibility();
@@ -2928,11 +2932,17 @@
                 console.log("✅ Đã nhận mốc gốc đồng bộ: ", mapOriginLat, mapOriginLon);
             },100);
 
-            // BỔ SUNG: Theo dõi trạng thái Path Planner để hiện nút Start
-            subscribeToTopic('/field_planner/state', 'std_msgs/Int32', (m) => {
-                if (m.data === 5 && fieldPlannerState !== 5) {
+            // Theo dõi trạng thái Path Follower Bridge để hiện nút Stop/Start hoặc báo lỗi
+            subscribeToTopic('/path_follower_bridge/state', 'std_msgs/Int32', (m) => {
+                if (m.data === 5 && pathFollowerState !== 5) {
                     alert("Trạng thái lỗi khi người dùng yêu cầu bắt đầu nhưng xe đang ở quá xa điểm đầu tiên của lộ trình");
                 }
+                pathFollowerState = m.data;
+                updatePathModeUI();
+            },100);
+
+            // BỔ SUNG: Theo dõi trạng thái Path Planner để hiện nút Start
+            subscribeToTopic('/field_planner/state', 'std_msgs/Int32', (m) => {
                 fieldPlannerState = m.data;
                 updatePathModeUI();
             },100);
@@ -2944,7 +2954,7 @@
         function startPathFollowing() {
             if (!ros.isConnected) return;
 
-            if (fieldPlannerState === 4) {
+            if (pathFollowerState === 4) {
                 // Đang chạy -> Nhấn để Stop
                 const srv = new ROSLIB.Service({
                     ros: ros,
