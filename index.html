@@ -14,7 +14,7 @@
     <meta name="theme-color" content="#111111">
 
     <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="tailwind.min.css">
 
     <!-- ROSLibJS & EventEmitter2 -->
     <script src="https://cdn.jsdelivr.net/npm/eventemitter2@6.4.9/lib/eventemitter2.min.js"></script>
@@ -1656,7 +1656,16 @@
                 modal.classList.remove('opacity-0', 'pointer-events-none');
                 modalContent.classList.replace('scale-95', 'scale-100');
                 if (ros.isConnected) refreshNodes();
-                setTimeout(() => { if (chart) chart.resize(); }, 300);
+                setTimeout(() => { 
+                    if (chart) {
+                        chart.resize(); 
+                        chart.update();
+                    }
+                    if (pidChart) {
+                        pidChart.resize();
+                        pidChart.update();
+                    }
+                }, 300);
             } else {
                 modal.classList.add('opacity-0', 'pointer-events-none');
                 modalContent.classList.replace('scale-100', 'scale-95');
@@ -2018,11 +2027,29 @@
             }]
         });
 
+        let chartUpdatePending = false;
+        let pidChartUpdatePending = false;
+
+        // Tiết lưu cập nhật đồ thị (10Hz) chỉ khi Settings đang mở
+        setInterval(() => {
+            if (isSettingsOpen) {
+                if (chartUpdatePending && chart) {
+                    chart.update();
+                    chartUpdatePending = false;
+                }
+                if (pidChartUpdatePending && pidChart) {
+                    pidChart.update();
+                    pidChartUpdatePending = false;
+                }
+            }
+        }, 100);
+
         function updateChart(datasetIndex, value) {
+            if (!chart) return;
             const data = chart.data.datasets[datasetIndex].data;
             data.push(value);
             data.shift();
-            chart.update();
+            chartUpdatePending = true;
         }
 
         // --- Cấu hình PID Chart ---
@@ -2088,13 +2115,14 @@
 
         // Hàm cập nhật dữ liệu cho biểu đồ PID
         function updatePidChart(componentsArray) {
+            if (!pidChart) return;
             // 1. Đẩy dữ liệu vào đồ thị Chart.js như cũ
             for (let i = 0; i < 6; i++) {
                 const dataArr = pidChart.data.datasets[i].data;
                 dataArr.push(componentsArray[i]);
                 dataArr.shift();
             }
-            pidChart.update();
+            pidChartUpdatePending = true;
 
             // 2. Cập nhật giá trị ra các thẻ số ngoài màn hình HTML
             document.getElementById('num-yp').innerText = componentsArray[0].toFixed(3);
