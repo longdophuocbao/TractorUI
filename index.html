@@ -82,9 +82,11 @@
         /* Loại bỏ viền trắng mặc định của Leaflet divIcon */
         .custom-tractor-icon,
         .custom-mini-tractor-icon,
-        .vertex-number-icon {
-            background: transparent;
-            border: none;
+        .vertex-number-icon,
+        .custom-start-icon,
+        .custom-end-icon {
+            background: transparent !important;
+            border: none !important;
         }
 
         /* CSS cho Minimap */
@@ -2887,7 +2889,7 @@
                         let leafletMarker;
 
                         // Nếu là điểm bắt đầu (Start - ARROW)
-                        if (marker.ns === "endpoints" && marker.id === 0) {
+                        if (marker.ns === "endpoints" && marker.id == 0) {
                             let customIcon = L.divIcon({
                                 className: 'custom-start-icon',
                                 html: `<div style="font-size: 24px; filter: drop-shadow(0px 0px 4px rgba(0,0,0,0.8));">🟢</div>`,
@@ -2896,7 +2898,7 @@
                             leafletMarker = L.marker([lat, lon], { icon: customIcon }).addTo(vertexMarkersLayer);
                         }
                         // Nếu là điểm kết thúc (End - CUBE)
-                        else if (marker.ns === "endpoints" && marker.id === 1) {
+                        else if (marker.ns === "endpoints" && marker.id == 1) {
                             let customIcon = L.divIcon({
                                 className: 'custom-end-icon',
                                 html: `<div style="font-size: 24px; filter: drop-shadow(0px 0px 4px rgba(0,0,0,0.8));">🛑</div>`,
@@ -2923,7 +2925,7 @@
                         activeVertexMarkers[markerKey] = leafletMarker;
                     }
                 });
-            },100);
+            });
 
             // Subscribe để lấy mốc tọa độ chuẩn từ C++
             subscribeToTopic('/map_origin', 'sensor_msgs/NavSatFix', (m) => {
