@@ -634,7 +634,7 @@
                         data-i18n="set-manual-pub">Manual Publish (/steering_command)</h3>
                     <div class="flex flex-col gap-4">
                         <div class="flex items-center gap-3">
-                            <input type="range" id="steer-input" min="-1.8" max="1.8" step="0.01" value="0.0"
+                            <input type="range" id="steer-input" min="-2.15" max="2.40" step="0.01" value="0.0"
                                 class="flex-1 accent-orange-600 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
                             <span id="steer-value" class="text-white font-mono w-12 text-center">0.00</span>
                         </div>
@@ -726,6 +726,7 @@
         let hasReferenceLine = false, firstGpsFix = false;
 
         let odomX = 0, odomY = 0, tractorMathYaw = 0, tractorCssAngle = 0;
+        let smoothOdomX = null, smoothOdomY = null;
         let refLinePoints = [];
         let currentTopicSub = null;
 
@@ -1755,12 +1756,12 @@
         });
 
         const tractorHtml = `
-            <div id="tractor-wrapper" class="relative flex flex-col items-center justify-center w-full h-full transition-transform duration-500">
+            <div id="tractor-wrapper" class="relative flex flex-col items-center justify-center w-full h-full transition-transform duration-100">
                 <div class="absolute bottom-full mb-2 bg-gray-900/80 backdrop-blur border border-white/20 px-2 py-1 rounded text-[10px] font-mono text-center shadow-lg pointer-events-none whitespace-nowrap">
                     <div class="text-orange-400 font-bold tracking-wide">CMD: <span id="marker-cmd">--</span></div>
                     <div class="text-purple-400 font-bold tracking-wide">Speed: <span id="marker-speed">--</span></div>
                 </div>
-                <div id="marker-arrow" class="w-6 h-6 flex items-center justify-center transition-transform duration-500 drop-shadow-[0_0_8px_rgba(37,99,235,0.6)]" style="transform: rotate(0rad);">
+                <div id="marker-arrow" class="w-6 h-6 flex items-center justify-center transition-transform duration-100 drop-shadow-[0_0_8px_rgba(37,99,235,0.6)]" style="transform: rotate(0rad);">
                     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
                         <rect x="2" y="12" width="5" height="10" rx="1.5" fill="#1f2937"/><rect x="17" y="12" width="5" height="10" rx="1.5" fill="#1f2937"/>
                         <rect x="3" y="3" width="4" height="6" rx="1" fill="#374151"/><rect x="17" y="3" width="4" height="6" rx="1" fill="#374151"/>
@@ -2632,8 +2633,36 @@
             },100);
 
             subscribeToTopic('/odom/absolute', 'nav_msgs/Odometry', (m) => {
-                odomX = m.pose.pose.position.x;
-                odomY = m.pose.pose.position.y;
+                let rawOdomX = m.pose.pose.position.x;
+                let rawOdomY = m.pose.pose.position.y;
+
+                if (smoothOdomX === null || smoothOdomY === null) {
+                    smoothOdomX = rawOdomX;
+                    smoothOdomY = rawOdomY;
+                } else {
+                    let dx = rawOdomX - smoothOdomX;
+                    let dy = rawOdomY - smoothOdomY;
+                    let dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist > 2.0) {
+                        smoothOdomX = rawOdomX;
+                        smoothOdomY = rawOdomY;
+                    } else {
+                        let alpha;
+                        if (dist < 0.01) {
+                            alpha = 0.05;
+                        } else if (dist > 0.1) {
+                            alpha = 0.35;
+                        } else {
+                            alpha = 0.05 + ((dist - 0.01) / 0.09) * 0.30;
+                        }
+                        smoothOdomX = smoothOdomX + alpha * (rawOdomX - smoothOdomX);
+                        smoothOdomY = smoothOdomY + alpha * (rawOdomY - smoothOdomY);
+                    }
+                }
+
+                odomX = smoothOdomX;
+                odomY = smoothOdomY;
 
                 // --- BỔ SUNG: Tính tọa độ Lat/Lon của xe dựa trên Odom ---
                 if (mapOriginLat !== null && mapOriginLon !== null) {
