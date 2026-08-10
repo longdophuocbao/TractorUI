@@ -17,16 +17,16 @@
     <link rel="stylesheet" href="tailwind.min.css">
 
     <!-- ROSLibJS & EventEmitter2 -->
-    <script src="https://cdn.jsdelivr.net/npm/eventemitter2@6.4.9/lib/eventemitter2.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/cbor-js@0.1.0/cbor.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/roslib@1/build/roslib.min.js"></script>
+    <script src="eventemitter2.min.js"></script>
+    <script src="cbor.min.js"></script>
+    <script src="roslib.min.js"></script>
 
     <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="chart.js"></script>
 
     <!-- Leaflet.js -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="leaflet.css" />
+    <script src="leaflet.js"></script>
 
     <style>
         /* Đảm bảo không bị cuộn trang trên mobile */
@@ -853,7 +853,7 @@
         const wsUrlInput = document.getElementById('ws-url');
 
         const currentHost = window.location.hostname;
-        wsUrlInput.value = `ws://${currentHost}:9090`;
+        wsUrlInput.value = window.location.protocol === 'https:' ? `wss://ws.${currentHost}` : `ws://${currentHost}:9090`;
 
         const paramsList = document.getElementById('params-list');
         const latDisplay = document.getElementById('data-lat');
