@@ -353,18 +353,6 @@
 
             <!-- Nhóm Nút Công cụ -->
             <div class="flex items-center gap-2">
-                <!-- Nút Đổi Bản Đồ (Map Source) -->
-                <button onclick="toggleMapSource()"
-                    class="pointer-events-auto glass-panel hover:bg-white/10 p-2.5 rounded-full shadow-lg transition active:scale-90 flex items-center gap-1.5"
-                    data-i18n-title="btn-switch-map" title="Switch Map Source">
-                    <svg class="w-5 h-5 text-gray-300 drop-shadow-md" fill="none" stroke="currentColor"
-                        viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7">
-                        </path>
-                    </svg>
-                </button>
-
                 <!-- Nút La Bàn (Chuyển chế độ N-UP / P-UP) -->
                 <button id="btn-compass" onclick="toggleMapRotation()"
                     class="pointer-events-auto glass-panel hover:bg-white/10 p-2.5 rounded-full shadow-lg transition active:scale-90 flex items-center gap-1.5"
@@ -2437,11 +2425,7 @@
 
         // --- 4. Map & Markers ---
         const nlscSatUrl = 'https://wmts.nlsc.gov.tw/wmts/PHOTO2/default/GoogleMapsCompatible/{z}/{y}/{x}';
-        const googleSatUrl = 'http://mt0.google.com/vt/lyrs=s&hl=en&x={x}&y={y}&z={z}';
         const osmUrl = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
-        const googleStreetUrl = 'http://mt0.google.com/vt/lyrs=m&hl=en&x={x}&y={y}&z={z}';
-
-        let currentMapSource = 'nlsc';
 
         let mainSatLayer = L.tileLayer(nlscSatUrl, { maxNativeZoom: 19, maxZoom: 22, attribution: '&copy; NLSC' });
         let mainStreetLayer = L.tileLayer(osmUrl, { maxNativeZoom: 19, maxZoom: 22, attribution: '&copy; OSM' });
@@ -2458,22 +2442,6 @@
             scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false, keyboard: false, maxZoom: 22
         }).setView([22.644689, 120.357255], 3);
         miniStreetLayer.addTo(minimap);
-
-        function toggleMapSource() {
-            if (currentMapSource === 'nlsc') {
-                currentMapSource = 'google';
-                mainSatLayer.setUrl(googleSatUrl);
-                miniSatLayer.setUrl(googleSatUrl);
-                mainStreetLayer.setUrl(googleStreetUrl);
-                miniStreetLayer.setUrl(googleStreetUrl);
-            } else {
-                currentMapSource = 'nlsc';
-                mainSatLayer.setUrl(nlscSatUrl);
-                miniSatLayer.setUrl(nlscSatUrl);
-                mainStreetLayer.setUrl(osmUrl);
-                miniStreetLayer.setUrl(osmUrl);
-            }
-        }
 
         function toggleMapLayer() {
             if (isSatelliteMain) {
