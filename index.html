@@ -229,7 +229,7 @@
         <div class="w-full max-w-5xl flex flex-col gap-6 my-auto">
             <!-- Header & Connect Button -->
             <div
-                class="glass-panel p-6 rounded-3xl shadow-[0_0_30px_rgba(0,0,0,0.5)] flex flex-col md:flex-row items-center justify-between gap-6 border border-white/10 w-full relative z-20">
+                class="glass-panel p-6 rounded-3xl shadow-[0_0_30px_rgba(0,0,0,0.5)] flex flex-col sm:flex-row items-center justify-between gap-6 border border-white/10 w-full relative z-20">
                 <div class="flex items-center gap-4">
                     <div
                         class="w-16 h-16 bg-gray-900/80 rounded-full flex items-center justify-center shadow-inner border border-gray-700">
@@ -241,16 +241,16 @@
                         </svg>
                     </div>
                     <div>
-                        <h1 class="text-2xl font-bold text-white tracking-widest uppercase drop-shadow-md">Straight
+                        <h1 class="text-lg sm:text-xl md:text-2xl font-bold text-white tracking-widest uppercase drop-shadow-md">Straight
                             Driving Assist Tractor
                         </h1>
                         <p class="text-gray-400 text-xs mt-1" data-i18n="splash-desc">Ready to connect to ROSBridge</p>
                     </div>
                 </div>
 
-                <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto z-30">
+                <div class="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto z-30">
                     <button id="splash-btn-connect"
-                        class="w-full md:w-auto px-8 py-3.5 rounded-xl font-bold tracking-wider uppercase transition-all duration-300 bg-gray-700 text-gray-400 flex justify-center items-center gap-2 border border-gray-600">
+                        class="w-full sm:w-auto px-8 py-3.5 rounded-xl font-bold tracking-wider uppercase transition-all duration-300 bg-gray-700 text-gray-400 flex justify-center items-center gap-2 border border-gray-600">
                         <span data-i18n="splash-btn">Connect System</span>
                     </button>
                     <button onclick="toggleSettings()"
@@ -277,7 +277,7 @@
             <!-- Main Content: Split Views -->
             <div class="flex flex-col gap-4 relative z-10 w-full">
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full">
                     <!-- View 1: 3D/Top-Down View -->
                     <div class="flex flex-col gap-2">
                         <div class="splash-canvas-container">
@@ -295,7 +295,6 @@
                     </div>
                 </div>
             </div>
-
         </div>
     </div>
 
@@ -327,7 +326,7 @@
         </div>
 
         <!-- Cụm Phải: Thông số Telemetry DJI Style -->
-        <div class="flex flex-row items-center gap-3">
+        <div class="flex flex-col sm:flex-row items-end sm:items-center gap-2 sm:gap-3">
             <div
                 class="pointer-events-auto flex items-center gap-4 glass-panel rounded-full px-5 py-2 shadow-lg text-xs font-mono">
                 
@@ -354,6 +353,15 @@
 
             <!-- Nhóm Nút Công cụ -->
             <div class="flex items-center gap-2">
+                <!-- Nút Đổi Lớp Bản Đồ (Satellite / Street) - Chỉ hiển thị trên mobile -->
+                <button onclick="toggleMapLayer()"
+                    class="pointer-events-auto glass-panel hover:bg-white/10 p-2.5 rounded-full shadow-lg transition active:scale-90 flex sm:hidden items-center justify-center"
+                    title="Toggle Map Layer (Satellite / Street)">
+                    <svg class="w-5 h-5 text-gray-300 drop-shadow-md" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                    </svg>
+                </button>
+
                 <!-- Nút Đổi Bản Đồ (Map Source) -->
                 <button onclick="toggleMapSource()"
                     class="pointer-events-auto glass-panel hover:bg-white/10 p-2.5 rounded-full shadow-lg transition active:scale-90 flex items-center gap-1.5"
@@ -376,7 +384,6 @@
                         <path d="M8 12 L16 12 L12 22 Z" fill="currentColor" stroke="currentColor" />
                         <path d="M8 12 L16 12 L12 2 Z" fill="#ef4444" stroke="#ef4444" />
                     </svg>
-                    <!-- <span id="compass-text" class="text-xs font-bold text-green-400 hidden sm:block">P-UP</span> -->
                 </button>
 
                 <!-- Nút Toàn Màn Hình (Fullscreen) -->
@@ -386,7 +393,7 @@
                     <svg class="w-5 h-5 text-gray-300 drop-shadow-md" fill="none" stroke="currentColor"
                         viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4">
+                            d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l-5-5m11 5l-5-5m5 5v-4m0 4h-4">
                         </path>
                     </svg>
                 </button>
@@ -425,26 +432,18 @@
 
     <!-- TOP CENTER CONTROLS: Tinh chỉnh bẻ lái & Chuyển luống -->
     <div id="top-controls-panel"
-        class="absolute top-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-3 glass-panel p-2 rounded-3xl transition-all duration-500 opacity-0 -translate-y-10 pointer-events-none shadow-2xl">
+        class="absolute bottom-48 sm:bottom-auto sm:top-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 sm:gap-3 glass-panel p-2 rounded-3xl transition-all duration-500 opacity-0 -translate-y-10 pointer-events-none shadow-2xl">
 
         <!-- Swath Left -->
-        <!-- <button id="btn-swath-left"
-            class="relative overflow-hidden group select-none bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 border border-indigo-500/30 p-5 rounded-2xl transition active:scale-95 flex justify-center items-center"
-            title="Swath Left">
-            <div class="hold-progress absolute left-0 bottom-0 top-0 w-0 bg-indigo-500/50 pointer-events-none"></div>
-            <svg class="relative z-10 w-7 h-7 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path>
-            </svg>
-        </button> -->
         <button id="btn-swath-left"
-            class="relative overflow-hidden group select-none bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 border border-indigo-500/30 p-5 rounded-2xl transition active:scale-95 flex justify-center items-center"
+            class="relative overflow-hidden group select-none bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 border border-indigo-500/30 p-4 sm:p-5 rounded-2xl transition active:scale-95 flex justify-center items-center"
             title="Swath Left">
 
             <!-- Thanh tiến trình (Progress bar) -->
             <div class="hold-progress absolute left-0 bottom-0 top-0 w-0 bg-indigo-500/50 pointer-events-none"></div>
 
             <!-- Icon -->
-            <svg class="relative z-10 w-7 h-7 group-hover:scale-110 transition-transform" fill="none"
+            <svg class="relative z-10 w-6 h-6 sm:w-7 sm:h-7 group-hover:scale-110 transition-transform" fill="none"
                 stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
                     d="M17 19V9a5 5 0 0 0-10 0v10M3 15l4 4 4-4"></path>
@@ -452,40 +451,39 @@
         </button>
 
         <button id="btn-rotate-left" onclick="callService('/steer_planner_node/rotate_ref_left')"
-            class="bg-white/5 hover:bg-white/15 p-3 rounded-xl transition active:scale-90 flex justify-center items-center"
+            class="bg-white/5 hover:bg-white/15 p-2.5 sm:p-3 rounded-xl transition active:scale-90 flex justify-center items-center"
             title="Rotate Left">
-            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M12 3v18 M18 12a6 6 0 0 0-12 0 M2 8l4 4 4-4"></path>
             </svg>
         </button>
 
+        <!-- Central XTE Display (Mobile-friendly) -->
+        <div id="mobile-xte-container" class="flex flex-col items-center justify-center px-3 py-1 bg-black/45 border border-white/10 rounded-2xl min-w-[75px] sm:min-w-[90px] shadow-inner select-none">
+            <span class="text-[8px] sm:text-[9px] text-gray-400 font-bold uppercase tracking-wider leading-none mb-0.5">XTE</span>
+            <span id="mobile-xte-value" class="text-xs sm:text-sm font-mono font-bold text-gray-400 leading-none">-- m</span>
+        </div>
+
         <button id="btn-rotate-right" onclick="callService('/steer_planner_node/rotate_ref_right')"
-            class="bg-white/5 hover:bg-white/15 p-3 rounded-xl transition active:scale-90 flex justify-center items-center"
+            class="bg-white/5 hover:bg-white/15 p-2.5 sm:p-3 rounded-xl transition active:scale-90 flex justify-center items-center"
             title="Rotate Right">
-            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M12 3v18 M6 12a6 6 0 0 1 12 0 M22 8l-4 4-4-4"></path>
             </svg>
         </button>
+
         <!-- Swath Right -->
-        <!-- <button id="btn-swath-right"
-            class="relative overflow-hidden group select-none bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 border border-indigo-500/30 p-5 rounded-2xl transition active:scale-95 flex justify-center items-center"
-            title="Swath Right">
-            <div class="hold-progress absolute left-0 bottom-0 top-0 w-0 bg-indigo-500/50 pointer-events-none"></div>
-            <svg class="relative z-10 w-7 h-7 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path>
-            </svg>
-        </button> -->
         <button id="btn-swath-right"
-            class="hold-btn relative overflow-hidden group select-none bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 border border-indigo-500/30 p-5 rounded-2xl transition active:scale-95 flex justify-center items-center"
+            class="hold-btn relative overflow-hidden group select-none bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 border border-indigo-500/30 p-4 sm:p-5 rounded-2xl transition active:scale-95 flex justify-center items-center"
             title="Swath Right">
 
             <!-- Thanh tiến trình (Progress bar) -->
             <div class="hold-progress absolute left-0 bottom-0 top-0 w-0 bg-indigo-500/50 pointer-events-none"></div>
 
             <!-- Icon -->
-            <svg class="relative z-10 w-7 h-7 group-hover:scale-110 transition-transform" fill="none"
+            <svg class="relative z-10 w-6 h-6 sm:w-7 sm:h-7 group-hover:scale-110 transition-transform" fill="none"
                 stroke="currentColor" viewBox="0 0 24 24">
                 <!-- Mũi tên quay đầu sang phải (Mirrored) -->
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
@@ -510,28 +508,26 @@
         </div>
 
         <div
-            class="glass-panel p-2 md:p-3 rounded-2xl flex justify-between items-center gap-2 pointer-events-auto shadow-2xl w-full max-w-[95vw] sm:w-auto sm:min-w-[450px] md:min-w-[500px]">
+            class="glass-panel p-2 md:p-3 rounded-2xl grid grid-cols-2 sm:flex sm:flex-row items-center gap-2 pointer-events-auto shadow-2xl w-full max-w-[95vw] sm:w-auto sm:min-w-[450px] md:min-w-[500px]">
 
             <button id="btn-record-vertex"
                 class="relative overflow-hidden select-none flex-1 flex flex-col items-center justify-center bg-blue-500/20 hover:bg-blue-500/40 border border-blue-500/30 py-2 rounded-xl transition active:scale-95 group">
                 <div class="hold-progress absolute left-0 bottom-0 top-0 w-0 bg-blue-500/50 pointer-events-none"></div>
                 <span class="relative z-10 text-xl mb-1 group-hover:scale-110 transition-transform">📍</span>
-                <span class="relative z-10 text-xs font-bold text-blue-100" data-i18n="btn-record-vertex">Record
-                    Vertex</span>
+                <span class="relative z-10 text-xs font-bold text-blue-100" data-i18n="btn-record-vertex">Record Vertex</span>
             </button>
 
-            <div id="divider-path" class="w-px h-10 bg-white/10 mx-1"></div>
+            <div id="divider-path" class="hidden sm:block w-px h-10 bg-white/10 mx-1"></div>
 
             <button id="btn-generate-path"
                 class="relative overflow-hidden select-none flex-1 flex flex-col items-center justify-center bg-green-500/20 hover:bg-green-500/40 border border-green-500/30 py-2 rounded-xl transition active:scale-95 group">
                 <div class="hold-progress absolute left-0 bottom-0 top-0 w-0 bg-green-500/50 pointer-events-none"></div>
                 <span class="relative z-10 text-xl mb-1 group-hover:scale-110 transition-transform">🗺️</span>
-                <span class="relative z-10 text-xs font-bold text-green-100" data-i18n="btn-generate-path">Generate
-                    Path</span>
+                <span class="relative z-10 text-xs font-bold text-green-100" data-i18n="btn-generate-path">Generate Path</span>
             </button>
 
             <!-- Divider và nút Start (hiện khi ở Path mode và đã quy hoạch) -->
-            <div id="divider-start" class="w-px h-10 bg-white/10 mx-1" style="display: none;"></div>
+            <div id="divider-start" class="hidden sm:block w-px h-10 bg-white/10 mx-1" style="display: none;"></div>
 
             <button id="btn-start-path"
                 class="relative overflow-hidden select-none flex-1 flex flex-col items-center justify-center bg-blue-500/20 hover:bg-blue-500/40 border border-blue-500/30 py-2 rounded-xl transition active:scale-95 group"
@@ -542,10 +538,10 @@
             </button>
 
             <!-- Divider và nút Clear All nằm chung hàng -->
-            <div id="divider-clear" class="w-px h-10 bg-white/10 mx-1"></div>
+            <div id="divider-clear" class="hidden sm:block w-px h-10 bg-white/10 mx-1"></div>
 
             <button id="btn-clear-all"
-                class="relative overflow-hidden select-none flex-1 flex flex-col items-center justify-center bg-red-500/20 hover:bg-red-500/40 border border-red-500/30 py-2 rounded-xl transition active:scale-95 group">
+                class="relative overflow-hidden select-none flex-1 flex flex-col items-center justify-center bg-red-500/20 hover:bg-red-500/40 border border-red-500/30 py-2 rounded-xl transition active:scale-95 group col-span-2">
                 <div class="hold-progress absolute left-0 bottom-0 top-0 w-0 bg-red-500/50 pointer-events-none"></div>
                 <span class="relative z-10 text-xl mb-1 group-hover:scale-110 transition-transform">🗑️</span>
                 <span class="relative z-10 text-xs font-bold text-red-100" data-i18n="btn-clear-all">Clear All</span>
@@ -553,19 +549,17 @@
 
             <!-- Nút Record Line (sẽ tự thay đổi UI dựa trên Topic state_machine) -->
             <button id="btn-record-line"
-                class="relative overflow-hidden select-none flex-1 flex flex-col items-center justify-center bg-red-500/20 hover:bg-red-500/40 border border-red-500/30 py-2 rounded-xl transition active:scale-95 group">
+                class="relative overflow-hidden select-none flex-1 flex flex-col items-center justify-center bg-red-500/20 hover:bg-red-500/40 border border-red-500/30 py-2 rounded-xl transition active:scale-95 group col-span-2">
                 <div class="hold-progress absolute left-0 bottom-0 top-0 w-0 bg-white/30 pointer-events-none"></div>
-                <span
-                    class="relative z-10 text-xl mb-1 group-hover:scale-110 transition-transform text-red-400">⏺</span>
-                <span class="relative z-10 text-xs font-bold text-red-100" data-i18n="btn-record-line">Record
-                    Line</span>
+                <span class="relative z-10 text-xl mb-1 group-hover:scale-110 transition-transform text-red-400">⏺</span>
+                <span class="relative z-10 text-xs font-bold text-red-100" data-i18n="btn-record-line">Record Line</span>
             </button>
 
         </div>
     </div>
 
     <!-- BOTTOM LEFT: Minimap & Recenter -->
-    <div class="absolute bottom-6 left-4 z-20 flex flex-col gap-3 pointer-events-none">
+    <div class="absolute bottom-32 sm:bottom-6 left-4 z-20 flex flex-col gap-3 pointer-events-none">
 
         <!-- Nút Trở Về Vị Trí Xe (Recenter) - Mặc định ẩn -->
         <button id="btn-recenter"
@@ -579,7 +573,7 @@
 
         <!-- Minimap Container -->
         <div id="minimap-container"
-            class="w-32 h-32 md:w-48 md:h-48 rounded-2xl border-2 border-white/20 shadow-2xl overflow-hidden cursor-pointer pointer-events-auto transition-transform hover:scale-105 group"
+            class="hidden sm:block w-32 h-32 md:w-48 md:h-48 rounded-2xl border-2 border-white/20 shadow-2xl overflow-hidden cursor-pointer pointer-events-auto transition-transform hover:scale-105 group"
             title="Click to switch map">
             <div id="minimap" class="w-full h-full pointer-events-none"></div>
             <!-- Icon hoán đổi hiện lên khi hover -->
@@ -1641,11 +1635,17 @@
 
             const btnStart = document.getElementById('btn-start-path');
             const divStart = document.getElementById('divider-start');
+            const btnClearAll = document.getElementById('btn-clear-all');
             if (!btnStart || !divStart) return;
 
             if (currentControlMode === 'path' && (fieldPlannerState === 3 || pathFollowerState === 4)) {
                 btnStart.style.display = 'flex';
                 divStart.style.display = 'block';
+
+                if (btnClearAll) {
+                    btnClearAll.classList.remove('col-span-2');
+                    btnClearAll.classList.add('col-span-1');
+                }
 
                 const icon = btnStart.querySelectorAll('span')[0];
                 const text = btnStart.querySelectorAll('span')[1];
@@ -1666,6 +1666,11 @@
             } else {
                 btnStart.style.display = 'none';
                 divStart.style.display = 'none';
+
+                if (btnClearAll) {
+                    btnClearAll.classList.remove('col-span-1');
+                    btnClearAll.classList.add('col-span-2');
+                }
             }
         }
 
@@ -2479,6 +2484,22 @@
             }
         }
 
+        function toggleMapLayer() {
+            if (isSatelliteMain) {
+                map.removeLayer(mainSatLayer);
+                minimap.removeLayer(miniStreetLayer);
+                mainStreetLayer.addTo(map);
+                miniSatLayer.addTo(minimap);
+                isSatelliteMain = false;
+            } else {
+                map.removeLayer(mainStreetLayer);
+                minimap.removeLayer(miniSatLayer);
+                mainSatLayer.addTo(map);
+                miniStreetLayer.addTo(minimap);
+                isSatelliteMain = true;
+            }
+        }
+
         function checkRecenterVisibility() {
             if (!firstGpsFix) return;
             const centerPoint = map.latLngToContainerPoint(map.getCenter());
@@ -2501,21 +2522,7 @@
             checkRecenterVisibility();
         });
 
-        document.getElementById('minimap-container').addEventListener('click', function () {
-            if (isSatelliteMain) {
-                map.removeLayer(mainSatLayer);
-                minimap.removeLayer(miniStreetLayer);
-                mainStreetLayer.addTo(map);
-                miniSatLayer.addTo(minimap);
-                isSatelliteMain = false;
-            } else {
-                map.removeLayer(mainStreetLayer);
-                minimap.removeLayer(miniSatLayer);
-                mainSatLayer.addTo(map);
-                miniStreetLayer.addTo(minimap);
-                isSatelliteMain = true;
-            }
-        });
+        document.getElementById('minimap-container').addEventListener('click', toggleMapLayer);
 
         document.getElementById('btn-recenter').addEventListener('click', function () {
             map.setView([latestLat, latestLon], map.getZoom() < 16 ? 19 : map.getZoom(), { animate: true });
@@ -2674,8 +2681,11 @@
                 // 3. Cập nhật Text XTE và Màu nền thanh tiêu đề
                 const xteEl = document.getElementById('xte-value');
                 const xteHeader = document.getElementById('xte-header');
+                const mobileXteEl = document.getElementById('mobile-xte-value');
+                const mobileXteContainer = document.getElementById('mobile-xte-container');
+                const err = Math.abs(t_d);
+
                 if (xteEl && xteHeader) {
-                    const err = Math.abs(t_d);
                     xteEl.innerText = err.toFixed(2) + ' m';
                     xteEl.className = 'text-xl font-mono font-bold text-white drop-shadow-md';
 
@@ -2685,6 +2695,20 @@
                         xteHeader.className = 'transition-colors duration-300 p-3 border-b flex justify-center items-center z-10 shadow-sm bg-orange-500 border-orange-600';
                     } else {
                         xteHeader.className = 'transition-colors duration-300 p-3 border-b flex justify-center items-center z-10 shadow-sm bg-green-500 border-green-600';
+                    }
+                }
+
+                if (mobileXteEl && mobileXteContainer) {
+                    mobileXteEl.innerText = err.toFixed(2) + ' m';
+                    if (err > 0.5) {
+                        mobileXteEl.className = 'text-xs sm:text-sm font-mono font-bold text-red-400 leading-none';
+                        mobileXteContainer.className = 'flex flex-col items-center justify-center px-3 py-1 bg-red-950/40 border border-red-500/30 rounded-2xl min-w-[75px] sm:min-w-[90px] shadow-inner select-none';
+                    } else if (err > 0.2) {
+                        mobileXteEl.className = 'text-xs sm:text-sm font-mono font-bold text-orange-400 leading-none';
+                        mobileXteContainer.className = 'flex flex-col items-center justify-center px-3 py-1 bg-orange-950/40 border border-orange-500/30 rounded-2xl min-w-[75px] sm:min-w-[90px] shadow-inner select-none';
+                    } else {
+                        mobileXteEl.className = 'text-xs sm:text-sm font-mono font-bold text-green-400 leading-none';
+                        mobileXteContainer.className = 'flex flex-col items-center justify-center px-3 py-1 bg-green-950/40 border border-green-500/30 rounded-2xl min-w-[75px] sm:min-w-[90px] shadow-inner select-none';
                     }
                 }
 
@@ -2726,10 +2750,19 @@
                 // Không có quỹ đạo
                 const xteEl = document.getElementById('xte-value');
                 const xteHeader = document.getElementById('xte-header');
+                const mobileXteEl = document.getElementById('mobile-xte-value');
+                const mobileXteContainer = document.getElementById('mobile-xte-container');
+
                 if (xteEl && xteHeader) {
                     xteEl.innerText = '-- m';
                     xteEl.className = 'text-xl font-mono font-bold text-gray-400';
                     xteHeader.className = 'transition-colors duration-300 p-3 border-b border-gray-200 flex justify-center items-center z-10 shadow-sm bg-gray-100/90';
+                }
+
+                if (mobileXteEl && mobileXteContainer) {
+                    mobileXteEl.innerText = '-- m';
+                    mobileXteEl.className = 'text-xs sm:text-sm font-mono font-bold text-gray-400 leading-none';
+                    mobileXteContainer.className = 'flex flex-col items-center justify-center px-3 py-1 bg-black/45 border border-white/10 rounded-2xl min-w-[75px] sm:min-w-[90px] shadow-inner select-none';
                 }
             }
 
