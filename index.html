@@ -538,7 +538,7 @@
     </div>
 
     <!-- BOTTOM LEFT: Minimap & Recenter -->
-    <div class="absolute bottom-44 sm:bottom-6 left-4 z-20 flex flex-col gap-3 pointer-events-none">
+    <div class="absolute bottom-6 left-4 z-20 flex flex-col gap-3 pointer-events-none">
 
         <!-- Nút Trở Về Vị Trí Xe (Recenter) - Mặc định ẩn -->
         <button id="btn-recenter"
@@ -775,13 +775,7 @@
                             </div>
                         </div>
 
-                        <div class="bg-gray-800/50 p-5 rounded-xl border border-gray-700/50 mt-4">
-                            <h3 class="text-sm font-bold text-gray-300 mb-3 uppercase tracking-wider">
-                                PID Components Analysis</h3>
-                            <div class="relative h-64 w-full">
-                                <canvas id="pidChart"></canvas>
-                            </div>
-                        </div>
+
 
                         <!-- Giám sát Topic (Topic Explorer) -->
                         <div class="bg-gray-800/50 p-5 rounded-xl border border-gray-700/50">
@@ -869,6 +863,7 @@
 
         // Trạng thái xoay Map (Mặc định bật)
         let isHeadingUp = true;
+        let isPannedAway = false;
 
         // ROS Planner State (1: IDLE, 2: RECORDING, 3: ACTIVE)
         let plannerState = 1;
@@ -1706,8 +1701,9 @@
                 if (compassText) compassText.innerText = 'P-UP';
                 if (compassText) compassText.classList.replace('text-blue-400', 'text-green-400');
                 if (compassIcon) compassIcon.classList.replace('text-blue-400', 'text-green-400');
-                // Vô hiệu hóa tính năng di chuyển (drag) bản đồ khi H-UP/P-UP
-                map.dragging.disable();
+                // Cho phép kéo thả bản đồ khi H-UP/P-UP
+                map.dragging.enable();
+                isPannedAway = false;
                 if (latestLat !== null && latestLon !== null) {
                     map.setView([latestLat, latestLon], map.getZoom(), { animate: false });
                 }
@@ -1855,10 +1851,7 @@
                             chart.resize(); 
                             chart.update();
                         }
-                        if (pidChart) {
-                            pidChart.resize();
-                            pidChart.update();
-                        }
+
                     }, 100);
                 } else {
                     authCard.classList.remove('hidden');
@@ -2437,6 +2430,29 @@
         const map = L.map('map', { zoomControl: false, maxZoom: 22 }).setView([22.644689, 120.357255], 7);
         mainSatLayer.addTo(map);
 
+        // Sửa hướng kéo bản đồ khi bản đồ đang bị xoay (H-UP / P-UP)
+        function patchMapDragging() {
+            if (map.dragging) {
+                if (!map.dragging._draggable) {
+                    map.dragging.enable();
+                }
+                if (map.dragging._draggable) {
+                    map.dragging._draggable.on('predrag', function () {
+                        if (isHeadingUp && typeof displayMapAngle === 'number' && displayMapAngle !== 0) {
+                            const offset = this._newPos.subtract(this._startPos);
+                            const angle = -displayMapAngle;
+                            const cos = Math.cos(angle);
+                            const sin = Math.sin(angle);
+                            const rx = offset.x * cos - offset.y * sin;
+                            const ry = offset.x * sin + offset.y * cos;
+                            this._newPos = this._startPos.add(L.point(rx, ry));
+                        }
+                    });
+                }
+            }
+        }
+        patchMapDragging();
+
         const minimap = L.map('minimap', {
             zoomControl: false, attributionControl: false, dragging: false, touchZoom: false,
             scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false, keyboard: false, maxZoom: 22
@@ -2466,8 +2482,8 @@
             const distance = centerPoint.distanceTo(tractorPoint);
             const btn = document.getElementById('btn-recenter');
 
-            // Ẩn Recenter nếu H-UP đang bật vì map luôn được force center
-            if (distance > 30 && !isHeadingUp) {
+            // Hiển thị Recenter nếu khoảng cách lệch lớn hơn 30px
+            if (distance > 30) {
                 btn.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-4');
                 btn.classList.add('pointer-events-auto');
             } else {
@@ -2475,6 +2491,10 @@
                 btn.classList.remove('pointer-events-auto');
             }
         }
+
+        map.on('dragstart', function () {
+            isPannedAway = true;
+        });
 
         map.on('move', function () {
             minimap.setView(map.getCenter(), Math.max(1, map.getZoom() - 4));
@@ -2484,7 +2504,8 @@
         document.getElementById('minimap-container').addEventListener('click', toggleMapLayer);
 
         document.getElementById('btn-recenter').addEventListener('click', function () {
-            map.setView([latestLat, latestLon], map.getZoom() < 16 ? 19 : map.getZoom(), { animate: true });
+            isPannedAway = false;
+            map.setView([latestLat, latestLon], 21, { animate: true });
         });
 
         const tractorHtml = `
@@ -2786,7 +2807,6 @@
         });
 
         let chartUpdatePending = false;
-        let pidChartUpdatePending = false;
 
         // Tiết lưu cập nhật đồ thị (10Hz) chỉ khi Settings đang mở
         setInterval(() => {
@@ -2794,10 +2814,6 @@
                 if (chartUpdatePending && chart) {
                     chart.update();
                     chartUpdatePending = false;
-                }
-                if (pidChartUpdatePending && pidChart) {
-                    pidChart.update();
-                    pidChartUpdatePending = false;
                 }
             }
         }, 100);
@@ -2810,86 +2826,7 @@
             chartUpdatePending = true;
         }
 
-        // --- Cấu hình PID Chart ---
-        // --- Cấu hình PID Chart có hiển thị số trực tiếp ---
-        const ctxPidChart = document.getElementById('pidChart').getContext('2d');
-        const pidChart = new Chart(ctxPidChart, {
-            type: 'line',
-            data: {
-                labels: Array(50).fill(''),
-                datasets: [
-                    { label: 'Yaw P', borderColor: '#ef4444', data: Array(50).fill(0), tension: 0.2, borderWidth: 2, pointRadius: 0 },
-                    { label: 'Yaw I', borderColor: '#f97316', data: Array(50).fill(0), tension: 0.2, borderWidth: 2, pointRadius: 0, borderDash: [5, 5] },
-                    { label: 'Yaw D', borderColor: '#eab308', data: Array(50).fill(0), tension: 0.2, borderWidth: 2, pointRadius: 0 },
-                    { label: 'Pos P', borderColor: '#3b82f6', data: Array(50).fill(0), tension: 0.2, borderWidth: 2, pointRadius: 0 },
-                    { label: 'Pos I', borderColor: '#06b6d4', data: Array(50).fill(0), tension: 0.2, borderWidth: 2, pointRadius: 0, borderDash: [5, 5] },
-                    { label: 'Pos D', borderColor: '#8b5cf6', data: Array(50).fill(0), tension: 0.2, borderWidth: 2, pointRadius: 0 }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                animation: false,
-                layout: {
-                    padding: {
-                        right: 45 // CHÚ Ý: Chừa khoảng trống bên phải để hiển thị chữ không bị che mất
-                    }
-                },
-                scales: {
-                    y: { grid: { color: '#374151' } },
-                    x: { grid: { display: false } }
-                },
-                plugins: { legend: { labels: { color: '#D1D5DB', font: { size: 10 } } } }
-            },
-            // Gắn mã Custom Plugin vẽ chữ vào đây
-            plugins: [{
-                id: 'realtimeLabels',
-                afterDatasetsDraw(chart) {
-                    const { ctx } = chart;
-                    ctx.save();
-                    ctx.font = 'bold 11px monospace'; // Định dạng phông chữ kiểu số kỹ thuật
-                    ctx.textBaseline = 'middle';
 
-                    chart.data.datasets.forEach((dataset, index) => {
-                        const meta = chart.getDatasetMeta(index);
-
-                        // Chỉ vẽ nếu đường đồ thị đó đang được bật (không bị nhấn ẩn đi ở Legend)
-                        if (!meta.hidden && meta.data.length > 0) {
-                            const lastPoint = meta.data[meta.data.length - 1]; // Điểm pixel cuối cùng trên canvas
-                            const lastValue = dataset.data[dataset.data.length - 1]; // Giá trị số thực tế
-
-                            if (lastPoint && !isNaN(lastValue)) {
-                                ctx.fillStyle = dataset.borderColor; // Lấy màu chữ trùng màu đường line
-
-                                // Vẽ giá trị số cách điểm cuối 6 pixel về phía bên phải
-                                ctx.fillText(lastValue.toFixed(3), lastPoint.x + 6, lastPoint.y);
-                            }
-                        }
-                    });
-                    ctx.restore();
-                }
-            }]
-        });
-
-        // Hàm cập nhật dữ liệu cho biểu đồ PID
-        function updatePidChart(componentsArray) {
-            if (!pidChart) return;
-            // 1. Đẩy dữ liệu vào đồ thị Chart.js như cũ
-            for (let i = 0; i < 6; i++) {
-                const dataArr = pidChart.data.datasets[i].data;
-                dataArr.push(componentsArray[i]);
-                dataArr.shift();
-            }
-            pidChartUpdatePending = true;
-
-            // 2. Cập nhật giá trị ra các thẻ số ngoài màn hình HTML
-            document.getElementById('num-yp').innerText = componentsArray[0].toFixed(3);
-            document.getElementById('num-yi').innerText = componentsArray[1].toFixed(3);
-            document.getElementById('num-yd').innerText = componentsArray[2].toFixed(3);
-            document.getElementById('num-pp').innerText = componentsArray[3].toFixed(3);
-            document.getElementById('num-pi').innerText = componentsArray[4].toFixed(3);
-            document.getElementById('num-pd').innerText = componentsArray[5].toFixed(3);
-        }
 
         // --- 7. ROS 2 Parameter Logic ---
         function refreshNodes() {
@@ -3474,8 +3411,8 @@
                     if (!firstGpsFix) {
                         map.setView([tractorLat, tractorLon], 19);
                         firstGpsFix = true;
-                    } else if (isHeadingUp) {
-                        // Tự động kéo bản đồ theo xe khi H-UP được kích hoạt
+                    } else if (isHeadingUp && !isPannedAway) {
+                        // Tự động kéo bản đồ theo xe khi H-UP được kích hoạt và không bị pan đi
                         map.setView([tractorLat, tractorLon], map.getZoom(), { animate: false });
                     }
                     checkRecenterVisibility();
@@ -3563,12 +3500,7 @@
                 updateChart(1, odomYawDeg);
             },100);
 
-            // Theo dõi thành phần PID
-            subscribeToTopic('/pid_components', 'std_msgs/Float64MultiArray', (m) => {
-                if (m.data && m.data.length === 6) {
-                    updatePidChart(m.data);
-                }
-            },100);
+
 
             subscribeToTopic('/reference_line', 'nav_msgs/msg/Path', (m) => {
                 if (m.poses && m.poses.length > 0) {
