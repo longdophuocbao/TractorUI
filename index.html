@@ -353,6 +353,16 @@
 
             <!-- Nhóm Nút Công cụ -->
             <div class="flex items-center gap-2">
+                <!-- Nút Bật/Tắt Panel Depth Control -->
+                <button id="btn-toggle-depth" onclick="toggleDepthPanel()"
+                    class="pointer-events-auto glass-panel hover:bg-white/10 p-2.5 rounded-full shadow-lg transition active:scale-90 flex items-center justify-center text-blue-400"
+                    title="Toggle Depth Control" data-i18n-title="depth-toggle-panel">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+                    </svg>
+                </button>
+
                 <!-- Nút La Bàn (Chuyển chế độ N-UP / P-UP) -->
                 <button id="btn-compass" onclick="toggleMapRotation()"
                     class="pointer-events-auto glass-panel hover:bg-white/10 p-2.5 rounded-full shadow-lg transition active:scale-90 flex items-center gap-1.5"
@@ -563,6 +573,158 @@
                         d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
                 </svg>
             </div>
+        </div>
+    </div>
+
+    <!-- RIGHT PANEL: Depth Control -->
+    <div id="depth-panel"
+        class="absolute right-4 top-20 z-20 w-[280px] glass-panel rounded-2xl shadow-2xl border border-white/10 p-3.5 flex flex-col gap-2.5 pointer-events-auto transition-all duration-300 hidden sm:flex">
+
+        <!-- Header: title + live depth link dot + collapse button -->
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <span class="text-xs font-bold text-gray-200 uppercase tracking-wider flex items-center gap-1.5"
+                    data-i18n="depth-title">
+                    <svg class="w-3.5 h-3.5 text-blue-400 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+                    </svg>
+                    Depth Control
+                </span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span id="depth-link-dot" class="w-2.5 h-2.5 rounded-full bg-gray-500 transition-colors" title="depth link"></span>
+                <button id="depth-toggle-collapse" type="button" onclick="toggleDepthCollapse()"
+                    class="text-gray-400 hover:text-white p-1 rounded transition active:scale-90" title="Collapse/Expand">
+                    <svg id="depth-collapse-icon" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Readout: Depth actual + error badge + telemetry badges -->
+        <div class="bg-black/30 rounded-xl p-2.5 border border-white/5 flex flex-col gap-1.5">
+            <div class="flex items-baseline justify-between">
+                <div class="flex items-baseline gap-1">
+                    <span id="depth-actual" class="text-2xl font-mono font-bold text-white tracking-tight">--</span>
+                    <span class="text-xs font-mono text-gray-400">mm</span>
+                </div>
+                <div id="depth-error-badge" class="text-[11px] font-mono font-semibold px-2 py-0.5 rounded-md bg-gray-800 text-gray-400">
+                    <span data-i18n="depth-error">Err</span>: <span id="depth-error-val">--</span>
+                </div>
+            </div>
+
+            <!-- Telemetry Details: Lift angle & Tailboard angle -->
+            <div class="grid grid-cols-2 gap-1.5 pt-1 border-t border-white/5 text-[11px] font-mono text-gray-400">
+                <div class="flex items-center justify-between bg-white/5 px-2 py-1 rounded">
+                    <span data-i18n="depth-lift">Lift</span>
+                    <span class="text-white font-bold"><span id="depth-lift-actual">--.-</span>°</span>
+                </div>
+                <div class="flex items-center justify-between bg-white/5 px-2 py-1 rounded">
+                    <span data-i18n="depth-tail">Tail</span>
+                    <span class="text-white font-bold"><span id="depth-tail-actual">--.-</span>°</span>
+                </div>
+            </div>
+
+            <!-- Depth Gauge Bar -->
+            <div class="relative w-full h-1.5 bg-gray-800 rounded-full overflow-hidden mt-0.5" title="Depth Gauge">
+                <div id="depth-gauge-actual" class="absolute top-0 bottom-0 left-0 bg-blue-500 rounded-full transition-all duration-200" style="width: 0%;"></div>
+                <div id="depth-gauge-target" class="absolute top-0 bottom-0 w-1 bg-yellow-400 -translate-x-1/2 transition-all duration-200" style="left: 0%;"></div>
+            </div>
+        </div>
+
+        <!-- Collapsible Content (Mode, Inputs, Steppers, Controls) -->
+        <div id="depth-collapsible-content" class="flex flex-col gap-2.5 transition-all duration-300">
+            <!-- Mode selector -->
+            <div class="grid grid-cols-2 gap-2">
+                <button id="depth-mode-auto" data-depth-mode="0"
+                    class="depth-mode-btn py-1.5 rounded-lg text-xs font-bold bg-blue-600 text-white transition-colors active:scale-95"
+                    data-i18n="depth-mode-auto">AUTO</button>
+                <button id="depth-mode-manual" data-depth-mode="1"
+                    class="depth-mode-btn py-1.5 rounded-lg text-xs font-bold bg-gray-700 text-gray-300 transition-colors active:scale-95"
+                    data-i18n="depth-mode-manual">MANUAL</button>
+            </div>
+
+            <!-- AUTO: depth setpoint in mm with steppers and presets -->
+            <div id="depth-auto-input" class="flex flex-col gap-1.5">
+                <div class="flex items-center justify-between">
+                    <label class="text-[10px] text-gray-400 uppercase tracking-wider"
+                        data-i18n="depth-set-mm">Target depth (mm)</label>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <button type="button" onclick="adjustDepthTarget(-20)"
+                        class="px-2.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-300 text-xs font-mono font-bold active:scale-90 transition">
+                        -20
+                    </button>
+                    <button type="button" onclick="adjustDepthTarget(-10)"
+                        class="px-2.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-300 text-xs font-mono font-bold active:scale-90 transition">
+                        -10
+                    </button>
+                    <input id="depth-target-mm" type="number" min="50" max="150" step="5" value="120"
+                        class="flex-1 min-w-0 bg-gray-900/90 border border-gray-600 rounded-lg px-1 py-1 text-center text-white font-mono text-base font-bold focus:outline-none focus:border-blue-500">
+                    <button type="button" onclick="adjustDepthTarget(10)"
+                        class="px-2.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-300 text-xs font-mono font-bold active:scale-90 transition">
+                        +10
+                    </button>
+                    <button type="button" onclick="adjustDepthTarget(20)"
+                        class="px-2.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-300 text-xs font-mono font-bold active:scale-90 transition">
+                        +20
+                    </button>
+                </div>
+                <!-- Preset chips -->
+                <div class="flex items-center justify-between gap-1 pt-0.5">
+                    <button type="button" onclick="setDepthTargetPreset(80)"
+                        class="flex-1 py-1 text-[10px] font-mono rounded bg-white/5 hover:bg-white/15 border border-white/10 text-gray-300 transition active:scale-95">80</button>
+                    <button type="button" onclick="setDepthTargetPreset(100)"
+                        class="flex-1 py-1 text-[10px] font-mono rounded bg-white/5 hover:bg-white/15 border border-white/10 text-gray-300 transition active:scale-95">100</button>
+                    <button type="button" onclick="setDepthTargetPreset(120)"
+                        class="flex-1 py-1 text-[10px] font-mono rounded bg-white/5 hover:bg-white/15 border border-white/10 text-gray-300 transition active:scale-95">120</button>
+                    <button type="button" onclick="setDepthTargetPreset(150)"
+                        class="flex-1 py-1 text-[10px] font-mono rounded bg-white/5 hover:bg-white/15 border border-white/10 text-gray-300 transition active:scale-95">150</button>
+                </div>
+            </div>
+
+            <!-- MANUAL: lift arm angle with steppers and presets -->
+            <div id="depth-manual-input" class="flex-col gap-1.5 hidden">
+                <div class="flex items-center justify-between">
+                    <label class="text-[10px] text-gray-400 uppercase tracking-wider"
+                        data-i18n="depth-set-angle">Lift arm angle</label>
+                    <span class="text-xs text-white font-mono font-bold"><span id="depth-angle-value">20.0</span>°</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="adjustDepthAngle(-1.0)"
+                        class="px-2.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-300 text-xs font-mono font-bold active:scale-90 transition">
+                        -1°
+                    </button>
+                    <input id="depth-target-deg" type="range" min="0" max="35" step="0.5" value="20"
+                        class="flex-1 accent-blue-500 h-2 bg-gray-700 rounded-lg cursor-pointer">
+                    <button type="button" onclick="adjustDepthAngle(1.0)"
+                        class="px-2.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-300 text-xs font-mono font-bold active:scale-90 transition">
+                        +1°
+                    </button>
+                </div>
+                <!-- Angle Presets -->
+                <div class="flex items-center justify-between gap-1 pt-0.5">
+                    <button type="button" onclick="setDepthAnglePreset(10.0)"
+                        class="flex-1 py-1 text-[10px] font-mono rounded bg-white/5 hover:bg-white/15 border border-white/10 text-gray-300 transition active:scale-95">10°</button>
+                    <button type="button" onclick="setDepthAnglePreset(15.0)"
+                        class="flex-1 py-1 text-[10px] font-mono rounded bg-white/5 hover:bg-white/15 border border-white/10 text-gray-300 transition active:scale-95">15°</button>
+                    <button type="button" onclick="setDepthAnglePreset(20.0)"
+                        class="flex-1 py-1 text-[10px] font-mono rounded bg-white/5 hover:bg-white/15 border border-white/10 text-gray-300 transition active:scale-95">20°</button>
+                    <button type="button" onclick="setDepthAnglePreset(25.0)"
+                        class="flex-1 py-1 text-[10px] font-mono rounded bg-white/5 hover:bg-white/15 border border-white/10 text-gray-300 transition active:scale-95">25°</button>
+                </div>
+            </div>
+
+            <!-- Tap to engage, hold 1 s to disengage -->
+            <button id="depth-active-btn"
+                class="relative overflow-hidden w-full py-3 rounded-xl font-bold text-sm bg-emerald-600 hover:bg-emerald-500 text-white transition-colors select-none touch-none shadow-md shadow-emerald-900/40">
+                <span id="depth-active-fill"
+                    class="absolute inset-y-0 left-0 w-0 bg-white/35 pointer-events-none"></span>
+                <span id="depth-active-label" class="relative" data-i18n="depth-activate">ACTIVATE</span>
+            </button>
+            <p class="text-[10px] text-gray-400 text-center leading-tight -mt-1" data-i18n="depth-hold-hint">
+                Tap to engage &middot; hold 1 s to disengage</p>
         </div>
     </div>
 
@@ -975,7 +1137,21 @@
                 "btn-unlock": "Unlock",
                 "btn-lock": "Lock Engineer Mode",
                 "swath-simulation": "Swath Simulation",
-                "lbl-working-width": "Implement Working Width:"
+                "lbl-working-width": "Implement Working Width:",
+                "depth-title": "Depth Control",
+                "depth-mode-auto": "AUTO",
+                "depth-mode-manual": "MANUAL",
+                "depth-set-mm": "Target depth (mm)",
+                "depth-set-angle": "Lift arm angle",
+                "depth-activate": "ACTIVATE",
+                "depth-deactivate": "DEACTIVATE",
+                "depth-active": "ACTIVE",
+                "depth-hold-hint": "Tap to engage · hold 1 s to disengage",
+                "depth-releasing": "RELEASING...",
+                "depth-lift": "Lift",
+                "depth-tail": "Tail",
+                "depth-error": "Err",
+                "depth-toggle-panel": "Toggle Depth Control"
             },
             zh: {
                 "hud-disconnected": "已斷開",
@@ -1034,7 +1210,21 @@
                 "btn-unlock": "解鎖",
                 "btn-lock": "鎖定工程師模式",
                 "swath-simulation": "作業路徑模擬",
-                "lbl-working-width": "農具作業寬度:"
+                "lbl-working-width": "農具作業寬度:",
+                "depth-title": "耕深控制",
+                "depth-mode-auto": "自動",
+                "depth-mode-manual": "手動",
+                "depth-set-mm": "目標耕深 (mm)",
+                "depth-set-angle": "提升臂角度",
+                "depth-activate": "啟動",
+                "depth-deactivate": "解除",
+                "depth-active": "運行中",
+                "depth-hold-hint": "點擊啟動 · 長按 1 秒解除",
+                "depth-releasing": "解除中...",
+                "depth-lift": "提升臂",
+                "depth-tail": "尾門",
+                "depth-error": "偏差",
+                "depth-toggle-panel": "切換耕深控制"
             }
         };
 
@@ -3226,6 +3416,7 @@
                 splashLastTime = performance.now();
                 splashAnimFrame = requestAnimationFrame(splashAnimationLoop);
             }
+            resetDepthControlUI();
             resetSplashBtn();
         });
 
@@ -3262,6 +3453,390 @@
                 }
             }
         });
+
+        // ---------------------------------------------------------------------
+        // Depth Control: Publisher, State & UI Logic
+        // ---------------------------------------------------------------------
+        const depthCmdPub = new ROSLIB.Topic({
+            ros: ros,
+            name: '/ui/depth_command',
+            messageType: 'tractor_espnow_bridge/msg/DepthUiCommand'
+        });
+
+        let depthCurrentMode = 0; // 0 = AUTO, 1 = MANUAL
+        let depthEnabled = false;
+        let depthPublishThrottleTimer = null;
+        let depthHoldTimer = null;
+        let depthPressStartTime = 0;
+        let isDepthHolding = false;
+
+        function getDepthTarget() {
+            if (depthCurrentMode === 0) {
+                // AUTO: input in mm, controller operates directly in mm (50..150 mm)
+                const inputEl = document.getElementById('depth-target-mm');
+                let valMm = inputEl ? parseFloat(inputEl.value) : 120;
+                if (isNaN(valMm)) valMm = 120;
+                return Math.max(50.0, Math.min(150.0, valMm));
+            } else {
+                // MANUAL: lift arm angle in deg (0..35 deg)
+                const sliderEl = document.getElementById('depth-target-deg');
+                let valDeg = sliderEl ? parseFloat(sliderEl.value) : 20.0;
+                if (isNaN(valDeg)) valDeg = 20.0;
+                return Math.max(0.0, Math.min(35.0, valDeg));
+            }
+        }
+
+        function publishDepthCommand() {
+            if (!ros.isConnected) return;
+            const targetVal = getDepthTarget();
+            depthCmdPub.publish(new ROSLIB.Message({
+                mode: depthCurrentMode,
+                target: targetVal,
+                enable: depthEnabled
+            }));
+        }
+
+        function throttledPublishDepthCommand() {
+            if (depthPublishThrottleTimer) return;
+            depthPublishThrottleTimer = setTimeout(() => {
+                depthPublishThrottleTimer = null;
+                if (depthEnabled) publishDepthCommand();
+            }, 80);
+        }
+
+        function setDepthMode(mode) {
+            depthCurrentMode = mode;
+            const btnAuto = document.getElementById('depth-mode-auto');
+            const btnManual = document.getElementById('depth-mode-manual');
+            const autoInput = document.getElementById('depth-auto-input');
+            const manualInput = document.getElementById('depth-manual-input');
+
+            if (mode === 0) {
+                if (btnAuto) {
+                    btnAuto.classList.remove('bg-gray-700', 'text-gray-300');
+                    btnAuto.classList.add('bg-blue-600', 'text-white');
+                }
+                if (btnManual) {
+                    btnManual.classList.remove('bg-blue-600', 'text-white');
+                    btnManual.classList.add('bg-gray-700', 'text-gray-300');
+                }
+                if (autoInput) autoInput.classList.remove('hidden');
+                if (manualInput) {
+                    manualInput.classList.add('hidden');
+                    manualInput.classList.remove('flex');
+                }
+            } else {
+                if (btnManual) {
+                    btnManual.classList.remove('bg-gray-700', 'text-gray-300');
+                    btnManual.classList.add('bg-blue-600', 'text-white');
+                }
+                if (btnAuto) {
+                    btnAuto.classList.remove('bg-blue-600', 'text-white');
+                    btnAuto.classList.add('bg-gray-700', 'text-gray-300');
+                }
+                if (manualInput) {
+                    manualInput.classList.remove('hidden');
+                    manualInput.classList.add('flex');
+                }
+                if (autoInput) autoInput.classList.add('hidden');
+            }
+
+            if (depthEnabled) {
+                publishDepthCommand();
+            }
+        }
+
+        function updateDepthActiveUI(enabled) {
+            const btn = document.getElementById('depth-active-btn');
+            const fill = document.getElementById('depth-active-fill');
+            const label = document.getElementById('depth-active-label');
+            if (!btn || !label) return;
+
+            if (enabled) {
+                btn.classList.remove('bg-emerald-600', 'hover:bg-emerald-500', 'shadow-emerald-900/40', 'bg-gray-700', 'text-gray-200');
+                btn.classList.add('bg-red-600', 'hover:bg-red-500', 'text-white', 'shadow-lg', 'shadow-red-900/50');
+                label.setAttribute('data-i18n', 'depth-deactivate');
+                label.innerText = t('depth-deactivate');
+            } else {
+                btn.classList.remove('bg-red-600', 'hover:bg-red-500', 'shadow-lg', 'shadow-red-900/50', 'bg-gray-700', 'text-gray-200');
+                btn.classList.add('bg-emerald-600', 'hover:bg-emerald-500', 'text-white', 'shadow-md', 'shadow-emerald-900/40');
+                label.setAttribute('data-i18n', 'depth-activate');
+                label.innerText = t('depth-activate');
+            }
+            if (fill) {
+                fill.style.transition = 'width 0.2s ease-out';
+                fill.style.width = '0%';
+            }
+        }
+
+        // --- Depth UI Steppers & Presets ---
+        function adjustDepthTarget(deltaMm) {
+            const inputMm = document.getElementById('depth-target-mm');
+            if (!inputMm) return;
+            let cur = parseFloat(inputMm.value) || 120;
+            let next = Math.max(50, Math.min(150, cur + deltaMm));
+            inputMm.value = next;
+            updateDepthGauge();
+            if (depthEnabled) {
+                publishDepthCommand();
+            }
+        }
+
+        function setDepthTargetPreset(valMm) {
+            const inputMm = document.getElementById('depth-target-mm');
+            if (!inputMm) return;
+            inputMm.value = valMm;
+            updateDepthGauge();
+            if (depthEnabled) {
+                publishDepthCommand();
+            }
+        }
+
+        function adjustDepthAngle(deltaDeg) {
+            const slider = document.getElementById('depth-target-deg');
+            const valDisplay = document.getElementById('depth-angle-value');
+            if (!slider) return;
+            let cur = parseFloat(slider.value) || 20.0;
+            let next = Math.max(0.0, Math.min(35.0, +(cur + deltaDeg).toFixed(1)));
+            slider.value = next;
+            if (valDisplay) valDisplay.innerText = next.toFixed(1);
+            if (depthEnabled) {
+                publishDepthCommand();
+            }
+        }
+
+        function setDepthAnglePreset(valDeg) {
+            const slider = document.getElementById('depth-target-deg');
+            const valDisplay = document.getElementById('depth-angle-value');
+            if (!slider) return;
+            slider.value = valDeg;
+            if (valDisplay) valDisplay.innerText = valDeg.toFixed(1);
+            if (depthEnabled) {
+                publishDepthCommand();
+            }
+        }
+
+        function updateDepthGauge(actualMm) {
+            const gaugeActual = document.getElementById('depth-gauge-actual');
+            const gaugeTarget = document.getElementById('depth-gauge-target');
+            const inputMm = document.getElementById('depth-target-mm');
+            const targetMm = inputMm ? parseFloat(inputMm.value) || 120 : 120;
+
+            const maxScaleMm = 150;
+            if (gaugeTarget) {
+                const pctTarget = Math.max(0, Math.min(100, (targetMm / maxScaleMm) * 100));
+                gaugeTarget.style.left = pctTarget + '%';
+            }
+            if (gaugeActual && actualMm !== undefined) {
+                const pctActual = Math.max(0, Math.min(100, (actualMm / maxScaleMm) * 100));
+                gaugeActual.style.width = pctActual + '%';
+            }
+        }
+
+        let isDepthCollapsed = false;
+        function toggleDepthCollapse() {
+            isDepthCollapsed = !isDepthCollapsed;
+            const content = document.getElementById('depth-collapsible-content');
+            const icon = document.getElementById('depth-collapse-icon');
+            if (content) {
+                if (isDepthCollapsed) {
+                    content.classList.add('hidden');
+                } else {
+                    content.classList.remove('hidden');
+                }
+            }
+            if (icon) {
+                icon.style.transform = isDepthCollapsed ? 'rotate(180deg)' : 'rotate(0deg)';
+            }
+        }
+
+        function toggleDepthPanel() {
+            const panel = document.getElementById('depth-panel');
+            if (!panel) return;
+            if (panel.classList.contains('hidden')) {
+                panel.classList.remove('hidden');
+                panel.classList.add('flex');
+            } else if (panel.classList.contains('sm:flex') && window.innerWidth < 640) {
+                panel.classList.remove('hidden');
+                panel.classList.add('flex');
+            } else {
+                panel.classList.add('hidden');
+                panel.classList.remove('flex');
+            }
+        }
+
+        function resetDepthControlUI() {
+            depthEnabled = false;
+            updateDepthActiveUI(false);
+            const depthActual = document.getElementById('depth-actual');
+            if (depthActual) depthActual.innerText = '--';
+            const depthLiftActual = document.getElementById('depth-lift-actual');
+            if (depthLiftActual) depthLiftActual.innerText = '--.-';
+            const depthTailActual = document.getElementById('depth-tail-actual');
+            if (depthTailActual) depthTailActual.innerText = '--.-';
+            const depthErrorVal = document.getElementById('depth-error-val');
+            if (depthErrorVal) depthErrorVal.innerText = '--';
+            const depthLinkDot = document.getElementById('depth-link-dot');
+            if (depthLinkDot) {
+                depthLinkDot.className = 'w-2.5 h-2.5 rounded-full bg-gray-500 transition-colors';
+                depthLinkDot.title = 'depth link';
+            }
+            updateDepthGauge(0);
+        }
+
+        function initDepthControl() {
+            const btnAuto = document.getElementById('depth-mode-auto');
+            const btnManual = document.getElementById('depth-mode-manual');
+            const sliderDeg = document.getElementById('depth-target-deg');
+            const inputMm = document.getElementById('depth-target-mm');
+            const activeBtn = document.getElementById('depth-active-btn');
+            const activeFill = document.getElementById('depth-active-fill');
+            const activeLabel = document.getElementById('depth-active-label');
+
+            if (btnAuto) btnAuto.addEventListener('click', () => setDepthMode(0));
+            if (btnManual) btnManual.addEventListener('click', () => setDepthMode(1));
+
+            if (sliderDeg) {
+                sliderDeg.addEventListener('input', (e) => {
+                    const val = parseFloat(e.target.value);
+                    const valDisplay = document.getElementById('depth-angle-value');
+                    if (valDisplay) valDisplay.innerText = val.toFixed(1);
+                    if (depthEnabled) {
+                        throttledPublishDepthCommand();
+                    }
+                });
+                sliderDeg.addEventListener('change', () => {
+                    if (depthEnabled) {
+                        publishDepthCommand();
+                    }
+                });
+            }
+
+            if (inputMm) {
+                inputMm.addEventListener('input', () => updateDepthGauge());
+                inputMm.addEventListener('change', () => {
+                    updateDepthGauge();
+                    if (depthEnabled) {
+                        publishDepthCommand();
+                    }
+                });
+                inputMm.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        inputMm.blur();
+                        updateDepthGauge();
+                        if (depthEnabled) {
+                            publishDepthCommand();
+                        }
+                    }
+                });
+            }
+
+            if (activeBtn) {
+                const startActivePress = (e) => {
+                    if (e.type === 'mousedown' && e.button !== 0) return;
+                    if (e.pointerType === 'mouse' && e.button !== 0) return;
+                    e.preventDefault();
+
+                    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    if (audioCtx.state === 'suspended') audioCtx.resume();
+
+                    isDepthHolding = true;
+                    depthPressStartTime = performance.now();
+
+                    if (depthHoldTimer) {
+                        clearTimeout(depthHoldTimer);
+                        depthHoldTimer = null;
+                    }
+
+                    if (depthEnabled) {
+                        // Đang ACTIVE: Chuẩn bị giữ 1s để tắt (Disengage)
+                        if (activeFill) {
+                            activeFill.style.transition = 'none';
+                            activeFill.style.width = '0%';
+                            void activeFill.offsetWidth;
+                            activeFill.style.transition = 'width 1000ms linear';
+                            activeFill.style.width = '100%';
+                        }
+                        if (activeLabel) {
+                            activeLabel.innerText = t('depth-releasing');
+                        }
+
+                        depthHoldTimer = setTimeout(() => {
+                            if (isDepthHolding && depthEnabled) {
+                                depthEnabled = false;
+                                publishDepthCommand();
+                                updateDepthActiveUI(false);
+                                if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+                                playSuccessSound();
+                                activeBtn.classList.add('animate-pop-bounce');
+                                setTimeout(() => activeBtn.classList.remove('animate-pop-bounce'), 300);
+                                isDepthHolding = false;
+                                depthHoldTimer = null;
+                            }
+                        }, 1000);
+                    }
+                };
+
+                const endActivePress = (e) => {
+                    if (!isDepthHolding) return;
+                    const elapsed = performance.now() - depthPressStartTime;
+                    isDepthHolding = false;
+
+                    if (depthHoldTimer) {
+                        clearTimeout(depthHoldTimer);
+                        depthHoldTimer = null;
+                    }
+
+                    if (!depthEnabled) {
+                        // Đang TẮT: Tap (<1000ms) để BẬT (Engage)
+                        if (elapsed < 1000) {
+                            depthEnabled = true;
+                            publishDepthCommand();
+                            updateDepthActiveUI(true);
+                            if (navigator.vibrate) navigator.vibrate(80);
+                            playSuccessSound();
+                            activeBtn.classList.add('animate-pop-bounce');
+                            setTimeout(() => activeBtn.classList.remove('animate-pop-bounce'), 300);
+                        }
+                    } else {
+                        // Đang BẬT: Nhả trước 1s -> Hủy thao tác tắt
+                        if (activeFill) {
+                            activeFill.style.transition = 'width 0.2s ease-out';
+                            activeFill.style.width = '0%';
+                        }
+                        if (activeLabel) {
+                            activeLabel.innerText = t('depth-deactivate');
+                        }
+                    }
+                };
+
+                const cancelActivePress = () => {
+                    if (!isDepthHolding) return;
+                    isDepthHolding = false;
+                    if (depthHoldTimer) {
+                        clearTimeout(depthHoldTimer);
+                        depthHoldTimer = null;
+                    }
+                    if (depthEnabled) {
+                        if (activeFill) {
+                            activeFill.style.transition = 'width 0.2s ease-out';
+                            activeFill.style.width = '0%';
+                        }
+                        if (activeLabel) {
+                            activeLabel.innerText = t('depth-deactivate');
+                        }
+                    }
+                };
+
+                activeBtn.addEventListener('pointerdown', startActivePress);
+                activeBtn.addEventListener('pointerup', endActivePress);
+                activeBtn.addEventListener('pointerleave', cancelActivePress);
+                activeBtn.addEventListener('pointercancel', cancelActivePress);
+                activeBtn.addEventListener('contextmenu', e => e.preventDefault());
+            }
+
+            updateDepthGauge();
+        }
 
         function subscribeToTopic(name, type, callback, throttleRate=0) {
             new ROSLIB.Topic({ ros: ros, name: name, messageType: type, throttle_rate: throttleRate }).subscribe(callback);
@@ -3701,6 +4276,84 @@
                 fieldPlannerState = m.data;
                 updatePathModeUI();
             },100);
+
+            // --- Depth Control Subscriptions ---
+            subscribeToTopic('/depth_link/status', 'tractor_espnow_bridge/msg/DepthLinkStatus', (m) => {
+                const depthActual = document.getElementById('depth-actual');
+                const depthLinkDot = document.getElementById('depth-link-dot');
+                const depthLiftActual = document.getElementById('depth-lift-actual');
+                const depthTailActual = document.getElementById('depth-tail-actual');
+                const depthErrorVal = document.getElementById('depth-error-val');
+                const depthErrorBadge = document.getElementById('depth-error-badge');
+                const inputMm = document.getElementById('depth-target-mm');
+
+                if (m.link_ok) {
+                    const actualMm = Math.round(m.estimate_depth_cm);
+                    if (depthActual) {
+                        depthActual.innerText = actualMm;
+                    }
+                    if (depthLiftActual) {
+                        depthLiftActual.innerText = m.lift_angle_deg.toFixed(1);
+                    }
+                    if (depthTailActual) {
+                        depthTailActual.innerText = m.tail_angle_deg.toFixed(1);
+                    }
+
+                    // Tính sai số độ sâu khi ở AUTO mode
+                    if (depthCurrentMode === 0 && inputMm) {
+                        const targetMm = parseFloat(inputMm.value) || 120;
+                        const err = actualMm - targetMm;
+                        if (depthErrorVal) {
+                            depthErrorVal.innerText = (err > 0 ? '+' : '') + err;
+                        }
+                        if (depthErrorBadge) {
+                            if (Math.abs(err) <= 20) {
+                                depthErrorBadge.className = 'text-[11px] font-mono font-semibold px-2 py-0.5 rounded-md bg-emerald-900/60 text-emerald-300 border border-emerald-500/30';
+                            } else if (Math.abs(err) <= 50) {
+                                depthErrorBadge.className = 'text-[11px] font-mono font-semibold px-2 py-0.5 rounded-md bg-amber-900/60 text-amber-300 border border-amber-500/30';
+                            } else {
+                                depthErrorBadge.className = 'text-[11px] font-mono font-semibold px-2 py-0.5 rounded-md bg-rose-900/60 text-rose-300 border border-rose-500/30';
+                            }
+                        }
+                    } else if (depthErrorVal) {
+                        depthErrorVal.innerText = '--';
+                    }
+
+                    updateDepthGauge(actualMm);
+
+                    if (depthLinkDot) {
+                        depthLinkDot.className = 'w-2.5 h-2.5 rounded-full bg-green-400 drop-shadow-[0_0_6px_rgba(74,222,128,0.8)] transition-colors';
+                        depthLinkDot.title = 'Depth link OK';
+                    }
+                } else {
+                    if (depthActual) depthActual.innerText = '--';
+                    if (depthLiftActual) depthLiftActual.innerText = '--.-';
+                    if (depthTailActual) depthTailActual.innerText = '--.-';
+                    if (depthErrorVal) depthErrorVal.innerText = '--';
+                    if (depthLinkDot) {
+                        depthLinkDot.className = 'w-2.5 h-2.5 rounded-full bg-red-500 transition-colors';
+                        depthLinkDot.title = 'Depth link down';
+                    }
+                }
+            }, 100);
+
+            subscribeToTopic('/ui/depth_command_ack', 'tractor_espnow_bridge/msg/DepthUiCommand', (m) => {
+                if (m.mode === 0) {
+                    const inputMm = document.getElementById('depth-target-mm');
+                    if (inputMm && document.activeElement !== inputMm) {
+                        inputMm.value = Math.round(m.target);
+                    }
+                } else if (m.mode === 1) {
+                    const sliderDeg = document.getElementById('depth-target-deg');
+                    const valDisplay = document.getElementById('depth-angle-value');
+                    if (sliderDeg && document.activeElement !== sliderDeg) {
+                        sliderDeg.value = m.target;
+                    }
+                    if (valDisplay) {
+                        valDisplay.innerText = m.target.toFixed(1);
+                    }
+                }
+            }, 100);
         });
 
         let isPathPaused = false;
@@ -3903,6 +4556,9 @@
 
         // Khởi tạo vòng quay swath width picker
         initIosPicker();
+
+        // Khởi tạo Depth Control panel
+        initDepthControl();
 
         // Chạy ngay lập tức Animation nền của màn hình chờ
         setTimeout(() => {
