@@ -94,6 +94,18 @@
             background-color: #1a1a1a;
         }
 
+        /* Minimap: nút nhỏ, bấm để mở rộng / thu gọn */
+        #minimap-container { width: 3.5rem; height: 3.5rem; transition: width .25s, height .25s; }
+        #minimap-container.expanded { width: 11rem; height: 11rem; }
+        @media (min-width: 768px) { #minimap-container.expanded { width: min(14rem, 45vh); height: min(14rem, 45vh); } }
+        #minimap-container.expanded #minimap-hint { display: none; }
+        #minimap-swap { display: none; }
+        #minimap-container.expanded #minimap-swap { display: flex; }
+
+        /* Depth panel: mở/đóng bằng nút trên HUD (ghi đè hidden / sm:flex) */
+        #depth-panel.depth-open { display: flex; }
+        #depth-panel.depth-closed { display: none; }
+
         .leaflet-control-attribution {
             display: none !important;
         }
@@ -562,23 +574,31 @@
 
         <!-- Minimap Container -->
         <div id="minimap-container"
-            class="hidden sm:block w-32 h-32 md:w-48 md:h-48 rounded-2xl border-2 border-white/20 shadow-2xl overflow-hidden cursor-pointer pointer-events-auto transition-transform hover:scale-105 group"
-            title="Click to switch map">
+            class="hidden sm:block relative rounded-2xl border-2 border-white/20 shadow-2xl overflow-hidden cursor-pointer pointer-events-auto"
+            title="Tap to expand / collapse map">
             <div id="minimap" class="w-full h-full pointer-events-none"></div>
-            <!-- Icon hoán đổi hiện lên khi hover -->
-            <div
-                class="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-[1001]">
-                <svg class="w-8 h-8 text-white drop-shadow-md" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <!-- Icon mở rộng: chỉ hiện khi minimap đang thu gọn -->
+            <div id="minimap-hint"
+                class="absolute inset-0 bg-black/35 flex items-center justify-center pointer-events-none z-[1001]">
+                <svg class="w-6 h-6 text-white drop-shadow-md" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
+                </svg>
+            </div>
+            <!-- Nút đổi lớp bản đồ (vệ tinh / đường phố): chỉ hiện khi đã mở rộng -->
+            <button id="minimap-swap" type="button" title="Switch map"
+                class="absolute bottom-1 right-1 z-[1002] w-8 h-8 rounded-full glass-panel items-center justify-center pointer-events-auto active:scale-90">
+                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
                 </svg>
-            </div>
+            </button>
         </div>
     </div>
 
     <!-- RIGHT PANEL: Depth Control -->
     <div id="depth-panel"
-        class="absolute right-4 top-20 z-20 w-[280px] glass-panel rounded-2xl shadow-2xl border border-white/10 p-3.5 flex flex-col gap-2.5 pointer-events-auto transition-all duration-300 hidden sm:flex">
+        class="absolute right-4 top-28 sm:top-20 z-20 w-[280px] glass-panel rounded-2xl shadow-2xl border border-white/10 p-3.5 flex flex-col gap-2.5 pointer-events-auto transition-all duration-300 hidden sm:flex">
 
         <!-- Header: title + live depth link dot + collapse button -->
         <div class="flex items-center justify-between">
@@ -1927,7 +1947,7 @@
             if (!btn) return;
             const icon = btn.querySelectorAll('span')[0];
             const text = btn.querySelectorAll('span')[1];
-            btn.className = "relative overflow-hidden select-none flex-1 flex flex-col items-center justify-center py-2 rounded-xl transition active:scale-95 group border";
+            btn.className = "relative overflow-hidden select-none flex-1 flex flex-col items-center justify-center py-2 rounded-xl transition active:scale-95 group border col-span-2";
 
             // plannerState: 1 = IDLE, 2 = RECORDING, 3 = ACTIVE (Đang lái bám theo vạch)
             if (plannerState === 2) {
@@ -2691,7 +2711,12 @@
             checkRecenterVisibility();
         });
 
-        document.getElementById('minimap-container').addEventListener('click', toggleMapLayer);
+        const minimapBox = document.getElementById('minimap-container');
+        minimapBox.addEventListener('click', () => {
+            minimapBox.classList.toggle('expanded');
+            setTimeout(() => { minimap.invalidateSize(); minimap.setView(map.getCenter(), Math.max(1, map.getZoom() - 4)); }, 300);
+        });
+        document.getElementById('minimap-swap').addEventListener('click', (e) => { e.stopPropagation(); toggleMapLayer(); });
 
         document.getElementById('btn-recenter').addEventListener('click', function () {
             isPannedAway = false;
@@ -3653,16 +3678,9 @@
         function toggleDepthPanel() {
             const panel = document.getElementById('depth-panel');
             if (!panel) return;
-            if (panel.classList.contains('hidden')) {
-                panel.classList.remove('hidden');
-                panel.classList.add('flex');
-            } else if (panel.classList.contains('sm:flex') && window.innerWidth < 640) {
-                panel.classList.remove('hidden');
-                panel.classList.add('flex');
-            } else {
-                panel.classList.add('hidden');
-                panel.classList.remove('flex');
-            }
+            const open = getComputedStyle(panel).display !== 'none';
+            panel.classList.toggle('depth-closed', open);
+            panel.classList.toggle('depth-open', !open);
         }
 
         function resetDepthControlUI() {
