@@ -745,6 +745,10 @@
             </button>
             <p class="text-[10px] text-gray-400 text-center leading-tight -mt-1" data-i18n="depth-hold-hint">
                 Tap to engage &middot; hold 1 s to disengage</p>
+            <!-- Shown while the controller at the depth system has taken control -->
+            <p id="depth-preempt-notice"
+                class="hidden text-[11px] font-semibold text-center leading-tight px-2 py-1.5 rounded-lg bg-amber-900/60 text-amber-200 border border-amber-500/40"
+                data-i18n="depth-preempted">Local controller took over. Tap ACTIVATE to control from here again.</p>
         </div>
     </div>
 
@@ -1277,6 +1281,7 @@
                 "depth-active": "ACTIVE",
                 "depth-hold-hint": "Tap to engage · hold 1 s to disengage",
                 "depth-releasing": "RELEASING...",
+                "depth-preempted": "Local controller took over. Tap ACTIVATE to control from here again.",
                 "depth-lift": "Lift",
                 "depth-tail": "Tail",
                 "depth-error": "Err",
@@ -1374,6 +1379,7 @@
                 "depth-active": "運行中",
                 "depth-hold-hint": "點擊啟動 · 長按 1 秒解除",
                 "depth-releasing": "解除中...",
+                "depth-preempted": "現場控制器已接管。點「啟動」可重新由此控制。",
                 "depth-lift": "提升臂",
                 "depth-tail": "尾門",
                 "depth-error": "偏差",
@@ -3825,6 +3831,12 @@
 
         let depthCurrentMode = 0; // 0 = AUTO, 1 = MANUAL
         let depthEnabled = false;
+        // The backend (/depth_link/status.streaming) is the truth for the ACTIVATE
+        // button: it drops when the controller at the depth system takes over. Right
+        // after a tap here the status still shows the old state, so it is ignored
+        // for this long.
+        const DEPTH_SYNC_GRACE_MS = 1000;
+        let depthUserActionAt = -DEPTH_SYNC_GRACE_MS;
         let depthPublishThrottleTimer = null;
         let depthHoldTimer = null;
         let depthPressStartTime = 0;
@@ -4018,9 +4030,28 @@
             panel.classList.toggle('depth-open', !open);
         }
 
+        // Follows the bridge: streaming stops by itself when the controller at the
+        // depth system issues a newer command than the one sent from here.
+        function syncDepthActiveFromBackend(m) {
+            const notice = document.getElementById('depth-preempt-notice');
+            if (notice) notice.classList.toggle('hidden', m.preempted !== true);
+
+            if (performance.now() - depthUserActionAt < DEPTH_SYNC_GRACE_MS) return;
+            if (typeof m.streaming !== 'boolean' || m.streaming === depthEnabled) return;
+
+            const takenOver = depthEnabled && !m.streaming && m.preempted === true;
+            depthEnabled = m.streaming;
+            isDepthHolding = false;
+            if (depthHoldTimer) { clearTimeout(depthHoldTimer); depthHoldTimer = null; }
+            updateDepthActiveUI(depthEnabled);
+            if (takenOver && navigator.vibrate) navigator.vibrate([200, 100, 200]);
+        }
+
         function resetDepthControlUI() {
             depthEnabled = false;
             updateDepthActiveUI(false);
+            const depthPreemptNotice = document.getElementById('depth-preempt-notice');
+            if (depthPreemptNotice) depthPreemptNotice.classList.add('hidden');
             const depthActual = document.getElementById('depth-actual');
             if (depthActual) depthActual.innerText = '--';
             const depthLiftActual = document.getElementById('depth-lift-actual');
@@ -4117,6 +4148,7 @@
                         depthHoldTimer = setTimeout(() => {
                             if (isDepthHolding && depthEnabled) {
                                 depthEnabled = false;
+                                depthUserActionAt = performance.now();
                                 publishDepthCommand();
                                 updateDepthActiveUI(false);
                                 if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
@@ -4144,6 +4176,7 @@
                         // Đang TẮT: Tap (<1000ms) để BẬT (Engage)
                         if (elapsed < 1000) {
                             depthEnabled = true;
+                            depthUserActionAt = performance.now();
                             publishDepthCommand();
                             updateDepthActiveUI(true);
                             if (navigator.vibrate) navigator.vibrate(80);
@@ -4641,6 +4674,8 @@
                 const depthErrorVal = document.getElementById('depth-error-val');
                 const depthErrorBadge = document.getElementById('depth-error-badge');
                 const inputMm = document.getElementById('depth-target-mm');
+
+                syncDepthActiveFromBackend(m);
 
                 if (m.link_ok) {
                     const actualMm = Math.round(m.estimate_depth_cm);
