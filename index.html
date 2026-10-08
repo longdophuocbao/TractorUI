@@ -948,6 +948,91 @@
                             </div>
                         </div>
 
+                        <!-- Dò giới hạn lái (Steering Limit Finder) -->
+                        <style>
+                            .sl-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem; }
+                            @media (min-width: 640px) { .sl-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+                            .sl-btns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem; }
+                            @media (min-width: 640px) { .sl-btns { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+                            .sl-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+                            .sl-badge { font-size: 10px; padding: 2px 8px; border-radius: 9999px; font-weight: 700; white-space: nowrap; }
+                            .sl-track { position: relative; height: 26px; background: #111827; border: 1px solid #374151; border-radius: 0.5rem; overflow: hidden; }
+                            .sl-range { position: absolute; top: 0; bottom: 0; background: rgba(34, 197, 94, 0.18); border-left: 2px solid #22c55e; border-right: 2px solid #22c55e; }
+                            .sl-zero { position: absolute; top: 0; bottom: 0; width: 1px; background: #6b7280; }
+                            .sl-actual { position: absolute; top: 2px; bottom: 2px; width: 4px; margin-left: -2px; background: #f97316; border-radius: 2px; }
+                            #jog-slider:disabled { opacity: 0.4; cursor: not-allowed; }
+                        </style>
+                        <div class="bg-gray-800/50 p-5 rounded-xl border border-gray-700/50">
+                            <div class="flex justify-between items-center mb-3 gap-2">
+                                <h3 class="text-sm font-bold text-gray-300 uppercase tracking-wider"
+                                    data-i18n="sl-title">Steering Limit Finder</h3>
+                                <span id="sl-calibrated" class="sl-badge bg-gray-700 text-gray-300">--</span>
+                            </div>
+                            <p class="text-xs text-gray-400 mb-3" data-i18n="sl-desc">Jog the steering motor slowly at low torque (calibrated limits are ignored) to find the mechanical boundaries, then capture center, left and right.</p>
+
+                            <!-- Giá trị hiện tại -->
+                            <div class="sl-grid mb-3">
+                                <div class="bg-gray-900 rounded-lg p-2 text-center">
+                                    <div class="text-xs text-gray-500" data-i18n="sl-actual">Actual (rad)</div>
+                                    <div id="sl-val-actual" class="text-white font-mono text-sm">--</div>
+                                </div>
+                                <div class="bg-gray-900 rounded-lg p-2 text-center">
+                                    <div class="text-xs text-gray-500" data-i18n="sl-left">Left limit</div>
+                                    <div id="sl-val-left" class="text-green-400 font-mono text-sm">--</div>
+                                </div>
+                                <div class="bg-gray-900 rounded-lg p-2 text-center">
+                                    <div class="text-xs text-gray-500" data-i18n="sl-right">Right limit</div>
+                                    <div id="sl-val-right" class="text-green-400 font-mono text-sm">--</div>
+                                </div>
+                                <div class="bg-gray-900 rounded-lg p-2 text-center">
+                                    <div class="text-xs text-gray-500" data-i18n="sl-iq">Current Iq (A)</div>
+                                    <div id="sl-val-iq" class="text-white font-mono text-sm">--</div>
+                                </div>
+                            </div>
+
+                            <!-- Thanh vị trí: vùng xanh = giới hạn đang lưu, vạch cam = góc thực tế -->
+                            <div class="flex justify-between text-xs text-gray-500 mb-1">
+                                <span data-i18n="sl-dir-left">◀ Left (+)</span>
+                                <span data-i18n="sl-dir-right">Right (−) ▶</span>
+                            </div>
+                            <div class="sl-track mb-4">
+                                <div id="sl-bar-range" class="sl-range hidden"></div>
+                                <div class="sl-zero" style="left: 50%;"></div>
+                                <div id="sl-bar-actual" class="sl-actual hidden"></div>
+                            </div>
+
+                            <!-- Jog -->
+                            <div class="flex items-center justify-between mb-3 gap-2">
+                                <div class="flex items-center gap-2">
+                                    <input type="checkbox" id="jog-enable" onchange="setJogEnabled(this.checked)"
+                                        class="w-4 h-4 rounded border-gray-600 bg-gray-700 text-orange-600 focus:ring-orange-500">
+                                    <label for="jog-enable" class="text-xs text-gray-400 uppercase font-bold cursor-pointer"
+                                        data-i18n="sl-jog-enable">Enable jog (motor engages)</label>
+                                </div>
+                                <span id="jog-value" class="text-white font-mono text-sm">0%</span>
+                            </div>
+                            <input type="range" id="jog-slider" min="-100" max="100" step="1" value="0" disabled
+                                class="w-full accent-orange-600 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                            <p class="text-xs text-gray-500 mt-1 mb-4" data-i18n="sl-jog-hint">Drag and hold to turn; release to stop. When the actual angle stops following, you are at the boundary.</p>
+
+                            <!-- Các bước lưu -->
+                            <div class="sl-btns">
+                                <button id="sl-btn-center" onclick="slSetCenter()"
+                                    class="sl-btn bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-xs font-semibold transition active:scale-95"
+                                    data-i18n="sl-btn-center">1. Set Center</button>
+                                <button id="sl-btn-left" onclick="slCapture('left')" disabled
+                                    class="sl-btn bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-xs font-semibold transition active:scale-95"
+                                    data-i18n="sl-btn-left">2. Capture Left</button>
+                                <button id="sl-btn-right" onclick="slCapture('right')" disabled
+                                    class="sl-btn bg-green-600 text-white px-3 py-2 rounded-lg text-xs font-semibold transition active:scale-95"
+                                    data-i18n="sl-btn-right">3. Capture Right &amp; Save</button>
+                                <button id="sl-btn-cancel" onclick="slCancel()" disabled
+                                    class="sl-btn bg-gray-700 text-white px-3 py-2 rounded-lg text-xs font-semibold transition active:scale-95"
+                                    data-i18n="sl-btn-cancel">Cancel</button>
+                            </div>
+                            <p id="sl-message" class="text-xs text-gray-400 mt-1 font-mono" style="min-height: 1.25rem; margin-top: 0.75rem;"></p>
+                        </div>
+
                         <!-- Biểu đồ -->
                         <div class="bg-gray-800/50 p-5 rounded-xl border border-gray-700/50">
                             <h3 class="text-sm font-bold text-gray-300 mb-3 uppercase tracking-wider" data-i18n="set-chart">
@@ -1129,6 +1214,30 @@
                 "btn-connect": "Connect",
                 "btn-disconnect": "Disconnect",
                 "set-manual-pub": "Manual Publish (/steering_command)",
+                "sl-title": "Steering Limit Finder",
+                "sl-desc": "Jog the steering motor slowly at low torque (calibrated limits are ignored) to find the mechanical boundaries, then capture center, left and right.",
+                "sl-actual": "Actual (rad)",
+                "sl-left": "Left limit",
+                "sl-right": "Right limit",
+                "sl-iq": "Current Iq (A)",
+                "sl-dir-left": "◀ Left (+)",
+                "sl-dir-right": "Right (−) ▶",
+                "sl-jog-enable": "Enable jog (motor engages)",
+                "sl-jog-hint": "Drag and hold to turn; release to stop. When the actual angle stops following, you are at the boundary.",
+                "sl-btn-center": "1. Set Center",
+                "sl-btn-left": "2. Capture Left",
+                "sl-btn-right": "3. Capture Right & Save",
+                "sl-btn-cancel": "Cancel",
+                "sl-calibrated": "CALIBRATED",
+                "sl-uncalibrated": "NOT CALIBRATED",
+                "sl-fault": "FAULT",
+                "sl-step-0": "Jog to straight ahead, then press 1. Set Center.",
+                "sl-step-1": "Center captured. Jog to FULL LEFT, then press 2. Capture Left.",
+                "sl-step-2": "Left captured. Jog to FULL RIGHT, then press 3. Capture Right & Save.",
+                "sl-settling": "Releasing motor and capturing center (2 s)...",
+                "sl-no-ros": "ROS is not connected.",
+                "sl-no-service": "Service call failed: ",
+                "sl-confirm-center": "Set the CURRENT wheel position as straight ahead?\n\nThe motor is released for 2 s and the steering limits must be captured again.",
                 "btn-send-cmd": "Send Command",
                 "set-chart": "Telemetry Chart",
                 "set-topic-exp": "Topic Explorer",
@@ -1198,6 +1307,30 @@
                 "btn-connect": "連接",
                 "btn-disconnect": "斷開",
                 "set-manual-pub": "手提發佈 (/steering_command)",
+                "sl-title": "轉向極限尋找",
+                "sl-desc": "以低扭力緩慢點動轉向馬達（忽略已校準的極限）找出機械邊界，再依序擷取中心、左極限與右極限。",
+                "sl-actual": "實際角度 (rad)",
+                "sl-left": "左極限",
+                "sl-right": "右極限",
+                "sl-iq": "電流 Iq (A)",
+                "sl-dir-left": "◀ 左 (+)",
+                "sl-dir-right": "右 (−) ▶",
+                "sl-jog-enable": "啟用點動（馬達上電）",
+                "sl-jog-hint": "按住拖動以轉向，放開即停止。實際角度不再跟隨時即為邊界。",
+                "sl-btn-center": "1. 設定中心",
+                "sl-btn-left": "2. 擷取左極限",
+                "sl-btn-right": "3. 擷取右極限並儲存",
+                "sl-btn-cancel": "取消",
+                "sl-calibrated": "已校準",
+                "sl-uncalibrated": "未校準",
+                "sl-fault": "故障",
+                "sl-step-0": "點動至直行位置，然後按「1. 設定中心」。",
+                "sl-step-1": "已擷取中心。點動至最左，然後按「2. 擷取左極限」。",
+                "sl-step-2": "已擷取左極限。點動至最右，然後按「3. 擷取右極限並儲存」。",
+                "sl-settling": "正在釋放馬達並擷取中心（2 秒）...",
+                "sl-no-ros": "ROS 尚未連接。",
+                "sl-no-service": "服務呼叫失敗：",
+                "sl-confirm-center": "將目前車輪位置設為直行中心？\n\n馬達會釋放 2 秒，且必須重新擷取轉向極限。",
                 "btn-send-cmd": "發送指令",
                 "set-chart": "遙測圖表",
                 "set-topic-exp": "Topic 瀏覽器",
@@ -3480,6 +3613,208 @@
         });
 
         // ---------------------------------------------------------------------
+        // Steering Limit Finder: jog slider + calibration capture
+        // ---------------------------------------------------------------------
+        // The slider is a spring-return rate control: -1..1 on
+        // /steer_motor_node/jog_rate (+ = left). The node moves slowly at low
+        // torque, ignores the calibrated limits, and releases the motor if this
+        // stream stops, so it is published continuously while jog is enabled.
+        const jogPub = new ROSLIB.Topic({ ros: ros, name: '/steer_motor_node/jog_rate', messageType: 'std_msgs/Float64' });
+        const JOG_PUBLISH_MS = 100;
+        let jogTimer = null;
+        let slBusy = false;
+        const slState = { actual: null, center: null, left: null, right: null, step: 0, calibrated: null, fault: false };
+
+        function jogRate() {
+            const slider = document.getElementById('jog-slider');
+            // Slider left = steer left = positive rate
+            return slider ? -parseFloat(slider.value) / 100 : 0;
+        }
+
+        function resetJogSlider() {
+            const slider = document.getElementById('jog-slider');
+            if (slider) slider.value = 0;
+            const label = document.getElementById('jog-value');
+            if (label) label.innerText = '0%';
+        }
+
+        function setJogEnabled(enabled) {
+            const checkbox = document.getElementById('jog-enable');
+            const slider = document.getElementById('jog-slider');
+            if (enabled && (!ros.isConnected || slBusy)) {
+                enabled = false;
+                if (!ros.isConnected) slMessage(t('sl-no-ros'), true);
+            }
+            if (checkbox) checkbox.checked = enabled;
+            if (slider) slider.disabled = !enabled;
+            resetJogSlider();
+
+            if (jogTimer) { clearInterval(jogTimer); jogTimer = null; }
+            if (enabled) {
+                jogTimer = setInterval(() => {
+                    const panel = document.getElementById('jog-slider');
+                    // Stop as soon as the panel is hidden, locked or ROS drops
+                    if (!ros.isConnected || !panel || panel.offsetParent === null || document.hidden) {
+                        setJogEnabled(false);
+                        return;
+                    }
+                    jogPub.publish(new ROSLIB.Message({ data: jogRate() }));
+                }, JOG_PUBLISH_MS);
+            } else if (ros.isConnected) {
+                // One explicit stop; the node then times the stream out and releases
+                jogPub.publish(new ROSLIB.Message({ data: 0.0 }));
+            }
+        }
+
+        document.addEventListener('input', (e) => {
+            if (e.target.id === 'jog-slider') {
+                const label = document.getElementById('jog-value');
+                const pct = -parseInt(e.target.value, 10);
+                if (label) label.innerText = (pct > 0 ? '◀ ' : '') + Math.abs(pct) + '%' + (pct < 0 ? ' ▶' : '');
+            }
+        });
+        // Spring return: letting go of the slider always stops the motion
+        ['pointerup', 'pointercancel', 'touchend', 'touchcancel', 'mouseup', 'blur'].forEach((evt) => {
+            window.addEventListener(evt, resetJogSlider, true);
+        });
+        document.addEventListener('change', (e) => {
+            if (e.target.id === 'jog-slider') resetJogSlider();
+        });
+        document.addEventListener('visibilitychange', () => { if (document.hidden) setJogEnabled(false); });
+
+        function slMessage(text, isError = false) {
+            const el = document.getElementById('sl-message');
+            if (!el) return;
+            el.innerText = text;
+            el.style.color = isError ? '#f87171' : '';
+        }
+
+        function slFormat(v) {
+            return (v === null || !isFinite(v)) ? '--' : v.toFixed(3);
+        }
+
+        function updateSteerLimitUI() {
+            const set = (id, text) => { const el = document.getElementById(id); if (el) el.innerText = text; };
+            set('sl-val-actual', slFormat(slState.actual));
+            set('sl-val-left', slFormat(slState.left));
+            set('sl-val-right', slFormat(slState.right));
+
+            const badge = document.getElementById('sl-calibrated');
+            if (badge) {
+                if (slState.fault) {
+                    badge.innerText = t('sl-fault');
+                    badge.className = 'sl-badge bg-red-600 text-white';
+                } else if (slState.calibrated === null) {
+                    badge.innerText = '--';
+                    badge.className = 'sl-badge bg-gray-700 text-gray-300';
+                } else {
+                    badge.innerText = t(slState.calibrated ? 'sl-calibrated' : 'sl-uncalibrated');
+                    badge.className = 'sl-badge ' + (slState.calibrated ? 'bg-green-600 text-white' : 'bg-orange-600 text-white');
+                }
+            }
+
+            // Position bar. Left of the bar is steering left (positive angles).
+            const haveLimits = slState.left !== null && slState.right !== null && slState.left > slState.right;
+            const span = 1.2 * Math.max(2.5, Math.abs(slState.left || 0), Math.abs(slState.right || 0), Math.abs(slState.actual || 0));
+            const toPct = (angle) => 50 - (angle / span) * 50;
+            const range = document.getElementById('sl-bar-range');
+            if (range) {
+                range.classList.toggle('hidden', !haveLimits);
+                if (haveLimits) {
+                    range.style.left = toPct(slState.left) + '%';
+                    range.style.width = (toPct(slState.right) - toPct(slState.left)) + '%';
+                }
+            }
+            const marker = document.getElementById('sl-bar-actual');
+            if (marker) {
+                marker.classList.toggle('hidden', slState.actual === null);
+                if (slState.actual !== null) marker.style.left = toPct(slState.actual) + '%';
+            }
+
+            const btn = (id, enabled) => { const el = document.getElementById(id); if (el) el.disabled = !enabled || slBusy; };
+            btn('sl-btn-center', true);
+            btn('sl-btn-left', slState.step === 1);
+            btn('sl-btn-right', slState.step === 2);
+            btn('sl-btn-cancel', slState.step !== 0);
+        }
+
+        function slShowStep() {
+            slMessage(t('sl-step-' + slState.step));
+        }
+
+        // nextStep: calibration step the node is in once the call succeeds. It is
+        // applied here so the buttons advance even if /steer_motor_node/calibration
+        // is not being received.
+        function slCallTrigger(name, nextStep, onDone) {
+            if (!ros.isConnected) { slMessage(t('sl-no-ros'), true); return; }
+            slBusy = true;
+            updateSteerLimitUI();
+            const finish = (ok, message) => {
+                slBusy = false;
+                if (ok) slState.step = nextStep;
+                // The node's own text tells the operator to call a service; show the button step instead
+                if (ok && nextStep !== 0) slShowStep(); else slMessage(message, !ok);
+                updateSteerLimitUI();
+                if (onDone) onDone(ok);
+            };
+            new ROSLIB.Service({ ros: ros, name: name, serviceType: 'std_srvs/Trigger' }).callService(
+                new ROSLIB.ServiceRequest({}),
+                (res) => finish(res.success, res.message),
+                (err) => finish(false, t('sl-no-service') + err));
+        }
+
+        function slSetCenter() {
+            if (!confirm(t('sl-confirm-center'))) return;
+            // The motor must be free to settle: stop the jog stream first
+            const wasJogging = document.getElementById('jog-enable').checked;
+            setJogEnabled(false);
+            slMessage(t('sl-settling'));
+            slCallTrigger('/steer_motor_node/calibrate', 1, (ok) => {
+                if (ok && wasJogging) setJogEnabled(true);
+            });
+        }
+
+        function slCapture(side) {
+            slCallTrigger('/steer_motor_node/capture_' + side + '_limit', side === 'left' ? 2 : 0);
+        }
+
+        function slCancel() {
+            setJogEnabled(false);
+            slCallTrigger('/steer_motor_node/cancel_calibration', 0);
+        }
+
+        function subscribeSteerLimitTopics() {
+            subscribeToTopic('/steering_angle_actual', 'std_msgs/Float64', (m) => {
+                slState.actual = m.data;
+                updateSteerLimitUI();
+            }, 100);
+            subscribeToTopic('/steer_motor_node/iq', 'std_msgs/Float64', (m) => {
+                const el = document.getElementById('sl-val-iq');
+                if (el) el.innerText = m.data.toFixed(2);
+            }, 200);
+            subscribeToTopic('/steer_motor_node/calibrated', 'std_msgs/Bool', (m) => {
+                slState.calibrated = m.data;
+                updateSteerLimitUI();
+            });
+            subscribeToTopic('/steer_motor_node/fault', 'std_msgs/Bool', (m) => {
+                slState.fault = m.data;
+                if (m.data) setJogEnabled(false);
+                updateSteerLimitUI();
+            });
+            // [center_offset_rad, left_limit_rad, right_limit_rad, step]
+            subscribeToTopic('/steer_motor_node/calibration', 'std_msgs/Float64MultiArray', (m) => {
+                const stepChanged = slState.step !== Math.round(m.data[3]);
+                slState.center = m.data[0];
+                slState.left = m.data[1];
+                slState.right = m.data[2];
+                slState.step = Math.round(m.data[3]);
+                if (stepChanged && !slBusy && slState.step !== 0) slShowStep();
+                updateSteerLimitUI();
+            });
+            slShowStep();
+        }
+
+        // ---------------------------------------------------------------------
         // Depth Control: Publisher, State & UI Logic
         // ---------------------------------------------------------------------
         const depthCmdPub = new ROSLIB.Topic({
@@ -3912,6 +4247,8 @@
                 steerMotorState = m.data;
                 updateMarkerCmdUI();
             },100);
+
+            subscribeSteerLimitTopics();
 
             subscribeToTopic('/imu', 'sensor_msgs/Imu', (m) => {
                 const markerYawDisplay = document.getElementById('marker-yaw');
