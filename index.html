@@ -654,6 +654,10 @@
         </div>
 
         <!-- Collapsible Content (Mode, Inputs, Steppers, Controls) -->
+        <!-- Why depth control is not working right now (link to the depth system) -->
+        <p id="depth-link-error"
+            class="hidden text-[11px] font-semibold text-center leading-tight px-2 py-1.5 rounded-lg bg-rose-900/70 text-rose-100 border border-rose-500/50"></p>
+
         <!-- HOME: one tap lifts the implement. Kept outside the collapsible part so it is always reachable -->
         <button id="depth-home-btn" type="button" onclick="sendDepthHome()"
             class="w-full py-2.5 rounded-xl font-bold text-sm bg-amber-600 hover:bg-amber-500 text-white transition-colors select-none active:scale-95 shadow-md shadow-amber-900/40"
@@ -1289,6 +1293,11 @@
                 "depth-hold-hint": "Tap to engage · hold 1 s to disengage",
                 "depth-releasing": "RELEASING...",
                 "depth-preempted": "Local controller took over. Tap ACTIVATE to control from here again.",
+                "depth-err-no-bridge": "Depth control unavailable: the depth bridge is not running on the tractor.",
+                "depth-err-no-port": "ESP-NOW master is not connected to the tractor computer (USB). Commands are not being sent.",
+                "depth-err-no-master": "ESP-NOW master is connected but not responding. Commands are not being sent.",
+                "depth-err-no-gateway": "No signal from the depth gateway (ESP-NOW). Commands may not arrive.",
+                "depth-err-write": "Commands to the ESP-NOW master are being dropped (USB link busy or stalled).",
                 "depth-lift": "Lift",
                 "depth-tail": "Tail",
                 "depth-error": "Err",
@@ -1389,6 +1398,11 @@
                 "depth-hold-hint": "點擊啟動 · 長按 1 秒解除",
                 "depth-releasing": "解除中...",
                 "depth-preempted": "現場控制器已接管。點「啟動」可重新由此控制。",
+                "depth-err-no-bridge": "無法控制深度：曳引機上的深度橋接程式未執行。",
+                "depth-err-no-port": "ESP-NOW 主機未連接到曳引機電腦（USB），指令無法送出。",
+                "depth-err-no-master": "ESP-NOW 主機已連接但沒有回應，指令無法送出。",
+                "depth-err-no-gateway": "收不到深度閘道器的訊號（ESP-NOW），指令可能無法送達。",
+                "depth-err-write": "送往 ESP-NOW 主機的指令被丟棄（USB 連線忙碌或停滯）。",
                 "depth-lift": "提升臂",
                 "depth-tail": "尾門",
                 "depth-error": "偏差",
@@ -4081,6 +4095,48 @@
             panel.classList.toggle('depth-open', !open);
         }
 
+        // Link to the depth system, from /espnow_link/stats (bridge, >= 2 Hz). Shows
+        // the first broken hop: bridge -> USB -> master -> ESP-NOW -> gateway.
+        const DEPTH_STATS_TIMEOUT_MS = 3000;
+        let depthStatsAt = 0;              // 0 = none since this page connected
+        let depthStatsMsg = null;
+        let depthWriteErrors = null;
+        let depthWriteErrorAt = -Infinity;
+
+        function updateDepthLinkError() {
+            const el = document.getElementById('depth-link-error');
+            if (!el) return;
+            let key = null;
+            if (ros.isConnected) {
+                const m = depthStatsMsg;
+                const now = performance.now();
+                if (now - depthStatsAt > DEPTH_STATS_TIMEOUT_MS) key = 'depth-err-no-bridge';
+                else if (!m) key = null;   // just connected, nothing heard yet
+                else if (m.serial_port_open === false) key = 'depth-err-no-port';
+                else if (!m.serial_ok) key = 'depth-err-no-master';
+                else if (!m.depth_link_ok) key = 'depth-err-no-gateway';
+                else if (now - depthWriteErrorAt < 5000) key = 'depth-err-write';
+            }
+            el.classList.toggle('hidden', key === null);
+            if (key !== null && el.getAttribute('data-i18n') !== key) {
+                el.setAttribute('data-i18n', key);
+                el.innerText = t(key);
+            }
+        }
+
+        function onDepthLinkStats(m) {
+            const errors = m.bridge_serial_write_errors;
+            if (typeof errors === 'number') {
+                if (depthWriteErrors !== null && errors > depthWriteErrors) depthWriteErrorAt = performance.now();
+                depthWriteErrors = errors;
+            }
+            depthStatsMsg = m;
+            depthStatsAt = performance.now();
+            updateDepthLinkError();
+        }
+        // Also catches the bridge going silent, which no message can report
+        setInterval(updateDepthLinkError, 1000);
+
         // Follows the bridge: streaming stops by itself when the controller at the
         // depth system issues a newer command than the one sent from here.
         function syncDepthActiveFromBackend(m) {
@@ -4783,6 +4839,11 @@
                     }
                 }
             }, 100);
+
+            // Give the bridge a moment to be heard before calling it missing
+            depthStatsMsg = null;
+            depthStatsAt = performance.now();
+            subscribeToTopic('/espnow_link/stats', 'tractor_espnow_bridge/msg/EspNowLinkStats', onDepthLinkStats, 500);
 
             subscribeToTopic('/ui/depth_command_ack', 'tractor_espnow_bridge/msg/DepthUiCommand', (m) => {
                 if (m.mode === 0) {
