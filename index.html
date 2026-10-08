@@ -654,6 +654,11 @@
         </div>
 
         <!-- Collapsible Content (Mode, Inputs, Steppers, Controls) -->
+        <!-- HOME: one tap lifts the implement. Kept outside the collapsible part so it is always reachable -->
+        <button id="depth-home-btn" type="button" onclick="sendDepthHome()"
+            class="w-full py-2.5 rounded-xl font-bold text-sm bg-amber-600 hover:bg-amber-500 text-white transition-colors select-none active:scale-95 shadow-md shadow-amber-900/40"
+            data-i18n="depth-home">HOME (LIFT)</button>
+
         <div id="depth-collapsible-content" class="flex flex-col gap-2.5 transition-all duration-300">
             <!-- Mode selector -->
             <div class="grid grid-cols-2 gap-2">
@@ -1274,6 +1279,8 @@
                 "depth-title": "Depth Control",
                 "depth-mode-auto": "AUTO",
                 "depth-mode-manual": "MANUAL",
+                "depth-home": "HOME (LIFT)",
+                "depth-home-active": "AT HOME · tap AUTO / MANUAL to work",
                 "depth-set-mm": "Target depth (mm)",
                 "depth-set-angle": "Lift arm angle",
                 "depth-activate": "ACTIVATE",
@@ -1372,6 +1379,8 @@
                 "depth-title": "耕深控制",
                 "depth-mode-auto": "自動",
                 "depth-mode-manual": "手動",
+                "depth-home": "回原位（升起）",
+                "depth-home-active": "已回原位 · 點「自動/手動」恢復作業",
                 "depth-set-mm": "目標耕深 (mm)",
                 "depth-set-angle": "提升臂角度",
                 "depth-activate": "啟動",
@@ -3858,14 +3867,54 @@
             }
         }
 
+        const DEPTH_MODE_HOME = 2;
+        // Set by the HOME button. While set, everything this panel publishes keeps
+        // the implement at HOME, so nudging a setpoint cannot lower it by accident.
+        // Choosing AUTO / MANUAL or tapping ACTIVATE clears it.
+        let depthHomeActive = false;
+
+        function getDepthAutoTargetMm() {
+            const inputEl = document.getElementById('depth-target-mm');
+            let valMm = inputEl ? parseFloat(inputEl.value) : 120;
+            if (isNaN(valMm)) valMm = 120;
+            return Math.max(50.0, Math.min(150.0, valMm));
+        }
+
         function publishDepthCommand() {
             if (!ros.isConnected) return;
-            const targetVal = getDepthTarget();
+            // HOME ignores the target, but the bridge files it under the AUTO setpoint
+            const targetVal = depthHomeActive ? getDepthAutoTargetMm() : getDepthTarget();
             depthCmdPub.publish(new ROSLIB.Message({
-                mode: depthCurrentMode,
+                mode: depthHomeActive ? DEPTH_MODE_HOME : depthCurrentMode,
                 target: targetVal,
                 enable: depthEnabled
             }));
+        }
+
+        // Lit when this panel commanded HOME, or the depth system reports it is there
+        function updateDepthHomeUI(reportedHome) {
+            const btn = document.getElementById('depth-home-btn');
+            if (!btn) return;
+            const lit = depthHomeActive || reportedHome === true;
+            btn.classList.toggle('ring-2', lit);
+            btn.classList.toggle('ring-amber-300', lit);
+            const key = depthHomeActive ? 'depth-home-active' : 'depth-home';
+            if (btn.getAttribute('data-i18n') !== key) {
+                btn.setAttribute('data-i18n', key);
+                btn.innerText = t(key);
+            }
+        }
+
+        // One tap: take control and send the implement to HOME
+        function sendDepthHome() {
+            if (!ros.isConnected) return;
+            depthHomeActive = true;
+            depthEnabled = true;
+            depthUserActionAt = performance.now();
+            publishDepthCommand();
+            updateDepthActiveUI(true);
+            updateDepthHomeUI();
+            if (navigator.vibrate) navigator.vibrate(80);
         }
 
         function throttledPublishDepthCommand() {
@@ -3878,6 +3927,8 @@
 
         function setDepthMode(mode) {
             depthCurrentMode = mode;
+            depthHomeActive = false;   // picking a working mode leaves HOME
+            updateDepthHomeUI();
             const btnAuto = document.getElementById('depth-mode-auto');
             const btnManual = document.getElementById('depth-mode-manual');
             const autoInput = document.getElementById('depth-auto-input');
@@ -4041,6 +4092,7 @@
 
             const takenOver = depthEnabled && !m.streaming && m.preempted === true;
             depthEnabled = m.streaming;
+            if (!depthEnabled) depthHomeActive = false;
             isDepthHolding = false;
             if (depthHoldTimer) { clearTimeout(depthHoldTimer); depthHoldTimer = null; }
             updateDepthActiveUI(depthEnabled);
@@ -4049,7 +4101,9 @@
 
         function resetDepthControlUI() {
             depthEnabled = false;
+            depthHomeActive = false;
             updateDepthActiveUI(false);
+            updateDepthHomeUI();
             const depthPreemptNotice = document.getElementById('depth-preempt-notice');
             if (depthPreemptNotice) depthPreemptNotice.classList.add('hidden');
             const depthActual = document.getElementById('depth-actual');
@@ -4176,8 +4230,10 @@
                         // Đang TẮT: Tap (<1000ms) để BẬT (Engage)
                         if (elapsed < 1000) {
                             depthEnabled = true;
+                            depthHomeActive = false;   // ACTIVATE means engage, not stay at HOME
                             depthUserActionAt = performance.now();
                             publishDepthCommand();
+                            updateDepthHomeUI();
                             updateDepthActiveUI(true);
                             if (navigator.vibrate) navigator.vibrate(80);
                             playSuccessSound();
@@ -4676,6 +4732,7 @@
                 const inputMm = document.getElementById('depth-target-mm');
 
                 syncDepthActiveFromBackend(m);
+                updateDepthHomeUI(m.link_ok && m.mode === DEPTH_MODE_HOME);
 
                 if (m.link_ok) {
                     const actualMm = Math.round(m.estimate_depth_cm);
