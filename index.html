@@ -31,6 +31,15 @@
     <script src="leaflet.js"></script>
 
     <style>
+        :root {
+            --hit-primary: 56px;
+            --hit-secondary: 48px;
+            --hit-min: 44px;
+            --txt-label: 14px;
+            --txt-value: 20px;
+            --dock-h: 120px;
+        }
+
         /* Đảm bảo không bị cuộn trang trên mobile */
         body,
         html {
@@ -264,13 +273,13 @@
 
                 <div class="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto z-30">
                     <button id="splash-btn-connect"
-                        class="w-full sm:w-auto px-8 py-3.5 rounded-xl font-bold tracking-wider uppercase transition-all duration-300 bg-gray-700 text-gray-400 flex justify-center items-center gap-2 border border-gray-600">
+                        class="w-full sm:w-auto px-8 py-3.5 min-h-[var(--hit-primary)] rounded-xl font-bold tracking-wider uppercase transition-all duration-300 bg-gray-700 text-gray-400 flex justify-center items-center gap-2 border border-gray-600 text-base">
                         <span data-i18n="splash-btn">Connect System</span>
                     </button>
                     <button onclick="toggleSettings()"
-                        class="w-full sm:w-auto p-3.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white border border-gray-700 transition active:scale-95 flex items-center justify-center"
+                        class="w-full sm:w-auto p-4 min-w-[52px] min-h-[52px] rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white border border-gray-700 transition active:scale-95 flex items-center justify-center"
                         title="Settings & Monitoring">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd"
                                 d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z"
                                 clip-rule="evenodd"></path>
@@ -325,7 +334,7 @@
     <div class="hmi-top-bar absolute top-4 left-4 right-4 z-10 flex justify-between items-start pointer-events-none">
 
         <!-- Cụm Trái: Tên hệ thống & Trạng thái kết nối -->
-        <div class="pointer-events-auto flex items-center gap-3 glass-panel rounded-full px-4 py-2 shadow-lg">
+        <div class="pointer-events-auto flex items-center gap-3 glass-panel rounded-full px-4 py-2 shadow-lg min-h-[var(--hit-secondary)]">
             <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z">
@@ -334,7 +343,7 @@
             <div class="flex items-center gap-2">
                 <span id="status-dot"
                     class="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_6px_#ef4444] animate-pulse"></span>
-                <span id="status-text" class="text-xs font-semibold text-red-400 uppercase"
+                <span id="status-text" class="text-sm font-semibold text-red-400 uppercase tracking-wide"
                     data-i18n="hud-disconnected">Disconnected</span>
             </div>
         </div>
@@ -342,7 +351,7 @@
         <!-- Cụm Phải: Thông số Telemetry DJI Style -->
         <div class="flex flex-col sm:flex-row items-end sm:items-center gap-2 sm:gap-3">
             <div
-                class="pointer-events-auto flex items-center gap-4 glass-panel rounded-full px-5 py-2 shadow-lg text-xs font-mono">
+                class="pointer-events-auto flex items-center gap-4 glass-panel rounded-full px-5 py-2 shadow-lg text-sm font-mono min-h-[var(--hit-secondary)]">
                 
                 <!-- Ping / Latency Display -->
                 <div class="flex items-center gap-1.5" title="Network Latency (Browser to Server)">
@@ -369,7 +378,7 @@
             <div class="flex items-center gap-2">
                 <!-- Nút Bật/Tắt Panel Depth Control -->
                 <button id="btn-toggle-depth" onclick="toggleDepthPanel()"
-                    class="pointer-events-auto glass-panel hover:bg-white/10 p-2.5 rounded-full shadow-lg transition active:scale-90 flex items-center justify-center text-blue-400"
+                    class="pointer-events-auto glass-panel hover:bg-white/10 p-3 rounded-full shadow-lg transition active:scale-90 flex items-center justify-center text-blue-400 min-w-[var(--hit-secondary)] min-h-[var(--hit-secondary)]"
                     title="Toggle Depth Control" data-i18n-title="depth-toggle-panel">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -379,7 +388,7 @@
 
                 <!-- Nút La Bàn (Chuyển chế độ N-UP / P-UP) -->
                 <button id="btn-compass" onclick="toggleMapRotation()"
-                    class="pointer-events-auto glass-panel hover:bg-white/10 p-2.5 rounded-full shadow-lg transition active:scale-90 flex items-center gap-1.5"
+                    class="pointer-events-auto glass-panel hover:bg-white/10 p-3 rounded-full shadow-lg transition active:scale-90 flex items-center justify-center min-w-[var(--hit-secondary)] min-h-[var(--hit-secondary)]"
                     title="Toggle Map Rotation">
                     <svg id="compass-icon"
                         class="w-5 h-5 text-green-400 drop-shadow-md transition-transform duration-100"
@@ -391,7 +400,7 @@
 
                 <!-- Nút Toàn Màn Hình (Fullscreen) -->
                 <button onclick="toggleFullScreen()"
-                    class="pointer-events-auto glass-panel hover:bg-white/10 p-2.5 rounded-full shadow-lg transition active:scale-90"
+                    class="pointer-events-auto glass-panel hover:bg-white/10 p-3 rounded-full shadow-lg transition active:scale-90 flex items-center justify-center min-w-[var(--hit-secondary)] min-h-[var(--hit-secondary)]"
                     title="Full Screen">
                     <svg class="w-5 h-5 text-gray-300 drop-shadow-md" fill="none" stroke="currentColor"
                         viewBox="0 0 24 24">
@@ -403,7 +412,7 @@
 
                 <!-- Nút Mở Cài Đặt (Hình Bánh Răng) -->
                 <button onclick="toggleSettings()"
-                    class="pointer-events-auto glass-panel hover:bg-white/10 p-2.5 rounded-full shadow-lg transition active:scale-90"
+                    class="pointer-events-auto glass-panel hover:bg-white/10 p-3 rounded-full shadow-lg transition active:scale-90 flex items-center justify-center min-w-[var(--hit-secondary)] min-h-[var(--hit-secondary)]"
                     title="Settings & Monitoring">
                     <svg class="w-5 h-5 text-gray-300 drop-shadow-md" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd"
@@ -420,14 +429,14 @@
         class="absolute left-4 top-20 bottom-56 w-[30%] min-w-[220px] max-w-[320px] bg-white/90 backdrop-blur-md border border-gray-200 rounded-2xl shadow-2xl transition-all duration-500 hidden md:flex flex-col overflow-hidden opacity-0 pointer-events-none -translate-x-10">
         <!-- Header -->
         <div id="xte-header"
-            class="bg-gray-100/90 transition-colors duration-300 p-3 border-b border-gray-200 flex justify-center items-center z-10 shadow-sm">
-            <span id="xte-value" class="text-xl font-mono font-bold text-gray-400">-- m</span>
+            class="bg-slate-900 transition-colors duration-300 p-3 border-b border-slate-700 flex justify-center items-center z-10 shadow-sm">
+            <span id="xte-value" class="text-3xl font-mono font-bold text-white tracking-tight">-- m</span>
         </div>
         <!-- Radar Canvas -->
-        <div class="flex-1 relative bg-[#f8fafc]">
+        <div class="flex-1 relative bg-[#0f172a]">
             <!-- Radar Grid lines background -->
             <div class="absolute inset-0 pointer-events-none"
-                style="background-image: linear-gradient(rgba(0,0,0,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.06) 1px, transparent 1px); background-size: 20px 20px; background-position: center bottom;">
+                style="background-image: linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px); background-size: 20px 20px; background-position: center bottom;">
             </div>
             <canvas id="devCanvas" class="absolute inset-0 w-full h-full"></canvas>
         </div>
@@ -439,7 +448,7 @@
 
         <!-- Swath Left -->
         <button id="btn-swath-left"
-            class="relative overflow-hidden group select-none bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 border border-indigo-500/30 p-3 sm:p-4 rounded-2xl transition active:scale-95 flex justify-center items-center min-w-[50px] min-h-[50px] sm:min-w-[58px] sm:min-h-[58px]"
+            class="relative overflow-hidden group select-none bg-indigo-500/35 hover:bg-indigo-500/50 text-indigo-200 border border-indigo-500/40 p-3 sm:p-4 rounded-2xl transition active:scale-95 flex justify-center items-center min-w-[var(--hit-primary)] min-h-[var(--hit-primary)]"
             title="Swath Left">
 
             <!-- Thanh tiến trình (Progress bar) -->
@@ -454,7 +463,7 @@
         </button>
 
         <button id="btn-rotate-left" onclick="callService('/steer_planner_node/rotate_ref_left')"
-            class="bg-white/10 hover:bg-white/20 p-2.5 sm:p-3 rounded-xl transition active:scale-90 flex justify-center items-center min-w-[48px] min-h-[48px] border border-white/10"
+            class="bg-white/10 hover:bg-white/20 p-2.5 sm:p-3 rounded-xl transition active:scale-90 flex justify-center items-center min-w-[var(--hit-secondary)] min-h-[var(--hit-secondary)] border border-white/10"
             title="Rotate Left">
             <svg class="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -463,13 +472,13 @@
         </button>
 
         <!-- Central XTE Display (Mobile-friendly) -->
-        <div id="mobile-xte-container" class="flex flex-col items-center justify-center px-3 py-1 bg-black/60 border border-white/20 rounded-2xl min-w-[75px] sm:min-w-[90px] shadow-inner select-none min-h-[48px]">
-            <span class="text-[8px] sm:text-[9px] text-gray-300 font-bold uppercase tracking-wider leading-none mb-0.5">XTE</span>
-            <span id="mobile-xte-value" class="text-xs sm:text-sm font-mono font-bold text-gray-200 leading-none">-- m</span>
+        <div id="mobile-xte-container" class="flex flex-col items-center justify-center px-3 py-1 bg-black/60 border border-white/20 rounded-2xl min-w-[85px] sm:min-w-[100px] shadow-inner select-none min-h-[var(--hit-secondary)]">
+            <span class="text-xs text-gray-300 font-bold uppercase tracking-wider leading-none mb-0.5">XTE</span>
+            <span id="mobile-xte-value" class="text-lg sm:text-xl font-mono font-bold text-white leading-none">-- m</span>
         </div>
 
         <button id="btn-rotate-right" onclick="callService('/steer_planner_node/rotate_ref_right')"
-            class="bg-white/10 hover:bg-white/20 p-2.5 sm:p-3 rounded-xl transition active:scale-90 flex justify-center items-center min-w-[48px] min-h-[48px] border border-white/10"
+            class="bg-white/10 hover:bg-white/20 p-2.5 sm:p-3 rounded-xl transition active:scale-90 flex justify-center items-center min-w-[var(--hit-secondary)] min-h-[var(--hit-secondary)] border border-white/10"
             title="Rotate Right">
             <svg class="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -479,7 +488,7 @@
 
         <!-- Swath Right -->
         <button id="btn-swath-right"
-            class="hold-btn relative overflow-hidden group select-none bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 border border-indigo-500/30 p-3 sm:p-4 rounded-2xl transition active:scale-95 flex justify-center items-center min-w-[50px] min-h-[50px] sm:min-w-[58px] sm:min-h-[58px]"
+            class="hold-btn relative overflow-hidden group select-none bg-indigo-500/35 hover:bg-indigo-500/50 text-indigo-200 border border-indigo-500/40 p-3 sm:p-4 rounded-2xl transition active:scale-95 flex justify-center items-center min-w-[var(--hit-primary)] min-h-[var(--hit-primary)]"
             title="Swath Right">
 
             <!-- Thanh tiến trình (Progress bar) -->
@@ -501,12 +510,12 @@
 
         <!-- Toggle Switch -->
         <div
-            class="glass-panel p-1 rounded-full flex items-center pointer-events-auto shadow-lg backdrop-blur-md bg-black/40">
+            class="glass-panel p-1 rounded-full flex items-center pointer-events-auto shadow-lg backdrop-blur-md bg-black/60 border border-white/20">
             <button onclick="setControlMode('record')" id="toggle-record"
-                class="px-4 py-1.5 rounded-full text-xs font-bold transition-all bg-blue-500/80 text-white shadow-md cursor-default"
+                class="px-5 py-2 min-h-[var(--hit-min)] rounded-full text-sm font-bold transition-all bg-blue-600 text-white shadow-md cursor-default"
                 data-i18n="mode-record">A-B Mode</button>
             <button onclick="setControlMode('path')" id="toggle-path"
-                class="px-4 py-1.5 rounded-full text-xs font-bold transition-all text-gray-400 hover:text-white cursor-pointer"
+                class="px-5 py-2 min-h-[var(--hit-min)] rounded-full text-sm font-bold transition-all text-gray-300 hover:text-white cursor-pointer"
                 data-i18n="mode-path">Path Mode</button>
         </div>
 
@@ -514,48 +523,48 @@
             class="glass-panel p-2 md:p-3 rounded-2xl grid grid-cols-2 sm:flex sm:flex-row items-center gap-2 pointer-events-auto shadow-2xl w-full max-w-[95vw] sm:w-auto sm:min-w-[450px] md:min-w-[500px]">
 
             <button id="btn-record-vertex"
-                class="relative overflow-hidden select-none flex-1 flex flex-col items-center justify-center bg-blue-500/20 hover:bg-blue-500/40 border border-blue-500/30 py-2 rounded-xl transition active:scale-95 group">
+                class="relative overflow-hidden select-none flex-1 flex flex-col items-center justify-center bg-blue-500/35 hover:bg-blue-500/50 border border-blue-500/40 py-2.5 min-h-[var(--hit-primary)] rounded-xl transition active:scale-95 group">
                 <div class="hold-progress absolute left-0 bottom-0 top-0 w-0 bg-blue-500/50 pointer-events-none"></div>
-                <span class="relative z-10 text-xl mb-1 group-hover:scale-110 transition-transform">📍</span>
-                <span class="relative z-10 text-xs font-bold text-blue-100" data-i18n="btn-record-vertex">Record Vertex</span>
+                <span class="relative z-10 text-xl mb-0.5 group-hover:scale-110 transition-transform">📍</span>
+                <span class="relative z-10 text-sm font-bold text-blue-100 drop-shadow" data-i18n="btn-record-vertex">Record Vertex</span>
             </button>
 
             <div id="divider-path" class="hidden sm:block w-px h-10 bg-white/10 mx-1"></div>
 
             <button id="btn-generate-path"
-                class="relative overflow-hidden select-none flex-1 flex flex-col items-center justify-center bg-green-500/20 hover:bg-green-500/40 border border-green-500/30 py-2 rounded-xl transition active:scale-95 group">
+                class="relative overflow-hidden select-none flex-1 flex flex-col items-center justify-center bg-green-500/35 hover:bg-green-500/50 border border-green-500/40 py-2.5 min-h-[var(--hit-primary)] rounded-xl transition active:scale-95 group">
                 <div class="hold-progress absolute left-0 bottom-0 top-0 w-0 bg-green-500/50 pointer-events-none"></div>
-                <span class="relative z-10 text-xl mb-1 group-hover:scale-110 transition-transform">🗺️</span>
-                <span class="relative z-10 text-xs font-bold text-green-100" data-i18n="btn-generate-path">Generate Path</span>
+                <span class="relative z-10 text-xl mb-0.5 group-hover:scale-110 transition-transform">🗺️</span>
+                <span class="relative z-10 text-sm font-bold text-green-100 drop-shadow" data-i18n="btn-generate-path">Generate Path</span>
             </button>
 
             <!-- Divider và nút Start (hiện khi ở Path mode và đã quy hoạch) -->
             <div id="divider-start" class="hidden sm:block w-px h-10 bg-white/10 mx-1" style="display: none;"></div>
 
             <button id="btn-start-path"
-                class="relative overflow-hidden select-none flex-1 flex flex-col items-center justify-center bg-blue-500/20 hover:bg-blue-500/40 border border-blue-500/30 py-2 rounded-xl transition active:scale-95 group"
+                class="relative overflow-hidden select-none flex-1 flex flex-col items-center justify-center bg-blue-500/35 hover:bg-blue-500/50 border border-blue-500/40 py-2.5 min-h-[var(--hit-primary)] rounded-xl transition active:scale-95 group"
                 style="display: none;">
                 <div class="hold-progress absolute left-0 bottom-0 top-0 w-0 bg-blue-500/50 pointer-events-none"></div>
-                <span class="relative z-10 text-xl mb-1 group-hover:scale-110 transition-transform">🚀</span>
-                <span class="relative z-10 text-xs font-bold text-blue-100" data-i18n="btn-start-path">Start</span>
+                <span class="relative z-10 text-xl mb-0.5 group-hover:scale-110 transition-transform">🚀</span>
+                <span class="relative z-10 text-sm font-bold text-blue-100 drop-shadow" data-i18n="btn-start-path">Start</span>
             </button>
 
             <!-- Divider và nút Clear All nằm chung hàng -->
             <div id="divider-clear" class="hidden sm:block w-px h-10 bg-white/10 mx-1"></div>
 
             <button id="btn-clear-all"
-                class="relative overflow-hidden select-none flex-1 flex flex-col items-center justify-center bg-red-500/20 hover:bg-red-500/40 border border-red-500/30 py-2 rounded-xl transition active:scale-95 group col-span-2">
+                class="relative overflow-hidden select-none flex-1 flex flex-col items-center justify-center bg-red-500/35 hover:bg-red-500/50 border border-red-500/40 py-2.5 min-h-[var(--hit-primary)] rounded-xl transition active:scale-95 group col-span-2">
                 <div class="hold-progress absolute left-0 bottom-0 top-0 w-0 bg-red-500/50 pointer-events-none"></div>
-                <span class="relative z-10 text-xl mb-1 group-hover:scale-110 transition-transform">🗑️</span>
-                <span class="relative z-10 text-xs font-bold text-red-100" data-i18n="btn-clear-all">Clear All</span>
+                <span class="relative z-10 text-xl mb-0.5 group-hover:scale-110 transition-transform">🗑️</span>
+                <span class="relative z-10 text-sm font-bold text-red-100 drop-shadow" data-i18n="btn-clear-all">Clear All</span>
             </button>
 
             <!-- Nút Record Line (sẽ tự thay đổi UI dựa trên Topic state_machine) -->
             <button id="btn-record-line"
-                class="relative overflow-hidden select-none flex-1 flex flex-col items-center justify-center bg-red-500/20 hover:bg-red-500/40 border border-red-500/30 py-2 rounded-xl transition active:scale-95 group col-span-2">
+                class="relative overflow-hidden select-none flex-1 flex flex-col items-center justify-center bg-red-500/35 hover:bg-red-500/50 border border-red-500/40 py-2.5 min-h-[var(--hit-primary)] rounded-xl transition active:scale-95 group col-span-2">
                 <div class="hold-progress absolute left-0 bottom-0 top-0 w-0 bg-white/30 pointer-events-none"></div>
-                <span class="relative z-10 text-xl mb-1 group-hover:scale-110 transition-transform text-red-400">⏺</span>
-                <span class="relative z-10 text-xs font-bold text-red-100" data-i18n="btn-record-line">Record Line</span>
+                <span class="relative z-10 text-xl mb-0.5 group-hover:scale-110 transition-transform text-red-400">⏺</span>
+                <span class="relative z-10 text-sm font-bold text-red-100 drop-shadow" data-i18n="btn-record-line">Record Line</span>
             </button>
 
         </div>
@@ -566,9 +575,9 @@
 
         <!-- Nút Trở Về Vị Trí Xe (Recenter) - Mặc định ẩn -->
         <button id="btn-recenter"
-            class="opacity-0 pointer-events-none translate-y-4 w-10 h-10 glass-panel rounded-full flex items-center justify-center hover:bg-white/20 transition-all duration-300 active:scale-90 shadow-[0_0_10px_rgba(0,0,0,0.5)] group self-start"
+            class="opacity-0 pointer-events-none translate-y-4 w-12 h-12 min-w-[var(--hit-secondary)] min-h-[var(--hit-secondary)] glass-panel rounded-full flex items-center justify-center hover:bg-white/20 transition-all duration-300 active:scale-90 shadow-[0_0_10px_rgba(0,0,0,0.5)] group self-start"
             data-i18n-title="btn-recenter" title="Recenter Map">
-            <svg class="w-5 h-5 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="#3b82f6"
+            <svg class="w-6 h-6 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="#3b82f6"
                 stroke="white" stroke-width="1.5" xmlns="http://www.w3.org/2000/svg">
                 <polygon points="12,2 22,20 12,17 2,20" />
             </svg>
@@ -589,8 +598,8 @@
             </div>
             <!-- Nút đổi lớp bản đồ (vệ tinh / đường phố): chỉ hiện khi đã mở rộng -->
             <button id="minimap-swap" type="button" title="Switch map"
-                class="absolute bottom-1 right-1 z-[1002] w-8 h-8 rounded-full glass-panel items-center justify-center pointer-events-auto active:scale-90">
-                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                class="absolute bottom-1 right-1 z-[1002] w-12 h-12 min-w-[var(--hit-secondary)] min-h-[var(--hit-secondary)] rounded-full glass-panel items-center justify-center pointer-events-auto active:scale-90">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
                 </svg>
@@ -640,137 +649,137 @@
         <div class="bg-black/30 rounded-xl p-2.5 border border-white/5 flex flex-col gap-1.5">
             <div class="flex items-baseline justify-between">
                 <div class="flex items-baseline gap-1">
-                    <span id="depth-actual" class="text-2xl font-mono font-bold text-white tracking-tight">--</span>
-                    <span class="text-xs font-mono text-gray-400">mm</span>
+                    <span id="depth-actual" class="text-2xl sm:text-3xl font-mono font-bold text-white tracking-tight">--</span>
+                    <span class="text-sm font-mono text-gray-300">mm</span>
                 </div>
-                <div id="depth-error-badge" class="text-[11px] font-mono font-semibold px-2 py-0.5 rounded-md bg-gray-800 text-gray-400">
+                <div id="depth-error-badge" class="text-xs font-mono font-semibold px-2.5 py-1 rounded-md bg-gray-800 text-gray-300 border border-white/10">
                     <span data-i18n="depth-error">Err</span>: <span id="depth-error-val">--</span>
                 </div>
             </div>
 
             <!-- Telemetry Details: Lift angle & Tailboard angle -->
-            <div class="grid grid-cols-2 gap-1.5 pt-1 border-t border-white/5 text-[11px] font-mono text-gray-400">
-                <div class="flex items-center justify-between bg-white/5 px-2 py-1 rounded">
+            <div class="grid grid-cols-2 gap-1.5 pt-1 border-t border-white/5 text-xs font-mono text-gray-300">
+                <div class="flex items-center justify-between bg-white/5 px-2.5 py-1.5 rounded">
                     <span data-i18n="depth-lift">Lift</span>
                     <span class="text-white font-bold"><span id="depth-lift-actual">--.-</span>°</span>
                 </div>
-                <div class="flex items-center justify-between bg-white/5 px-2 py-1 rounded">
+                <div class="flex items-center justify-between bg-white/5 px-2.5 py-1.5 rounded">
                     <span data-i18n="depth-tail">Tail</span>
                     <span class="text-white font-bold"><span id="depth-tail-actual">--.-</span>°</span>
                 </div>
             </div>
 
             <!-- Depth Gauge Bar -->
-            <div class="relative w-full h-1.5 bg-gray-800 rounded-full overflow-hidden mt-0.5" title="Depth Gauge">
+            <div class="relative w-full h-2 bg-gray-800 rounded-full overflow-hidden mt-0.5" title="Depth Gauge">
                 <div id="depth-gauge-actual" class="absolute top-0 bottom-0 left-0 bg-blue-500 rounded-full transition-all duration-200" style="width: 0%;"></div>
-                <div id="depth-gauge-target" class="absolute top-0 bottom-0 w-1 bg-yellow-400 -translate-x-1/2 transition-all duration-200" style="left: 0%;"></div>
+                <div id="depth-gauge-target" class="absolute top-0 bottom-0 w-1.5 bg-yellow-400 -translate-x-1/2 transition-all duration-200" style="left: 0%;"></div>
             </div>
         </div>
 
         <!-- Collapsible Content (Mode, Inputs, Steppers, Controls) -->
         <!-- Why depth control is not working right now (link to the depth system) -->
         <p id="depth-link-error"
-            class="hidden text-[11px] font-semibold text-center leading-tight px-2 py-1.5 rounded-lg bg-rose-900/70 text-rose-100 border border-rose-500/50"></p>
+            class="hidden text-xs font-semibold text-center leading-tight px-2 py-1.5 rounded-lg bg-rose-900/70 text-rose-100 border border-rose-500/50"></p>
 
         <!-- HOME: one tap lifts the implement. Kept outside the collapsible part so it is always reachable -->
         <button id="depth-home-btn" type="button" onclick="sendDepthHome()"
-            class="w-full py-2.5 rounded-xl font-bold text-sm bg-amber-600 hover:bg-amber-500 text-white transition-colors select-none active:scale-95 shadow-md shadow-amber-900/40"
+            class="w-full py-3 min-h-[var(--hit-primary)] rounded-xl font-bold text-base bg-amber-600 hover:bg-amber-500 text-white transition-colors select-none active:scale-95 shadow-md shadow-amber-900/40 tracking-wider"
             data-i18n="depth-home">HOME (LIFT)</button>
 
         <div id="depth-collapsible-content" class="flex flex-col gap-2.5 transition-all duration-300">
             <!-- Mode selector -->
             <div class="grid grid-cols-2 gap-2">
                 <button id="depth-mode-auto" data-depth-mode="0"
-                    class="depth-mode-btn py-1.5 rounded-lg text-xs font-bold bg-blue-600 text-white transition-colors active:scale-95"
+                    class="depth-mode-btn py-2 min-h-[var(--hit-min)] rounded-lg text-sm font-bold bg-blue-600 text-white transition-colors active:scale-95"
                     data-i18n="depth-mode-auto">AUTO</button>
                 <button id="depth-mode-manual" data-depth-mode="1"
-                    class="depth-mode-btn py-1.5 rounded-lg text-xs font-bold bg-gray-700 text-gray-300 transition-colors active:scale-95"
+                    class="depth-mode-btn py-2 min-h-[var(--hit-min)] rounded-lg text-sm font-bold bg-gray-700 text-gray-300 transition-colors active:scale-95"
                     data-i18n="depth-mode-manual">MANUAL</button>
             </div>
 
             <!-- AUTO: depth setpoint in mm with steppers and presets -->
             <div id="depth-auto-input" class="flex flex-col gap-1.5">
                 <div class="flex items-center justify-between">
-                    <label class="text-[10px] text-gray-400 uppercase tracking-wider"
+                    <label class="text-xs text-gray-300 uppercase tracking-wider font-semibold"
                         data-i18n="depth-set-mm">Target depth (mm)</label>
                 </div>
                 <div class="flex items-center gap-1.5">
                     <button type="button" onclick="adjustDepthTarget(-20)"
-                        class="depth-stepper-btn px-2.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-300 text-xs font-mono font-bold active:scale-90 transition">
+                        class="depth-stepper-btn px-2.5 py-2 min-h-[var(--hit-min)] min-w-[44px] rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-200 text-sm font-mono font-bold active:scale-90 transition">
                         -20
                     </button>
                     <button type="button" onclick="adjustDepthTarget(-10)"
-                        class="depth-stepper-btn px-2.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-300 text-xs font-mono font-bold active:scale-90 transition">
+                        class="depth-stepper-btn px-2.5 py-2 min-h-[var(--hit-min)] min-w-[44px] rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-200 text-sm font-mono font-bold active:scale-90 transition">
                         -10
                     </button>
                     <input id="depth-target-mm" type="number" min="50" max="150" step="5" value="120"
-                        class="flex-1 min-w-0 bg-gray-900/90 border border-gray-600 rounded-lg px-1 py-1 text-center text-white font-mono text-base font-bold focus:outline-none focus:border-blue-500">
+                        class="flex-1 min-w-0 bg-gray-900/90 border border-gray-600 rounded-lg px-1 py-1.5 text-center text-white font-mono text-lg font-bold focus:outline-none focus:border-blue-500 min-h-[var(--hit-min)]">
                     <button type="button" onclick="adjustDepthTarget(10)"
-                        class="depth-stepper-btn px-2.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-300 text-xs font-mono font-bold active:scale-90 transition">
+                        class="depth-stepper-btn px-2.5 py-2 min-h-[var(--hit-min)] min-w-[44px] rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-200 text-sm font-mono font-bold active:scale-90 transition">
                         +10
                     </button>
                     <button type="button" onclick="adjustDepthTarget(20)"
-                        class="depth-stepper-btn px-2.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-300 text-xs font-mono font-bold active:scale-90 transition">
+                        class="depth-stepper-btn px-2.5 py-2 min-h-[var(--hit-min)] min-w-[44px] rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-200 text-sm font-mono font-bold active:scale-90 transition">
                         +20
                     </button>
                 </div>
                 <!-- Preset chips -->
-                <div class="flex items-center justify-between gap-1 pt-0.5">
+                <div class="flex items-center justify-between gap-1.5 pt-0.5">
                     <button type="button" onclick="setDepthTargetPreset(80)"
-                        class="depth-preset-chip flex-1 py-1 text-[10px] font-mono rounded bg-white/5 hover:bg-white/15 border border-white/10 text-gray-300 transition active:scale-95">80</button>
+                        class="depth-preset-chip flex-1 py-1.5 min-h-[var(--hit-min)] text-sm font-mono font-semibold rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-gray-200 transition active:scale-95">80</button>
                     <button type="button" onclick="setDepthTargetPreset(100)"
-                        class="depth-preset-chip flex-1 py-1 text-[10px] font-mono rounded bg-white/5 hover:bg-white/15 border border-white/10 text-gray-300 transition active:scale-95">100</button>
+                        class="depth-preset-chip flex-1 py-1.5 min-h-[var(--hit-min)] text-sm font-mono font-semibold rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-gray-200 transition active:scale-95">100</button>
                     <button type="button" onclick="setDepthTargetPreset(120)"
-                        class="depth-preset-chip flex-1 py-1 text-[10px] font-mono rounded bg-white/5 hover:bg-white/15 border border-white/10 text-gray-300 transition active:scale-95">120</button>
+                        class="depth-preset-chip flex-1 py-1.5 min-h-[var(--hit-min)] text-sm font-mono font-semibold rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-gray-200 transition active:scale-95">120</button>
                     <button type="button" onclick="setDepthTargetPreset(150)"
-                        class="depth-preset-chip flex-1 py-1 text-[10px] font-mono rounded bg-white/5 hover:bg-white/15 border border-white/10 text-gray-300 transition active:scale-95">150</button>
+                        class="depth-preset-chip flex-1 py-1.5 min-h-[var(--hit-min)] text-sm font-mono font-semibold rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-gray-200 transition active:scale-95">150</button>
                 </div>
             </div>
 
             <!-- MANUAL: lift arm angle with steppers and presets -->
             <div id="depth-manual-input" class="flex-col gap-1.5 hidden">
                 <div class="flex items-center justify-between">
-                    <label class="text-[10px] text-gray-400 uppercase tracking-wider"
+                    <label class="text-xs text-gray-300 uppercase tracking-wider font-semibold"
                         data-i18n="depth-set-angle">Lift arm angle</label>
-                    <span class="text-xs text-white font-mono font-bold"><span id="depth-angle-value">20.0</span>°</span>
+                    <span class="text-sm text-white font-mono font-bold"><span id="depth-angle-value">20.0</span>°</span>
                 </div>
                 <div class="flex items-center gap-2">
                     <button type="button" onclick="adjustDepthAngle(-1.0)"
-                        class="depth-stepper-btn px-3 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-200 text-sm font-mono font-bold active:scale-90 transition">
+                        class="depth-stepper-btn px-3 py-2 min-h-[var(--hit-min)] min-w-[44px] rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-200 text-sm font-mono font-bold active:scale-90 transition">
                         -1°
                     </button>
                     <input id="depth-target-deg" type="range" min="0" max="35" step="0.5" value="20"
-                        class="flex-1 accent-blue-500 h-2.5 bg-gray-700 rounded-lg cursor-pointer">
+                        class="flex-1 accent-blue-500 h-3 bg-gray-700 rounded-lg cursor-pointer">
                     <button type="button" onclick="adjustDepthAngle(1.0)"
-                        class="depth-stepper-btn px-3 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-200 text-sm font-mono font-bold active:scale-90 transition">
+                        class="depth-stepper-btn px-3 py-2 min-h-[var(--hit-min)] min-w-[44px] rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-200 text-sm font-mono font-bold active:scale-90 transition">
                         +1°
                     </button>
                 </div>
                 <!-- Angle Presets -->
                 <div class="flex items-center justify-between gap-1.5 pt-0.5">
                     <button type="button" onclick="setDepthAnglePreset(10.0)"
-                        class="depth-preset-chip flex-1 py-1.5 text-xs font-mono rounded-lg bg-white/5 hover:bg-white/15 border border-white/15 text-gray-200 transition active:scale-95">10°</button>
+                        class="depth-preset-chip flex-1 py-1.5 min-h-[var(--hit-min)] text-sm font-mono font-semibold rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-gray-200 transition active:scale-95">10°</button>
                     <button type="button" onclick="setDepthAnglePreset(15.0)"
-                        class="depth-preset-chip flex-1 py-1.5 text-xs font-mono rounded-lg bg-white/5 hover:bg-white/15 border border-white/15 text-gray-200 transition active:scale-95">15°</button>
+                        class="depth-preset-chip flex-1 py-1.5 min-h-[var(--hit-min)] text-sm font-mono font-semibold rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-gray-200 transition active:scale-95">15°</button>
                     <button type="button" onclick="setDepthAnglePreset(20.0)"
-                        class="depth-preset-chip flex-1 py-1.5 text-xs font-mono rounded-lg bg-white/5 hover:bg-white/15 border border-white/15 text-gray-200 transition active:scale-95">20°</button>
+                        class="depth-preset-chip flex-1 py-1.5 min-h-[var(--hit-min)] text-sm font-mono font-semibold rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-gray-200 transition active:scale-95">20°</button>
                     <button type="button" onclick="setDepthAnglePreset(25.0)"
-                        class="depth-preset-chip flex-1 py-1.5 text-xs font-mono rounded-lg bg-white/5 hover:bg-white/15 border border-white/15 text-gray-200 transition active:scale-95">25°</button>
+                        class="depth-preset-chip flex-1 py-1.5 min-h-[var(--hit-min)] text-sm font-mono font-semibold rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-gray-200 transition active:scale-95">25°</button>
                 </div>
             </div>
 
             <!-- Tap to engage, hold 1 s to disengage -->
             <button id="depth-active-btn"
-                class="relative overflow-hidden w-full py-3 rounded-xl font-bold text-sm bg-emerald-600 hover:bg-emerald-500 text-white transition-colors select-none touch-none shadow-md shadow-emerald-900/40">
+                class="relative overflow-hidden w-full py-3.5 min-h-[var(--hit-primary)] rounded-xl font-bold text-base bg-emerald-600 hover:bg-emerald-500 text-white transition-colors select-none touch-none shadow-md shadow-emerald-900/40 tracking-wider">
                 <span id="depth-active-fill"
                     class="absolute inset-y-0 left-0 w-0 bg-white/35 pointer-events-none"></span>
                 <span id="depth-active-label" class="relative" data-i18n="depth-activate">ACTIVATE</span>
             </button>
-            <p class="text-[10px] text-gray-400 text-center leading-tight -mt-1" data-i18n="depth-hold-hint">
+            <p class="text-xs text-gray-300 text-center leading-tight mt-0.5" data-i18n="depth-hold-hint">
                 Tap to engage &middot; hold 1 s to disengage</p>
             <!-- Shown while the controller at the depth system has taken control -->
             <p id="depth-preempt-notice"
-                class="hidden text-[11px] font-semibold text-center leading-tight px-2 py-1.5 rounded-lg bg-amber-900/60 text-amber-200 border border-amber-500/40"
+                class="hidden text-xs font-semibold text-center leading-tight px-2 py-1.5 rounded-lg bg-amber-900/60 text-amber-200 border border-amber-500/40"
                 data-i18n="depth-preempted">Local controller took over. Tap ACTIVATE to control from here again.</p>
         </div>
     </div>
@@ -799,11 +808,11 @@
                 <div class="flex items-center gap-4">
                     <!-- Language Toggle Button -->
                     <button id="lang-toggle"
-                        class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-full text-xs font-bold transition shadow-md">繁體中文</button>
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 min-h-[var(--hit-min)] rounded-full text-sm font-bold transition shadow-md flex items-center justify-center">繁體中文</button>
 
                     <button onclick="toggleSettings()"
-                        class="text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 p-2 rounded-full transition">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        class="text-gray-300 hover:text-white bg-gray-800 hover:bg-gray-700 p-2.5 min-w-[var(--hit-min)] min-h-[var(--hit-min)] rounded-full transition flex items-center justify-center">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
@@ -814,11 +823,11 @@
             <!-- Tab Navigation -->
             <div class="flex border-b border-gray-800 bg-gray-900/50 px-6">
                 <button id="tab-user" onclick="switchSettingsTab('user')"
-                    class="py-3 px-4 text-sm font-semibold border-b-2 border-blue-500 text-blue-400 transition-all focus:outline-none flex items-center gap-2">
+                    class="py-3 px-5 min-h-[var(--hit-secondary)] text-sm font-semibold border-b-2 border-blue-500 text-blue-400 transition-all focus:outline-none flex items-center gap-2">
                     👤 <span data-i18n="tab-user">User Settings</span>
                 </button>
                 <button id="tab-engineer" onclick="switchSettingsTab('engineer')"
-                    class="py-3 px-4 text-sm font-semibold border-b-2 border-transparent text-gray-400 hover:text-gray-200 transition-all focus:outline-none flex items-center gap-2">
+                    class="py-3 px-5 min-h-[var(--hit-secondary)] text-sm font-semibold border-b-2 border-transparent text-gray-400 hover:text-gray-200 transition-all focus:outline-none flex items-center gap-2">
                     🛠️ <span data-i18n="tab-engineer">Engineer Settings</span>
                 </button>
             </div>
@@ -1045,16 +1054,16 @@
                             <!-- Các bước lưu -->
                             <div class="sl-btns">
                                 <button id="sl-btn-center" onclick="slSetCenter()"
-                                    class="sl-btn bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-xs font-semibold transition active:scale-95"
+                                    class="sl-btn bg-blue-600 hover:bg-blue-700 text-white px-3 py-2.5 min-h-[var(--hit-secondary)] rounded-lg text-sm font-semibold transition active:scale-95"
                                     data-i18n="sl-btn-center">1. Set Center</button>
                                 <button id="sl-btn-left" onclick="slCapture('left')" disabled
-                                    class="sl-btn bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-xs font-semibold transition active:scale-95"
+                                    class="sl-btn bg-blue-600 hover:bg-blue-700 text-white px-3 py-2.5 min-h-[var(--hit-secondary)] rounded-lg text-sm font-semibold transition active:scale-95"
                                     data-i18n="sl-btn-left">2. Capture Left</button>
                                 <button id="sl-btn-right" onclick="slCapture('right')" disabled
-                                    class="sl-btn bg-green-600 text-white px-3 py-2 rounded-lg text-xs font-semibold transition active:scale-95"
+                                    class="sl-btn bg-green-600 text-white px-3 py-2.5 min-h-[var(--hit-secondary)] rounded-lg text-sm font-semibold transition active:scale-95"
                                     data-i18n="sl-btn-right">3. Capture Right &amp; Save</button>
                                 <button id="sl-btn-cancel" onclick="slCancel()" disabled
-                                    class="sl-btn bg-gray-700 text-white px-3 py-2 rounded-lg text-xs font-semibold transition active:scale-95"
+                                    class="sl-btn bg-gray-700 text-white px-3 py-2.5 min-h-[var(--hit-secondary)] rounded-lg text-sm font-semibold transition active:scale-95"
                                     data-i18n="sl-btn-cancel">Cancel</button>
                             </div>
                             <p id="sl-message" class="text-xs text-gray-400 mt-1 font-mono" style="min-height: 1.25rem; margin-top: 0.75rem;"></p>
@@ -5081,6 +5090,14 @@
 
         // Khởi tạo Depth Control panel
         initDepthControl();
+
+        // Mục F: Tự động đo và ghi biến CSS --dock-h để các panel chống đè dock
+        const dockEl = document.querySelector('.hmi-bottom-dock');
+        if (dockEl && window.ResizeObserver) {
+            new ResizeObserver(() => {
+                document.documentElement.style.setProperty('--dock-h', dockEl.offsetHeight + 'px');
+            }).observe(dockEl);
+        }
 
         // Chạy ngay lập tức Animation nền của màn hình chờ
         setTimeout(() => {
