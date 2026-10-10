@@ -15,6 +15,8 @@
 
     <!-- Tailwind CSS -->
     <link rel="stylesheet" href="tailwind.min.css">
+    <!-- Agriculture High-Contrast Responsive HMI Theme -->
+    <link rel="stylesheet" href="theme-hmi.css">
 
     <!-- ROSLibJS & EventEmitter2 -->
     <script src="eventemitter2.min.js"></script>
@@ -320,7 +322,7 @@
     <!-- LỚP 1: GIAO DIỆN ĐIỀU KHIỂN (HUD Overlay) -->
 
     <!-- TOP BAR: Trạng thái & Telemetry -->
-    <div class="absolute top-4 left-4 right-4 z-10 flex justify-between items-start pointer-events-none">
+    <div class="hmi-top-bar absolute top-4 left-4 right-4 z-10 flex justify-between items-start pointer-events-none">
 
         <!-- Cụm Trái: Tên hệ thống & Trạng thái kết nối -->
         <div class="pointer-events-auto flex items-center gap-3 glass-panel rounded-full px-4 py-2 shadow-lg">
@@ -437,7 +439,7 @@
 
         <!-- Swath Left -->
         <button id="btn-swath-left"
-            class="relative overflow-hidden group select-none bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 border border-indigo-500/30 p-4 sm:p-5 rounded-2xl transition active:scale-95 flex justify-center items-center"
+            class="relative overflow-hidden group select-none bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 border border-indigo-500/30 p-3 sm:p-4 rounded-2xl transition active:scale-95 flex justify-center items-center min-w-[50px] min-h-[50px] sm:min-w-[58px] sm:min-h-[58px]"
             title="Swath Left">
 
             <!-- Thanh tiến trình (Progress bar) -->
@@ -452,7 +454,7 @@
         </button>
 
         <button id="btn-rotate-left" onclick="callService('/steer_planner_node/rotate_ref_left')"
-            class="bg-white/5 hover:bg-white/15 p-2.5 sm:p-3 rounded-xl transition active:scale-90 flex justify-center items-center"
+            class="bg-white/10 hover:bg-white/20 p-2.5 sm:p-3 rounded-xl transition active:scale-90 flex justify-center items-center min-w-[48px] min-h-[48px] border border-white/10"
             title="Rotate Left">
             <svg class="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -461,13 +463,13 @@
         </button>
 
         <!-- Central XTE Display (Mobile-friendly) -->
-        <div id="mobile-xte-container" class="flex flex-col items-center justify-center px-3 py-1 bg-black/45 border border-white/10 rounded-2xl min-w-[75px] sm:min-w-[90px] shadow-inner select-none">
-            <span class="text-[8px] sm:text-[9px] text-gray-400 font-bold uppercase tracking-wider leading-none mb-0.5">XTE</span>
-            <span id="mobile-xte-value" class="text-xs sm:text-sm font-mono font-bold text-gray-400 leading-none">-- m</span>
+        <div id="mobile-xte-container" class="flex flex-col items-center justify-center px-3 py-1 bg-black/60 border border-white/20 rounded-2xl min-w-[75px] sm:min-w-[90px] shadow-inner select-none min-h-[48px]">
+            <span class="text-[8px] sm:text-[9px] text-gray-300 font-bold uppercase tracking-wider leading-none mb-0.5">XTE</span>
+            <span id="mobile-xte-value" class="text-xs sm:text-sm font-mono font-bold text-gray-200 leading-none">-- m</span>
         </div>
 
         <button id="btn-rotate-right" onclick="callService('/steer_planner_node/rotate_ref_right')"
-            class="bg-white/5 hover:bg-white/15 p-2.5 sm:p-3 rounded-xl transition active:scale-90 flex justify-center items-center"
+            class="bg-white/10 hover:bg-white/20 p-2.5 sm:p-3 rounded-xl transition active:scale-90 flex justify-center items-center min-w-[48px] min-h-[48px] border border-white/10"
             title="Rotate Right">
             <svg class="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -477,7 +479,7 @@
 
         <!-- Swath Right -->
         <button id="btn-swath-right"
-            class="hold-btn relative overflow-hidden group select-none bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 border border-indigo-500/30 p-4 sm:p-5 rounded-2xl transition active:scale-95 flex justify-center items-center"
+            class="hold-btn relative overflow-hidden group select-none bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 border border-indigo-500/30 p-3 sm:p-4 rounded-2xl transition active:scale-95 flex justify-center items-center min-w-[50px] min-h-[50px] sm:min-w-[58px] sm:min-h-[58px]"
             title="Swath Right">
 
             <!-- Thanh tiến trình (Progress bar) -->
@@ -495,7 +497,7 @@
 
     <!-- BOTTOM CONTROLS: Field2Cover & Record Switcher -->
     <div
-        class="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 pointer-events-none w-full px-2 sm:px-4 flex flex-col items-center gap-3">
+        class="hmi-bottom-dock absolute bottom-6 left-1/2 -translate-x-1/2 z-10 pointer-events-none w-full px-2 sm:px-4 flex flex-col items-center gap-3">
 
         <!-- Toggle Switch -->
         <div
@@ -600,7 +602,12 @@
     <div id="depth-panel"
         class="absolute right-4 top-28 sm:top-20 z-20 w-[280px] glass-panel rounded-2xl shadow-2xl border border-white/10 p-3.5 flex flex-col gap-2.5 pointer-events-auto transition-all duration-300 hidden sm:flex">
 
-        <!-- Header: title + live depth link dot + collapse button -->
+        <!-- Mobile Drawer Grab Handle (Chỉ hiện trên màn hình nhỏ) -->
+        <div class="sm:hidden w-full flex flex-col items-center justify-center pt-1 pb-2">
+            <div class="w-12 h-1.5 bg-gray-600 rounded-full"></div>
+        </div>
+
+        <!-- Header: title + live depth link dot + collapse button + mobile close -->
         <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
                 <span class="text-xs font-bold text-gray-200 uppercase tracking-wider flex items-center gap-1.5"
@@ -614,9 +621,16 @@
             <div class="flex items-center gap-2">
                 <span id="depth-link-dot" class="w-2.5 h-2.5 rounded-full bg-gray-500 transition-colors" title="depth link"></span>
                 <button id="depth-toggle-collapse" type="button" onclick="toggleDepthCollapse()"
-                    class="text-gray-400 hover:text-white p-1 rounded transition active:scale-90" title="Collapse/Expand">
+                    class="hidden sm:inline-flex text-gray-400 hover:text-white p-1 rounded transition active:scale-90" title="Collapse/Expand">
                     <svg id="depth-collapse-icon" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </button>
+                <!-- Nút Đóng Bottom Drawer trên Mobile -->
+                <button type="button" onclick="toggleDepthPanel()"
+                    class="sm:hidden text-gray-400 hover:text-white p-2 rounded-lg bg-white/5 active:scale-90" title="Close Drawer">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
                 </button>
             </div>
@@ -682,34 +696,34 @@
                 </div>
                 <div class="flex items-center gap-1.5">
                     <button type="button" onclick="adjustDepthTarget(-20)"
-                        class="px-2.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-300 text-xs font-mono font-bold active:scale-90 transition">
+                        class="depth-stepper-btn px-2.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-300 text-xs font-mono font-bold active:scale-90 transition">
                         -20
                     </button>
                     <button type="button" onclick="adjustDepthTarget(-10)"
-                        class="px-2.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-300 text-xs font-mono font-bold active:scale-90 transition">
+                        class="depth-stepper-btn px-2.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-300 text-xs font-mono font-bold active:scale-90 transition">
                         -10
                     </button>
                     <input id="depth-target-mm" type="number" min="50" max="150" step="5" value="120"
                         class="flex-1 min-w-0 bg-gray-900/90 border border-gray-600 rounded-lg px-1 py-1 text-center text-white font-mono text-base font-bold focus:outline-none focus:border-blue-500">
                     <button type="button" onclick="adjustDepthTarget(10)"
-                        class="px-2.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-300 text-xs font-mono font-bold active:scale-90 transition">
+                        class="depth-stepper-btn px-2.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-300 text-xs font-mono font-bold active:scale-90 transition">
                         +10
                     </button>
                     <button type="button" onclick="adjustDepthTarget(20)"
-                        class="px-2.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-300 text-xs font-mono font-bold active:scale-90 transition">
+                        class="depth-stepper-btn px-2.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-300 text-xs font-mono font-bold active:scale-90 transition">
                         +20
                     </button>
                 </div>
                 <!-- Preset chips -->
                 <div class="flex items-center justify-between gap-1 pt-0.5">
                     <button type="button" onclick="setDepthTargetPreset(80)"
-                        class="flex-1 py-1 text-[10px] font-mono rounded bg-white/5 hover:bg-white/15 border border-white/10 text-gray-300 transition active:scale-95">80</button>
+                        class="depth-preset-chip flex-1 py-1 text-[10px] font-mono rounded bg-white/5 hover:bg-white/15 border border-white/10 text-gray-300 transition active:scale-95">80</button>
                     <button type="button" onclick="setDepthTargetPreset(100)"
-                        class="flex-1 py-1 text-[10px] font-mono rounded bg-white/5 hover:bg-white/15 border border-white/10 text-gray-300 transition active:scale-95">100</button>
+                        class="depth-preset-chip flex-1 py-1 text-[10px] font-mono rounded bg-white/5 hover:bg-white/15 border border-white/10 text-gray-300 transition active:scale-95">100</button>
                     <button type="button" onclick="setDepthTargetPreset(120)"
-                        class="flex-1 py-1 text-[10px] font-mono rounded bg-white/5 hover:bg-white/15 border border-white/10 text-gray-300 transition active:scale-95">120</button>
+                        class="depth-preset-chip flex-1 py-1 text-[10px] font-mono rounded bg-white/5 hover:bg-white/15 border border-white/10 text-gray-300 transition active:scale-95">120</button>
                     <button type="button" onclick="setDepthTargetPreset(150)"
-                        class="flex-1 py-1 text-[10px] font-mono rounded bg-white/5 hover:bg-white/15 border border-white/10 text-gray-300 transition active:scale-95">150</button>
+                        class="depth-preset-chip flex-1 py-1 text-[10px] font-mono rounded bg-white/5 hover:bg-white/15 border border-white/10 text-gray-300 transition active:scale-95">150</button>
                 </div>
             </div>
 
@@ -722,26 +736,26 @@
                 </div>
                 <div class="flex items-center gap-2">
                     <button type="button" onclick="adjustDepthAngle(-1.0)"
-                        class="px-2.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-300 text-xs font-mono font-bold active:scale-90 transition">
+                        class="depth-stepper-btn px-3 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-200 text-sm font-mono font-bold active:scale-90 transition">
                         -1°
                     </button>
                     <input id="depth-target-deg" type="range" min="0" max="35" step="0.5" value="20"
-                        class="flex-1 accent-blue-500 h-2 bg-gray-700 rounded-lg cursor-pointer">
+                        class="flex-1 accent-blue-500 h-2.5 bg-gray-700 rounded-lg cursor-pointer">
                     <button type="button" onclick="adjustDepthAngle(1.0)"
-                        class="px-2.5 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-300 text-xs font-mono font-bold active:scale-90 transition">
+                        class="depth-stepper-btn px-3 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-200 text-sm font-mono font-bold active:scale-90 transition">
                         +1°
                     </button>
                 </div>
                 <!-- Angle Presets -->
-                <div class="flex items-center justify-between gap-1 pt-0.5">
+                <div class="flex items-center justify-between gap-1.5 pt-0.5">
                     <button type="button" onclick="setDepthAnglePreset(10.0)"
-                        class="flex-1 py-1 text-[10px] font-mono rounded bg-white/5 hover:bg-white/15 border border-white/10 text-gray-300 transition active:scale-95">10°</button>
+                        class="depth-preset-chip flex-1 py-1.5 text-xs font-mono rounded-lg bg-white/5 hover:bg-white/15 border border-white/15 text-gray-200 transition active:scale-95">10°</button>
                     <button type="button" onclick="setDepthAnglePreset(15.0)"
-                        class="flex-1 py-1 text-[10px] font-mono rounded bg-white/5 hover:bg-white/15 border border-white/10 text-gray-300 transition active:scale-95">15°</button>
+                        class="depth-preset-chip flex-1 py-1.5 text-xs font-mono rounded-lg bg-white/5 hover:bg-white/15 border border-white/15 text-gray-200 transition active:scale-95">15°</button>
                     <button type="button" onclick="setDepthAnglePreset(20.0)"
-                        class="flex-1 py-1 text-[10px] font-mono rounded bg-white/5 hover:bg-white/15 border border-white/10 text-gray-300 transition active:scale-95">20°</button>
+                        class="depth-preset-chip flex-1 py-1.5 text-xs font-mono rounded-lg bg-white/5 hover:bg-white/15 border border-white/15 text-gray-200 transition active:scale-95">20°</button>
                     <button type="button" onclick="setDepthAnglePreset(25.0)"
-                        class="flex-1 py-1 text-[10px] font-mono rounded bg-white/5 hover:bg-white/15 border border-white/10 text-gray-300 transition active:scale-95">25°</button>
+                        class="depth-preset-chip flex-1 py-1.5 text-xs font-mono rounded-lg bg-white/5 hover:bg-white/15 border border-white/15 text-gray-200 transition active:scale-95">25°</button>
                 </div>
             </div>
 
