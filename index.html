@@ -240,10 +240,69 @@
             font-weight: bold;
             font-size: 18px;
         }
+
+        /* Command ≠ Status: Pending & Toast Notifications */
+        .btn-pending {
+            position: relative;
+            pointer-events: none;
+            opacity: 0.85;
+            animation: pendingPulse 1.2s infinite ease-in-out;
+        }
+        @keyframes pendingPulse {
+            0%, 100% { opacity: 0.85; transform: scale(1); }
+            50% { opacity: 0.55; transform: scale(0.98); }
+        }
+        #ui-toast-container {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            pointer-events: none;
+        }
+        .ui-toast {
+            pointer-events: auto;
+            min-width: 280px;
+            max-width: 420px;
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        .ui-toast.show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        .ui-toast-info {
+            background: rgba(30, 41, 59, 0.95);
+            border: 1px solid rgba(59, 130, 246, 0.4);
+            color: #93c5fd;
+        }
+        .ui-toast-warn {
+            background: rgba(69, 26, 3, 0.95);
+            border: 1px solid rgba(245, 158, 11, 0.4);
+            color: #fcd34d;
+        }
+        .ui-toast-error {
+            background: rgba(69, 10, 10, 0.95);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            color: #fca5a5;
+        }
     </style>
 </head>
 
 <body class="text-white font-sans text-sm select-none bg-[#111]">
+    <!-- Toast notification container -->
+    <div id="ui-toast-container"></div>
 
     <!-- LỚP CAO NHẤT: MÀN HÌNH CHỜ KẾT NỐI (SPLASH SCREEN) -->
     <div id="splash-screen"
@@ -462,7 +521,7 @@
             </svg>
         </button>
 
-        <button id="btn-rotate-left" onclick="callService('/steer_planner_node/rotate_ref_left')"
+        <button id="btn-rotate-left" onclick="callService('/steer_planner_node/rotate_ref_left', 'btn-rotate-left')"
             class="bg-white/10 hover:bg-white/20 p-2.5 sm:p-3 rounded-xl transition active:scale-90 flex justify-center items-center min-w-[var(--hit-secondary)] min-h-[var(--hit-secondary)] border border-white/10"
             title="Rotate Left">
             <svg class="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -477,7 +536,7 @@
             <span id="mobile-xte-value" class="text-lg sm:text-xl font-mono font-bold text-white leading-none">-- m</span>
         </div>
 
-        <button id="btn-rotate-right" onclick="callService('/steer_planner_node/rotate_ref_right')"
+        <button id="btn-rotate-right" onclick="callService('/steer_planner_node/rotate_ref_right', 'btn-rotate-right')"
             class="bg-white/10 hover:bg-white/20 p-2.5 sm:p-3 rounded-xl transition active:scale-90 flex justify-center items-center min-w-[var(--hit-secondary)] min-h-[var(--hit-secondary)] border border-white/10"
             title="Rotate Right">
             <svg class="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1324,7 +1383,12 @@
                 "depth-lift": "Lift",
                 "depth-tail": "Tail",
                 "depth-error": "Err",
-                "depth-toggle-panel": "Toggle Depth Control"
+                "depth-toggle-panel": "Toggle Depth Control",
+                "toast-cmd-failed": "Command failed: ",
+                "toast-cmd-timeout": "Hardware confirmation timed out.",
+                "toast-cmd-sent": "Command sent. Awaiting hardware confirmation...",
+                "toast-no-ros": "ROS is disconnected. Command not sent.",
+                "toast-idle-required": "Please return to IDLE state before switching modes!"
             },
             zh: {
                 "hud-disconnected": "已斷開",
@@ -1429,7 +1493,12 @@
                 "depth-lift": "提升臂",
                 "depth-tail": "尾門",
                 "depth-error": "偏差",
-                "depth-toggle-panel": "切換耕深控制"
+                "depth-toggle-panel": "切換耕深控制",
+                "toast-cmd-failed": "指令失敗：",
+                "toast-cmd-timeout": "硬體確認超時。",
+                "toast-cmd-sent": "指令已發送，等待硬體確認...",
+                "toast-no-ros": "ROS 未連線，無法發送指令。",
+                "toast-idle-required": "請先停止當前操作 (返回 IDLE 狀態) 再切換模式！"
             }
         };
 
@@ -2032,9 +2101,11 @@
                     text.innerText = t('btn-start-path') || "Start";
                     text.setAttribute('data-i18n', 'btn-start-path');
                 }
+                setButtonPending('btn-start-path', false);
             } else {
                 btnStart.style.display = 'none';
                 divStart.style.display = 'none';
+                setButtonPending('btn-start-path', false);
 
                 if (btnClearAll) {
                     btnClearAll.classList.remove('col-span-1');
@@ -2044,10 +2115,13 @@
         }
 
         function setControlMode(mode) {
-            // Prevent switching to Path Mode if not in IDLE state (1)
+            // Prevent switching modes if not in IDLE state
             if (mode === 'path' && plannerState !== 1) {
-                const msg = currentLang === 'zh' ? "請先停止當前操作 (返回 IDLE 狀態) 再切換模式！" : "Please stop current operation (return to IDLE state) before switching modes!";
-                alert(msg);
+                showToast(t('toast-idle-required'), 'warn');
+                return;
+            }
+            if (mode === 'record' && pathFollowerState === 4) {
+                showToast(t('toast-idle-required'), 'warn');
                 return;
             }
 
@@ -2118,9 +2192,9 @@
             }
         }
 
-        // Action gửi lệnh đi
+        // Action gửi lệnh đi (Command ≠ Status: pending spinner until /steer_planner_node/state_machine arrives)
         function toggleRecordLine() {
-            callService('/steer_planner_node/toggle_line_recording');
+            callService('/steer_planner_node/toggle_line_recording', 'btn-record-line');
         }
 
         function updateRecordLineButtonUI() {
@@ -2158,6 +2232,7 @@
                 text.className = "relative z-10 text-xs font-bold text-red-100";
                 text.innerText = t('btn-record-line');
             }
+            setButtonPending('btn-record-line', false);
         }
 
         function updateDynamicPanelsVisibility() {
@@ -3630,9 +3705,81 @@
             resetSplashBtn();
         });
 
-        function callService(name) {
-            if (!ros.isConnected) return;
-            new ROSLIB.Service({ ros: ros, name: name, serviceType: 'std_srvs/Empty' }).callService(new ROSLIB.ServiceRequest({}), () => console.log('Called ' + name));
+        // --- Toast Notification System ---
+        function showToast(message, type = 'info', duration = 3000) {
+            const container = document.getElementById('ui-toast-container');
+            if (!container) return;
+            const toast = document.createElement('div');
+            toast.className = `ui-toast ui-toast-${type}`;
+            const iconMap = {
+                info: 'ℹ️',
+                warn: '⚠️',
+                error: '❌'
+            };
+            toast.innerHTML = `<span>${iconMap[type] || 'ℹ️'}</span><span class="flex-1">${message}</span>`;
+            container.appendChild(toast);
+            requestAnimationFrame(() => toast.classList.add('show'));
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 350);
+            }, duration);
+        }
+
+        // --- Command ≠ Status: Pending State Helper ---
+        const pendingButtons = new Map();
+        function setButtonPending(btnId, isPending, timeoutMs = 2500, onTimeout = null) {
+            const btn = document.getElementById(btnId);
+            if (!btn) return;
+
+            if (pendingButtons.has(btnId)) {
+                clearTimeout(pendingButtons.get(btnId));
+                pendingButtons.delete(btnId);
+            }
+
+            if (isPending) {
+                btn.classList.add('btn-pending');
+                const timer = setTimeout(() => {
+                    btn.classList.remove('btn-pending');
+                    pendingButtons.delete(btnId);
+                    showToast(t('toast-cmd-timeout'), 'warn');
+                    if (onTimeout) onTimeout();
+                }, timeoutMs);
+                pendingButtons.set(btnId, timer);
+            } else {
+                btn.classList.remove('btn-pending');
+            }
+        }
+
+        // --- Robust ROS Service Caller with Response Handling ---
+        function callService(name, btnId = null, serviceType = 'std_srvs/Trigger', onComplete = null) {
+            if (!ros.isConnected) {
+                showToast(t('toast-no-ros'), 'error');
+                return;
+            }
+            if (btnId) setButtonPending(btnId, true);
+
+            const srv = new ROSLIB.Service({
+                ros: ros,
+                name: name,
+                serviceType: serviceType
+            });
+
+            srv.callService(new ROSLIB.ServiceRequest({}), (res) => {
+                if (btnId) setButtonPending(btnId, false);
+                if (res && res.success !== undefined) {
+                    if (!res.success) {
+                        showToast(t('toast-cmd-failed') + (res.message || 'Rejected'), 'warn', 4000);
+                    } else if (res.message) {
+                        console.log(`[Service OK] ${name}: ${res.message}`);
+                    }
+                }
+                if (onComplete) onComplete(true, res);
+            }, (err) => {
+                if (btnId) setButtonPending(btnId, false);
+                showToast(t('toast-cmd-failed') + err, 'error', 4000);
+                if (onComplete) onComplete(false, err);
+            });
         }
 
         const cmdPub = new ROSLIB.Topic({ ros: ros, name: '/steering_command', messageType: 'std_msgs/Float64' });
@@ -3932,25 +4079,28 @@
         function updateDepthHomeUI(reportedHome) {
             const btn = document.getElementById('depth-home-btn');
             if (!btn) return;
-            const lit = depthHomeActive || reportedHome === true;
+            const lit = reportedHome === true;
             btn.classList.toggle('ring-2', lit);
             btn.classList.toggle('ring-amber-300', lit);
-            const key = depthHomeActive ? 'depth-home-active' : 'depth-home';
+            const key = lit ? 'depth-home-active' : 'depth-home';
             if (btn.getAttribute('data-i18n') !== key) {
                 btn.setAttribute('data-i18n', key);
                 btn.innerText = t(key);
             }
         }
 
-        // One tap: take control and send the implement to HOME
+        // Command ≠ Status: sendDepthHome dispatches command and sets pending state; UI only changes when telemetry confirms
         function sendDepthHome() {
-            if (!ros.isConnected) return;
-            depthHomeActive = true;
-            depthEnabled = true;
-            depthUserActionAt = performance.now();
-            publishDepthCommand();
-            updateDepthActiveUI(true);
-            updateDepthHomeUI();
+            if (!ros.isConnected) {
+                showToast(t('toast-no-ros'), 'error');
+                return;
+            }
+            setButtonPending('depth-home-btn', true, 3000);
+            depthCmdPub.publish(new ROSLIB.Message({
+                mode: DEPTH_MODE_HOME,
+                target: getDepthAutoTargetMm(),
+                enable: true
+            }));
             if (navigator.vibrate) navigator.vibrate(80);
         }
 
@@ -3962,16 +4112,35 @@
             }, 80);
         }
 
+        // Command ≠ Status: setDepthMode dispatches requested mode; visual selection updates when backend confirms
         function setDepthMode(mode) {
-            depthCurrentMode = mode;
-            depthHomeActive = false;   // picking a working mode leaves HOME
-            updateDepthHomeUI();
+            if (!ros.isConnected) {
+                showToast(t('toast-no-ros'), 'error');
+                return;
+            }
+            const btnId = mode === 0 ? 'depth-mode-auto' : 'depth-mode-manual';
+            setButtonPending(btnId, true, 3000);
+
+            // Gửi lệnh chuyển mode
+            depthCmdPub.publish(new ROSLIB.Message({
+                mode: mode,
+                target: mode === 0 ? getDepthAutoTargetMm() : getDepthTarget(),
+                enable: depthEnabled
+            }));
+        }
+
+        // Cập nhật giao diện lựa chọn mode từ dữ liệu xác nhận thực tế của backend
+        function renderDepthModeSelection(actualMode) {
+            depthCurrentMode = actualMode;
             const btnAuto = document.getElementById('depth-mode-auto');
             const btnManual = document.getElementById('depth-mode-manual');
             const autoInput = document.getElementById('depth-auto-input');
             const manualInput = document.getElementById('depth-manual-input');
 
-            if (mode === 0) {
+            setButtonPending('depth-mode-auto', false);
+            setButtonPending('depth-mode-manual', false);
+
+            if (actualMode === 0) {
                 if (btnAuto) {
                     btnAuto.classList.remove('bg-gray-700', 'text-gray-300');
                     btnAuto.classList.add('bg-blue-600', 'text-white');
@@ -3985,7 +4154,7 @@
                     manualInput.classList.add('hidden');
                     manualInput.classList.remove('flex');
                 }
-            } else {
+            } else if (actualMode === 1) {
                 if (btnManual) {
                     btnManual.classList.remove('bg-gray-700', 'text-gray-300');
                     btnManual.classList.add('bg-blue-600', 'text-white');
@@ -3999,10 +4168,6 @@
                     manualInput.classList.add('flex');
                 }
                 if (autoInput) autoInput.classList.add('hidden');
-            }
-
-            if (depthEnabled) {
-                publishDepthCommand();
             }
         }
 
@@ -4160,25 +4325,75 @@
         // Also catches the bridge going silent, which no message can report
         setInterval(updateDepthLinkError, 1000);
 
-        // Follows the bridge: streaming stops by itself when the controller at the
-        // depth system issues a newer command than the one sent from here.
+        // Watchdog for /depth_link/status (telemetry timeout)
+        let lastDepthStatusAt = 0;
+        const DEPTH_STATUS_TIMEOUT_MS = 2500;
+
+        function checkDepthTelemetryTimeout() {
+            if (!ros.isConnected) return;
+            const now = performance.now();
+            if (lastDepthStatusAt > 0 && (now - lastDepthStatusAt > DEPTH_STATUS_TIMEOUT_MS)) {
+                const depthLinkDot = document.getElementById('depth-link-dot');
+                if (depthLinkDot) {
+                    depthLinkDot.className = 'w-2.5 h-2.5 rounded-full bg-red-500 transition-colors animate-pulse';
+                    depthLinkDot.title = 'Depth link timeout / stale';
+                }
+                const depthActual = document.getElementById('depth-actual');
+                if (depthActual) depthActual.innerText = '--';
+                const depthLiftActual = document.getElementById('depth-lift-actual');
+                if (depthLiftActual) depthLiftActual.innerText = '--.-';
+                const depthTailActual = document.getElementById('depth-tail-actual');
+                if (depthTailActual) depthTailActual.innerText = '--.-';
+                const depthErrorVal = document.getElementById('depth-error-val');
+                if (depthErrorVal) depthErrorVal.innerText = '--';
+
+                if (depthEnabled) {
+                    depthEnabled = false;
+                    updateDepthActiveUI(false);
+                    showToast(t('depth-err-no-gateway'), 'warn');
+                }
+                setButtonPending('depth-active-btn', false);
+                setButtonPending('depth-home-btn', false);
+            }
+        }
+        setInterval(checkDepthTelemetryTimeout, 1000);
+
+        // Command ≠ Status: UI state follows telemetry from /depth_link/status strictly.
         function syncDepthActiveFromBackend(m) {
+            lastDepthStatusAt = performance.now();
             const notice = document.getElementById('depth-preempt-notice');
             if (notice) notice.classList.toggle('hidden', m.preempted !== true);
 
-            if (performance.now() - depthUserActionAt < DEPTH_SYNC_GRACE_MS) return;
-            if (typeof m.streaming !== 'boolean' || m.streaming === depthEnabled) return;
+            if (typeof m.streaming === 'boolean') {
+                const wasEnabled = depthEnabled;
+                depthEnabled = m.streaming;
+                setButtonPending('depth-active-btn', false);
+                updateDepthActiveUI(depthEnabled);
 
-            const takenOver = depthEnabled && !m.streaming && m.preempted === true;
-            depthEnabled = m.streaming;
-            if (!depthEnabled) depthHomeActive = false;
+                if (wasEnabled && !depthEnabled && m.preempted === true) {
+                    if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+                    showToast(t('depth-preempted'), 'warn', 5000);
+                }
+            }
+
+            // Sync mode and HOME status from backend
+            if (m.link_ok && typeof m.mode === 'number') {
+                if (m.mode === DEPTH_MODE_HOME) {
+                    updateDepthHomeUI(true);
+                    setButtonPending('depth-home-btn', false);
+                } else {
+                    updateDepthHomeUI(false);
+                    setButtonPending('depth-home-btn', false);
+                    renderDepthModeSelection(m.mode);
+                }
+            }
+
             isDepthHolding = false;
             if (depthHoldTimer) { clearTimeout(depthHoldTimer); depthHoldTimer = null; }
-            updateDepthActiveUI(depthEnabled);
-            if (takenOver && navigator.vibrate) navigator.vibrate([200, 100, 200]);
         }
 
         function resetDepthControlUI() {
+            lastDepthStatusAt = 0;
             depthEnabled = false;
             depthHomeActive = false;
             updateDepthActiveUI(false);
@@ -4280,14 +4495,15 @@
 
                         depthHoldTimer = setTimeout(() => {
                             if (isDepthHolding && depthEnabled) {
-                                depthEnabled = false;
-                                depthUserActionAt = performance.now();
-                                publishDepthCommand();
-                                updateDepthActiveUI(false);
+                                // Gửi lệnh Disengage: enable = false
+                                setButtonPending('depth-active-btn', true, 3000);
+                                depthCmdPub.publish(new ROSLIB.Message({
+                                    mode: depthCurrentMode,
+                                    target: depthCurrentMode === 0 ? getDepthAutoTargetMm() : getDepthTarget(),
+                                    enable: false
+                                }));
                                 if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
                                 playSuccessSound();
-                                activeBtn.classList.add('animate-pop-bounce');
-                                setTimeout(() => activeBtn.classList.remove('animate-pop-bounce'), 300);
                                 isDepthHolding = false;
                                 depthHoldTimer = null;
                             }
@@ -4308,12 +4524,16 @@
                     if (!depthEnabled) {
                         // Đang TẮT: Tap (<1000ms) để BẬT (Engage)
                         if (elapsed < 1000) {
-                            depthEnabled = true;
-                            depthHomeActive = false;   // ACTIVATE means engage, not stay at HOME
-                            depthUserActionAt = performance.now();
-                            publishDepthCommand();
-                            updateDepthHomeUI();
-                            updateDepthActiveUI(true);
+                            if (!ros.isConnected) {
+                                showToast(t('toast-no-ros'), 'error');
+                                return;
+                            }
+                            setButtonPending('depth-active-btn', true, 3000);
+                            depthCmdPub.publish(new ROSLIB.Message({
+                                mode: depthCurrentMode,
+                                target: depthCurrentMode === 0 ? getDepthAutoTargetMm() : getDepthTarget(),
+                                enable: true
+                            }));
                             if (navigator.vibrate) navigator.vibrate(80);
                             playSuccessSound();
                             activeBtn.classList.add('animate-pop-bounce');
@@ -4889,9 +5109,14 @@
 
         let isPathPaused = false;
 
-        // --- Hàm Start Path Following ---
+        // --- Hàm Start Path Following (Command ≠ Status: pending until /path_follower_bridge/state confirms) ---
         function startPathFollowing() {
-            if (!ros.isConnected) return;
+            if (!ros.isConnected) {
+                showToast(t('toast-no-ros'), 'error');
+                return;
+            }
+
+            setButtonPending('btn-start-path', true);
 
             if (pathFollowerState === 4) {
                 // Đang chạy -> Nhấn để Stop
@@ -4905,7 +5130,8 @@
                     console.log('Path follower stopped:', res);
                     isPathPaused = true;
                 }, (err) => {
-                    console.error('Failed to stop path follower:', err);
+                    setButtonPending('btn-start-path', false);
+                    showToast(t('toast-cmd-failed') + err, 'error');
                 });
             } else if (fieldPlannerState === 3) {
                 // Đang dừng -> Nhấn để Start
@@ -4920,10 +5146,15 @@
                         });
                         const req = new ROSLIB.ServiceRequest({});
                         srv.callService(req, (res) => {
-                            console.log('Path follower resumed:', res);
-                            isPathPaused = false;
+                            if (!res.success) {
+                                setButtonPending('btn-start-path', false);
+                                showToast(t('toast-cmd-failed') + res.message, 'warn');
+                            } else {
+                                isPathPaused = false;
+                            }
                         }, (err) => {
-                            console.error('Failed to resume path follower:', err);
+                            setButtonPending('btn-start-path', false);
+                            showToast(t('toast-cmd-failed') + err, 'error');
                         });
                     } else {
                         const srv = new ROSLIB.Service({
@@ -4933,10 +5164,15 @@
                         });
                         const req = new ROSLIB.ServiceRequest({ data: true });
                         srv.callService(req, (res) => {
-                            console.log('Path follower restarted:', res);
-                            isPathPaused = false;
+                            if (!res.success) {
+                                setButtonPending('btn-start-path', false);
+                                showToast(t('toast-cmd-failed') + (res.message || 'Rejected'), 'warn');
+                            } else {
+                                isPathPaused = false;
+                            }
                         }, (err) => {
-                            console.error('Failed to restart path follower:', err);
+                            setButtonPending('btn-start-path', false);
+                            showToast(t('toast-cmd-failed') + err, 'error');
                         });
                     }
                 } else {
@@ -4947,12 +5183,19 @@
                     });
                     const req = new ROSLIB.ServiceRequest({ data: true });
                     srv.callService(req, (res) => {
-                        console.log('Path follower started:', res);
-                        isPathPaused = false;
+                        if (!res.success) {
+                            setButtonPending('btn-start-path', false);
+                            showToast(t('toast-cmd-failed') + (res.message || 'Rejected'), 'warn');
+                        } else {
+                            isPathPaused = false;
+                        }
                     }, (err) => {
-                        console.error('Failed to start path follower:', err);
+                        setButtonPending('btn-start-path', false);
+                        showToast(t('toast-cmd-failed') + err, 'error');
                     });
                 }
+            } else {
+                setButtonPending('btn-start-path', false);
             }
         }
 
@@ -5072,15 +5315,15 @@
         updateDynamicPanelsVisibility();
 
         // Đăng ký sự kiện nhấn giữ cho 3 nút (Thời gian 800ms)
-        setupHoldButton('btn-record-vertex', () => callService('/record_vertex'), 500);
-        setupHoldButton('btn-generate-path', () => callService('/generate_path'), 500);
+        setupHoldButton('btn-record-vertex', () => callService('/record_vertex', 'btn-record-vertex'), 500);
+        setupHoldButton('btn-generate-path', () => callService('/generate_path', 'btn-generate-path'), 500);
         setupHoldButton('btn-record-line', toggleRecordLine, 500);
 
         // BỔ SUNG: Nhấn giữ nút Thùng rác 1 giây để xóa toàn bộ
-        setupHoldButton('btn-clear-all', () => callService('/clear_all'), 500);
+        setupHoldButton('btn-clear-all', () => callService('/clear_all', 'btn-clear-all'), 500);
 
-        setupHoldButton('btn-swath-left', () => callService('/steer_planner_node/swath_left'), 300);
-        setupHoldButton('btn-swath-right', () => callService('/steer_planner_node/swath_right'), 300);
+        setupHoldButton('btn-swath-left', () => callService('/steer_planner_node/swath_left', 'btn-swath-left'), 300);
+        setupHoldButton('btn-swath-right', () => callService('/steer_planner_node/swath_right', 'btn-swath-right'), 300);
 
         // Nút Start trong Path Mode
         setupHoldButton('btn-start-path', startPathFollowing, 500);
