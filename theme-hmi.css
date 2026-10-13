@@ -534,6 +534,26 @@ input[type="range"]::-moz-range-thumb {
         max-height: 85vh !important;
         width: min(280px, 85vw) !important;
     }
+
+    /* Keep the mode selector where an operator expects it: centered at bottom. */
+    .hmi-bottom-dock > div:first-child {
+        position: fixed !important;
+        left: 50% !important;
+        right: auto !important;
+        bottom: max(0.5rem, env(safe-area-inset-bottom)) !important;
+        transform: translateX(-50%) !important;
+        width: max-content !important;
+        z-index: 55 !important;
+    }
+
+    /* The map control remains available at the lower-right corner. */
+    #map-tools {
+        position: fixed !important;
+        left: auto !important;
+        right: max(0.25rem, env(safe-area-inset-right)) !important;
+        bottom: max(0.25rem, env(safe-area-inset-bottom)) !important;
+        z-index: 40 !important;
+    }
 }
 
 /* iPhone Home Screen apps draw into the notch area with viewport-fit=cover.
@@ -541,9 +561,9 @@ input[type="range"]::-moz-range-thumb {
 @supports (padding: max(0px)) {
     @media (orientation: landscape) and (max-height: 500px) {
         .hmi-top-bar {
-            top: max(0.5rem, env(safe-area-inset-top)) !important;
-            left: max(0.5rem, env(safe-area-inset-left)) !important;
-            right: max(0.5rem, env(safe-area-inset-right)) !important;
+            top: max(0.25rem, env(safe-area-inset-top)) !important;
+            left: max(0.25rem, env(safe-area-inset-left)) !important;
+            right: max(0.25rem, env(safe-area-inset-right)) !important;
         }
 
         .hmi-bottom-dock {
