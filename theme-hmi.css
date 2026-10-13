@@ -482,6 +482,22 @@ input[type="range"]::-moz-range-thumb {
     }
 }
 
+/* Phones held horizontally are wider than 767px, so use the short viewport to
+   retain phone-specific touch behavior. */
+@media (max-height: 500px) and (hover: none) and (pointer: coarse) {
+    #coordinates-display {
+        display: none !important;
+    }
+
+    .hmi-top-bar {
+        z-index: 60 !important;
+    }
+
+    #depth-panel {
+        z-index: 70 !important;
+    }
+}
+
 /* ── 2. PHONE LANDSCAPE (orientation: landscape và max-height: 500px) ── */
 @media (orientation: landscape) and (max-height: 500px) {
     .hmi-bottom-dock {

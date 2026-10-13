@@ -446,7 +446,7 @@
                 <!-- Nút Bật/Tắt Panel Depth Control -->
                 <button id="btn-toggle-depth" onclick="toggleDepthPanel()"
                     class="pointer-events-auto glass-panel hover:bg-white/10 p-3 rounded-full shadow-lg transition active:scale-90 flex items-center justify-center text-blue-400 min-w-[var(--hit-secondary)] min-h-[var(--hit-secondary)]"
-                    title="Toggle Depth Control" data-i18n-title="depth-toggle-panel">
+                    title="Toggle Depth Control" data-i18n-title="depth-toggle-panel" aria-controls="depth-panel" aria-expanded="false">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
@@ -635,10 +635,10 @@
             </button>
 
             <div id="ab-library" class="col-span-2 flex flex-col gap-1">
-                <input id="ab-name" maxlength="100" placeholder="Tên ruộng / Field name" class="bg-gray-900 text-white rounded px-2 py-1" />
-                <button onclick="saveABLine()" class="rounded bg-green-700 px-2 py-1">Lưu A-B / Save</button>
-                <select id="ab-saved" class="bg-gray-900 text-white rounded px-2 py-1"><option value="">Chọn đường / Select line</option></select>
-                <div class="flex gap-2"><button onclick="refreshABLines()">↻ Danh sách / Refresh</button><button onclick="loadABLine()">Mở / Load</button></div>
+                <input id="ab-name" maxlength="100" placeholder="Field name" class="bg-gray-900 text-white rounded px-2 py-1" />
+                <button onclick="saveABLine()" class="rounded bg-green-700 px-2 py-1">Save A-B</button>
+                <select id="ab-saved" class="bg-gray-900 text-white rounded px-2 py-1"><option value="">Select reference line</option></select>
+                <div class="flex gap-2"><button onclick="refreshABLines()">↻ Refresh</button><button onclick="loadABLine()">Load</button></div>
             </div>
 
         </div>
@@ -859,7 +859,7 @@
     </div>
 
     <!-- BOTTOM RIGHT: Coordinates Display -->
-    <div class="absolute bottom-6 right-12 z-20 pointer-events-none hidden sm:block">
+    <div id="coordinates-display" class="absolute bottom-6 right-12 z-20 pointer-events-none hidden sm:block">
         <div
             class="glass-panel px-4 py-2 rounded-full shadow-lg text-[10px] sm:text-xs font-mono text-gray-300 flex flex-row items-center gap-3">
             <div> <span id="data-lat" class="text-white font-bold tracking-wider">--.------</span></div>
@@ -4337,10 +4337,12 @@
 
         function toggleDepthPanel() {
             const panel = document.getElementById('depth-panel');
+            const button = document.getElementById('btn-toggle-depth');
             if (!panel) return;
-            const open = getComputedStyle(panel).display !== 'none';
-            panel.classList.toggle('depth-closed', open);
-            panel.classList.toggle('depth-open', !open);
+            const isClosed = panel.classList.contains('depth-closed') || getComputedStyle(panel).display === 'none';
+            panel.classList.toggle('depth-closed', !isClosed);
+            panel.classList.toggle('depth-open', isClosed);
+            if (button) button.setAttribute('aria-expanded', String(isClosed));
         }
 
         // Link to the depth system, from /espnow_link/stats (bridge, >= 2 Hz). Shows
