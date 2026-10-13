@@ -104,6 +104,15 @@ input[type="range"] {
     right: max(1rem, var(--safe-right)) !important;
 }
 
+.hmi-telemetry-actions,
+.hmi-tool-actions {
+    flex-wrap: nowrap;
+}
+
+#ab-library[hidden] {
+    display: none !important;
+}
+
 .hmi-bottom-dock {
     bottom: max(1.5rem, var(--safe-bottom)) !important;
 }
@@ -527,25 +536,78 @@ input[type="range"]::-moz-range-thumb {
 @media (orientation: landscape) and (max-height: 500px) and (pointer: coarse) {
     .hmi-bottom-dock {
         position: fixed !important;
-        top: 4.5rem !important;
-        bottom: 0.5rem !important;
-        right: 0.5rem !important;
-        left: auto !important;
-        transform: none !important;
-        width: auto !important;
-        max-width: 220px !important;
-        max-height: calc(100dvh - 5rem - var(--safe-top) - var(--safe-bottom)) !important;
-        overflow-y: auto !important;
-        align-items: stretch !important;
+        top: auto !important;
+        right: auto !important;
+        bottom: max(0.5rem, env(safe-area-inset-bottom)) !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        width: min(calc(100vw - var(--safe-left) - var(--safe-right) - 1rem), 780px) !important;
+        max-width: none !important;
+        max-height: none !important;
+        overflow: visible !important;
+        align-items: center !important;
+        gap: 0.5rem !important;
     }
 
     .hmi-bottom-dock > div.grid,
     .hmi-bottom-dock > div:last-child {
-        display: flex !important;
-        flex-direction: column !important;
-        gap: 0.35rem !important;
-        min-width: auto !important;
+        display: grid !important;
+        grid-template-columns: minmax(104px, 0.9fr) minmax(0, 4.1fr) !important;
+        gap: 0.375rem !important;
+        min-width: 0 !important;
         width: 100% !important;
+        padding: 0.375rem !important;
+    }
+
+    /* In A-B mode, Record Line stays below the mode selector.  The A-B
+       library occupies the remaining width, so no control is pushed to a
+       separate vertical panel. */
+    #btn-record-line {
+        grid-column: 1 !important;
+        grid-row: 1 !important;
+        min-height: 3.25rem !important;
+        padding: 0.375rem !important;
+    }
+
+    #btn-record-line span:first-of-type {
+        font-size: 1rem !important;
+        margin-bottom: 0 !important;
+    }
+
+    #btn-record-line span:last-of-type {
+        font-size: 0.75rem !important;
+        white-space: nowrap;
+    }
+
+    #ab-library:not([hidden]) {
+        display: grid !important;
+        grid-column: 2 !important;
+        grid-row: 1 !important;
+        grid-template-columns: minmax(78px, 1fr) auto minmax(110px, 1.35fr) auto !important;
+        align-items: stretch !important;
+        gap: 0.375rem !important;
+        min-width: 0 !important;
+    }
+
+    #ab-library input,
+    #ab-library select,
+    #ab-library button {
+        min-width: 0 !important;
+        min-height: 3.25rem !important;
+        padding: 0.375rem 0.5rem !important;
+        font-size: clamp(0.7rem, 1.8vw, 0.875rem) !important;
+    }
+
+    #ab-library > div {
+        display: flex !important;
+        align-items: stretch !important;
+        gap: 0.25rem !important;
+        min-width: 0 !important;
+    }
+
+    #ab-library > div button {
+        flex: 1 1 auto;
+        white-space: nowrap;
     }
 
     #top-controls-panel {
@@ -560,13 +622,13 @@ input[type="range"]::-moz-range-thumb {
         width: min(280px, 85vw) !important;
     }
 
-    /* Keep the mode selector where an operator expects it: centered at bottom. */
+    /* The mode selector remains above the A-B controls, centered at the bottom. */
     .hmi-bottom-dock > div:first-child {
-        position: fixed !important;
-        left: 50% !important;
+        position: static !important;
+        left: auto !important;
         right: auto !important;
-        bottom: max(0.5rem, env(safe-area-inset-bottom)) !important;
-        transform: translateX(-50%) !important;
+        bottom: auto !important;
+        transform: none !important;
         width: max-content !important;
         z-index: 55 !important;
     }
@@ -592,7 +654,6 @@ input[type="range"]::-moz-range-thumb {
         }
 
         .hmi-bottom-dock {
-            right: max(0.5rem, env(safe-area-inset-right)) !important;
             bottom: max(0.5rem, env(safe-area-inset-bottom)) !important;
         }
     }

@@ -429,7 +429,7 @@
         </div>
 
         <!-- Cụm Phải: Thông số Telemetry DJI Style -->
-        <div class="flex flex-col md:flex-row items-end md:items-center gap-2 md:gap-3">
+        <div class="hmi-telemetry-actions flex flex-row items-center gap-2 md:gap-3">
             <div
                 class="pointer-events-auto flex items-center gap-4 glass-panel rounded-full px-5 py-2 shadow-lg text-sm font-mono min-h-[var(--hit-secondary)]">
                 
@@ -455,7 +455,7 @@
             </div>
 
             <!-- Nhóm Nút Công cụ -->
-            <div class="flex items-center gap-2">
+            <div class="hmi-tool-actions flex items-center gap-2">
                 <!-- Nút Bật/Tắt Panel Depth Control -->
                 <button id="btn-toggle-depth" onclick="toggleDepthPanel()"
                     class="pointer-events-auto glass-panel hover:bg-white/10 p-3 rounded-full shadow-lg transition active:scale-90 flex items-center justify-center text-blue-400 min-w-[var(--hit-secondary)] min-h-[var(--hit-secondary)]"
@@ -2184,7 +2184,7 @@
                 if (btnClearAll) btnClearAll.style.display = 'flex';
                 if (ros.isConnected) selectModePub.publish(new ROSLIB.Message({ data: 2 }));
             }
-            document.getElementById('ab-library').style.display = btnLine.style.display === 'none' ? 'none' : 'flex';
+            document.getElementById('ab-library').hidden = btnLine.style.display === 'none';
             if (btnLine.style.display !== 'none' && ros.isConnected) refreshABLines();
             updatePathModeUI();
         }
