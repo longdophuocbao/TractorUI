@@ -484,7 +484,7 @@ input[type="range"]::-moz-range-thumb {
 
 /* Phones held horizontally are wider than 767px, so use the short viewport to
    retain phone-specific touch behavior. */
-@media (max-height: 500px) and (hover: none) and (pointer: coarse) {
+@media (orientation: landscape) and (max-height: 500px) {
     #coordinates-display {
         display: none !important;
     }
