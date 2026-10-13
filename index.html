@@ -2460,13 +2460,13 @@
 
             const setClient = new ROSLIB.Service({
                 ros: ros,
-                name: '/steer_planner_node/set_parameters',
+                name: '/parameter_persistence/set_and_save',
                 serviceType: 'rcl_interfaces/srv/SetParameters'
             });
 
             const setReq = new ROSLIB.ServiceRequest({
                 parameters: [{
-                    name: 'swath_width_m',
+                    name: '/steer_planner_node::swath_width_m',
                     value: paramValueObj
                 }]
             });
@@ -3545,19 +3545,25 @@
             };
 
             if (pType === 1) paramValueObj.bool_value = (rawVal.toLowerCase() === 'true');
-            else if (pType === 2) paramValueObj.integer_value = parseInt(rawVal, 10) || 0;
-            else if (pType === 3) paramValueObj.double_value = parseFloat(rawVal) || 0.0;
+            else if (pType === 2) {
+                if (!/^-?\d+$/.test(rawVal) || !Number.isSafeInteger(Number(rawVal))) { showToast('Invalid integer', 'error'); return; }
+                paramValueObj.integer_value = Number(rawVal);
+            }
+            else if (pType === 3) {
+                if (!rawVal || !Number.isFinite(Number(rawVal))) { showToast('Invalid number', 'error'); return; }
+                paramValueObj.double_value = Number(rawVal);
+            }
             else if (pType === 4) paramValueObj.string_value = rawVal;
 
             const setClient = new ROSLIB.Service({
                 ros: ros,
-                name: nodeName + '/set_parameters',
+                name: '/parameter_persistence/set_and_save',
                 serviceType: 'rcl_interfaces/srv/SetParameters'
             });
 
             const setReq = new ROSLIB.ServiceRequest({
                 parameters: [{
-                    name: paramName,
+                    name: nodeName + '::' + paramName,
                     value: paramValueObj
                 }]
             });
@@ -3572,6 +3578,7 @@
                     btnEl.classList.add('btn-set-active');
                 } else {
                     btnEl.innerText = 'FAIL';
+                    showToast(res.results?.[0]?.reason || 'Parameter update/save failed', 'error', 6000);
                     btnEl.classList.replace('bg-blue-600', 'bg-red-600');
                 }
                 setTimeout(() => {
