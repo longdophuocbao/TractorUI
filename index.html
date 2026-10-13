@@ -209,27 +209,27 @@
         /* iOS-like Scroll Wheel Picker */
         .ios-picker-container {
             position: relative;
-            height: 150px;
+            height: 220px;
             overflow-y: scroll;
             scroll-snap-type: y mandatory;
             scrollbar-width: none;
-            padding-top: 60px;
-            padding-bottom: 60px;
+            padding-top: 88px;
+            padding-bottom: 88px;
             perspective: 1000px;
         }
         .ios-picker-container::-webkit-scrollbar {
             display: none;
         }
         .ios-picker-item {
-            height: 30px;
+            height: 44px;
             display: flex;
             align-items: center;
             justify-content: center;
             scroll-snap-align: center;
             font-family: monospace;
-            font-size: 16px;
-            color: #4b5563;
-            transition: color 0.15s ease, font-size 0.15s ease;
+            font-size: 18px;
+            color: #94a3b8;
+            transition: color 0.15s ease, font-size 0.15s ease, opacity 0.15s ease;
             backface-visibility: hidden;
             transform-style: preserve-3d;
             cursor: pointer;
@@ -238,7 +238,7 @@
         .ios-picker-item.selected {
             color: #60a5fa;
             font-weight: bold;
-            font-size: 18px;
+            font-size: 22px;
         }
 
         /* Command ≠ Status: Pending & Toast Notifications */
@@ -906,7 +906,7 @@
                                     <!-- iOS Style Scroll Wheel Picker (Single column) -->
                                     <div class="flex items-center justify-center bg-gray-950 border border-gray-800 rounded-2xl p-4 w-36 relative overflow-hidden shadow-inner">
                                         <!-- Highlight Bar Overlay -->
-                                        <div class="absolute left-0 right-0 h-[30px] top-[calc(50%-15px)] border-t border-b border-blue-500/30 bg-blue-500/5 pointer-events-none"></div>
+                                        <div class="absolute left-0 right-0 h-[44px] top-[calc(50%-22px)] border-t border-b border-blue-500/30 bg-blue-500/5 pointer-events-none"></div>
                                         
                                         <!-- Swath Wheel -->
                                         <div id="picker-swath" class="ios-picker-container w-full" onscroll="onPickerScroll()">
@@ -2282,6 +2282,8 @@
                 switchSettingsTab(currentSettingsTab);
                 if (ros.isConnected) {
                     loadUserSwathWidth();
+                } else {
+                    setTimeout(() => onPickerScroll(), 50);
                 }
             } else {
                 modal.classList.add('opacity-0', 'pointer-events-none');
@@ -2301,7 +2303,11 @@
                 tabEngineer.className = "py-3 px-4 text-sm font-semibold border-b-2 border-transparent text-gray-400 hover:text-gray-200 transition-all focus:outline-none flex items-center gap-2";
                 panelUser.classList.remove('hidden');
                 panelEngineer.classList.add('hidden');
-                loadUserSwathWidth();
+                if (ros.isConnected) {
+                    loadUserSwathWidth();
+                } else {
+                    setTimeout(() => onPickerScroll(), 50);
+                }
             } else {
                 tabUser.className = "py-3 px-4 text-sm font-semibold border-b-2 border-transparent text-gray-400 hover:text-gray-200 transition-all focus:outline-none flex items-center gap-2";
                 tabEngineer.className = "py-3 px-4 text-sm font-semibold border-b-2 border-blue-500 text-blue-400 transition-all focus:outline-none flex items-center gap-2";
@@ -2396,7 +2402,7 @@
             const btnEl = document.getElementById('btn-set-swath-width');
             if (!container || !btnEl) return;
 
-            const index = Math.round(container.scrollTop / 30);
+            const index = Math.round(container.scrollTop / PICKER_ITEM_HEIGHT);
             const items = container.querySelectorAll('.ios-picker-item');
             const selectedItem = items[index];
             if (!selectedItem) return;
@@ -2464,6 +2470,8 @@
             });
         }
 
+        const PICKER_ITEM_HEIGHT = 44;
+
         // Picker helper functions
         function initIosPicker() {
             const container = document.getElementById('picker-swath');
@@ -2479,14 +2487,14 @@
                 
                 const targetIdx = index;
                 item.onclick = () => {
-                    container.scrollTo({ top: targetIdx * 30, behavior: 'smooth' });
+                    container.scrollTo({ top: targetIdx * PICKER_ITEM_HEIGHT, behavior: 'smooth' });
                 };
                 container.appendChild(item);
                 index++;
             }
             
-            // Set initial state
-            onPickerScroll();
+            // Set initial state (default 2.0m if not already loaded)
+            selectSwathInPickers(2.0);
         }
 
         let pickerScrollTimeout = null;
@@ -2495,13 +2503,13 @@
             if (!container) return;
 
             const items = container.querySelectorAll('.ios-picker-item');
-            const index = Math.round(container.scrollTop / 30);
+            const index = Math.round(container.scrollTop / PICKER_ITEM_HEIGHT);
             
             items.forEach((item, idx) => {
                 const distance = Math.abs(idx - index);
-                let scale = 1 - Math.min(distance * 0.15, 0.4);
-                let opacity = 1 - Math.min(distance * 0.25, 0.7);
-                let rotateX = Math.max(-60, Math.min(60, (idx - index) * 20));
+                let scale = 1 - Math.min(distance * 0.12, 0.35);
+                let opacity = Math.max(0.35, 1 - distance * 0.25);
+                let rotateX = Math.max(-50, Math.min(50, (idx - index) * 18));
 
                 item.style.transform = `scale(${scale}) rotateX(${rotateX}deg)`;
                 item.style.opacity = opacity;
@@ -2523,7 +2531,7 @@
             const container = document.getElementById('picker-swath');
             if (!container) return;
 
-            const index = Math.round(container.scrollTop / 30);
+            const index = Math.round(container.scrollTop / PICKER_ITEM_HEIGHT);
             const items = container.querySelectorAll('.ios-picker-item');
             const selectedItem = items[index];
             if (selectedItem) {
@@ -2540,14 +2548,14 @@
             const index = Math.round((clampedVal - SWATH_MIN) / SWATH_STEP);
 
             container.scrollTo({
-                top: index * 30,
+                top: index * PICKER_ITEM_HEIGHT,
                 behavior: 'smooth'
             });
 
             setTimeout(() => {
                 onPickerScroll();
                 updateSwathSimulation(clampedVal);
-            }, 300);
+            }, 100);
         }
 
         // SWATH WIDTH SIMULATION VISUALIZATION (Picture1.png reference)
@@ -2555,7 +2563,7 @@
             if (swathVal === undefined) {
                 const container = document.getElementById('picker-swath');
                 if (container) {
-                    const index = Math.round(container.scrollTop / 30);
+                    const index = Math.round(container.scrollTop / PICKER_ITEM_HEIGHT);
                     const items = container.querySelectorAll('.ios-picker-item');
                     const selectedItem = items[index];
                     if (selectedItem) {
