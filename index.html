@@ -18,7 +18,7 @@
     <!-- Tailwind CSS -->
     <link rel="stylesheet" href="tailwind.min.css">
     <!-- Agriculture High-Contrast Responsive HMI Theme -->
-    <link rel="stylesheet" href="theme-hmi.css?v=20261013-ab-controls">
+    <link rel="stylesheet" href="theme-hmi.css?v=20261013-ab-dialogs">
 
     <!-- ROSLibJS & EventEmitter2 -->
     <script src="eventemitter2.min.js"></script>
@@ -647,14 +647,43 @@
                 <span class="relative z-10 text-sm font-bold text-red-100 drop-shadow" data-i18n="btn-record-line">Record Line</span>
             </button>
 
-            <div id="ab-library" class="col-span-2 flex flex-col gap-1">
-                <input id="ab-name" maxlength="100" placeholder="Field name" aria-label="Field name" class="bg-gray-900 text-white rounded px-2 py-1" />
-                <button id="btn-ab-save" onclick="saveABLine()" class="rounded bg-green-700 px-2 py-1">Save A-B</button>
-                <select id="ab-saved" aria-label="Select reference line" class="bg-gray-900 text-white rounded px-2 py-1"><option value="">Select reference line</option></select>
-                <div class="flex gap-2"><button id="btn-ab-refresh" onclick="refreshABLines()">↻ Refresh</button><button id="btn-ab-load" onclick="loadABLine()">Load</button></div>
-            </div>
+            <button id="btn-ab-save" type="button" onclick="openABDialog('save')" aria-haspopup="dialog" aria-controls="ab-save-dialog">
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 3h13l3 3v15H4zM7 3v6h10V3M7 21v-8h10v8"/></svg>
+                <span>Save A-B</span>
+            </button>
+            <button id="btn-ab-load" type="button" onclick="openABDialog('load')" aria-haspopup="dialog" aria-controls="ab-load-dialog">
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V5a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v2M3 9h18l-2 12H5z"/></svg>
+                <span>Load A-B</span>
+            </button>
 
         </div>
+    </div>
+
+    <div id="ab-save-dialog" class="ab-dialog-backdrop" hidden onclick="if (event.target === this) closeABDialog('save')">
+        <form class="ab-dialog-panel" role="dialog" aria-modal="true" aria-labelledby="ab-save-title" onsubmit="event.preventDefault(); saveABLine()">
+            <h2 id="ab-save-title">Save reference line</h2>
+            <label for="ab-name">Field name</label>
+            <input id="ab-name" name="field-name" type="text" maxlength="100" autocomplete="off" required placeholder="Enter field name">
+            <div class="ab-dialog-actions">
+                <button type="button" class="ab-dialog-cancel" onclick="closeABDialog('save')">Cancel</button>
+                <button type="submit" class="ab-dialog-primary ab-dialog-save">Save A-B</button>
+            </div>
+        </form>
+    </div>
+
+    <div id="ab-load-dialog" class="ab-dialog-backdrop" hidden onclick="if (event.target === this) closeABDialog('load')">
+        <form class="ab-dialog-panel" role="dialog" aria-modal="true" aria-labelledby="ab-load-title" onsubmit="event.preventDefault(); loadABLine()">
+            <h2 id="ab-load-title">Load reference line</h2>
+            <label for="ab-saved">Reference line</label>
+            <div class="ab-load-picker">
+                <select id="ab-saved" name="reference-line" required><option value="">Select reference line</option></select>
+                <button id="btn-ab-refresh" type="button" onclick="refreshABLines()">↻ Refresh</button>
+            </div>
+            <div class="ab-dialog-actions">
+                <button type="button" class="ab-dialog-cancel" onclick="closeABDialog('load')">Cancel</button>
+                <button type="submit" class="ab-dialog-primary ab-dialog-load">Load A-B</button>
+            </div>
+        </form>
     </div>
 
     <!-- BOTTOM LEFT: Minimap & Recenter -->
@@ -2161,7 +2190,6 @@
             const btnVertex = document.getElementById('btn-record-vertex');
             const btnGen = document.getElementById('btn-generate-path');
             const btnLine = document.getElementById('btn-record-line');
-            const abLibrary = document.getElementById('ab-library');
             const btnClearAll = document.getElementById('btn-clear-all');
             const divider = document.getElementById('divider-path');
             const dividerClear = document.getElementById('divider-clear');
@@ -2187,13 +2215,6 @@
                 if (btnClearAll) btnClearAll.style.display = 'flex';
                 if (ros.isConnected) selectModePub.publish(new ROSLIB.Message({ data: 2 }));
             }
-            abLibrary.hidden = mode !== 'record';
-            if (mode === 'record') {
-                abLibrary.style.removeProperty('display');
-            } else {
-                abLibrary.style.setProperty('display', 'none', 'important');
-            }
-            if (mode === 'record' && ros.isConnected) refreshABLines();
             updatePathModeUI();
         }
 
@@ -2242,7 +2263,25 @@
             });
         }
         let abRequestPending = false;
-        function requestABLine(action, name) {
+        function openABDialog(action) {
+            const dialog = document.getElementById(action === 'save' ? 'ab-save-dialog' : 'ab-load-dialog');
+            dialog.hidden = false;
+            if (action === 'save') {
+                document.getElementById('ab-name').focus();
+            } else {
+                refreshABLines();
+            }
+        }
+        function closeABDialog(action) {
+            document.getElementById(action === 'save' ? 'ab-save-dialog' : 'ab-load-dialog').hidden = true;
+            document.getElementById(action === 'save' ? 'btn-ab-save' : 'btn-ab-load').focus();
+        }
+        document.addEventListener('keydown', event => {
+            if (event.key !== 'Escape') return;
+            if (!document.getElementById('ab-save-dialog').hidden) closeABDialog('save');
+            if (!document.getElementById('ab-load-dialog').hidden) closeABDialog('load');
+        });
+        function requestABLine(action, name, onSuccess) {
             if (!ros.isConnected || abRequestPending) return;
             if (!name) { showToast('Nhập tên hoặc chọn đường A-B.', 'warn'); return; }
             abRequestPending = true;
@@ -2251,12 +2290,15 @@
                 if (!res.results || !res.results.every(r => r.successful)) { abRequestPending = false; showToast('Không thể đặt tên đường.', 'error'); return; }
                 callService('/steer_planner_node/' + action + '_reference_line', null, 'std_srvs/Trigger', (ok, result) => {
                     abRequestPending = false;
-                    if (ok && result.success) { showToast(result.message, 'success'); refreshABLines(); }
+                    if (ok && result.success) {
+                        showToast(result.message, 'success');
+                        if (onSuccess) onSuccess();
+                    }
                 });
             }, err => { abRequestPending = false; showToast(String(err), 'error'); });
         }
-        function saveABLine() { requestABLine('save', document.getElementById('ab-name').value.trim()); }
-        function loadABLine() { requestABLine('load', document.getElementById('ab-saved').value); }
+        function saveABLine() { requestABLine('save', document.getElementById('ab-name').value.trim(), () => closeABDialog('save')); }
+        function loadABLine() { requestABLine('load', document.getElementById('ab-saved').value, () => closeABDialog('load')); }
 
         function toggleRecordLine() {
             callService('/steer_planner_node/toggle_line_recording', 'btn-record-line');
