@@ -536,6 +536,23 @@ input[type="range"]::-moz-range-thumb {
     }
 }
 
+/* iPhone Home Screen apps draw into the notch area with viewport-fit=cover.
+   Keep interactive controls outside the hardware safe areas. */
+@supports (padding: max(0px)) {
+    @media (orientation: landscape) and (max-height: 500px) {
+        .hmi-top-bar {
+            top: max(0.5rem, env(safe-area-inset-top)) !important;
+            left: max(0.5rem, env(safe-area-inset-left)) !important;
+            right: max(0.5rem, env(safe-area-inset-right)) !important;
+        }
+
+        .hmi-bottom-dock {
+            right: max(0.5rem, env(safe-area-inset-right)) !important;
+            bottom: max(0.5rem, env(safe-area-inset-bottom)) !important;
+        }
+    }
+}
+
 /* ── 3. TABLET & CABIN TOUCHSCREEN (768px - 1180px) ── */
 @media (min-width: 768px) and (max-width: 1180px) {
     #deviation-panel {
