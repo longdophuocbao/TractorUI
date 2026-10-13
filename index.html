@@ -2215,7 +2215,7 @@
                 if (!ok || !res.success) return;
                 const select = document.getElementById('ab-saved');
                 const previous = select.value;
-                select.replaceChildren(new Option('Chọn đường / Select line', ''));
+                select.replaceChildren(new Option('Select reference line', ''));
                 res.message.split('\n').filter(Boolean).forEach(name => select.add(new Option(name, name)));
                 select.value = previous;
             });
@@ -3087,7 +3087,24 @@
 
         let vertexMarkersLayer = L.layerGroup().addTo(map); // Lớp chứa các điểm đánh dấu (vertices, endpoints)
 
+        function refreshPhoneViewportLayout() {
+            if (!window.matchMedia('(pointer: coarse)').matches) return;
+
+            // iOS Home Screen apps can report the old safe-area dimensions for a
+            // short time after rotation. Reflow and resize Leaflet after it settles.
+            [0, 120, 350, 700].forEach(delay => {
+                setTimeout(() => {
+                    document.documentElement.style.setProperty('--viewport-revision', String(Date.now()));
+                    void document.body.offsetHeight;
+                    map.invalidateSize({ pan: false, debounceMoveend: true });
+                    minimap.invalidateSize({ pan: false, debounceMoveend: true });
+                }, delay);
+            });
+        }
+
         window.addEventListener('resize', () => { map.invalidateSize(); minimap.invalidateSize(); });
+        window.addEventListener('orientationchange', refreshPhoneViewportLayout);
+        if (window.visualViewport) window.visualViewport.addEventListener('resize', refreshPhoneViewportLayout);
         setTimeout(() => { map.invalidateSize(); minimap.invalidateSize(); }, 500);
 
         // --- 5. Deviation 2D Radar ---
