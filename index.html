@@ -2160,6 +2160,7 @@
             const btnVertex = document.getElementById('btn-record-vertex');
             const btnGen = document.getElementById('btn-generate-path');
             const btnLine = document.getElementById('btn-record-line');
+            const abLibrary = document.getElementById('ab-library');
             const btnClearAll = document.getElementById('btn-clear-all');
             const divider = document.getElementById('divider-path');
             const dividerClear = document.getElementById('divider-clear');
@@ -2185,8 +2186,13 @@
                 if (btnClearAll) btnClearAll.style.display = 'flex';
                 if (ros.isConnected) selectModePub.publish(new ROSLIB.Message({ data: 2 }));
             }
-            document.getElementById('ab-library').hidden = btnLine.style.display === 'none';
-            if (btnLine.style.display !== 'none' && ros.isConnected) refreshABLines();
+            abLibrary.hidden = mode !== 'record';
+            if (mode === 'record') {
+                abLibrary.style.removeProperty('display');
+            } else {
+                abLibrary.style.setProperty('display', 'none', 'important');
+            }
+            if (mode === 'record' && ros.isConnected) refreshABLines();
             updatePathModeUI();
         }
 
