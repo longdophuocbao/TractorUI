@@ -2962,6 +2962,7 @@
 
         let isSatelliteMain = true;
 
+        const defaultTractorZoom = 19;
         const map = L.map('map', { zoomControl: false, maxZoom: 22 }).setView([22.644689, 120.357255], 7);
         mainSatLayer.addTo(map);
 
@@ -3045,7 +3046,7 @@
 
         document.getElementById('btn-recenter').addEventListener('click', function () {
             isPannedAway = false;
-            map.setView([latestLat, latestLon], 21, { animate: true });
+            map.setView([latestLat, latestLon], defaultTractorZoom, { animate: true });
         });
 
         const tractorHtml = `
@@ -4710,7 +4711,7 @@
                     latestLon = m.longitude;
 
                     if (!firstGpsFix) {
-                        map.setView([m.latitude, m.longitude], 19);
+                        map.setView([m.latitude, m.longitude], defaultTractorZoom);
                         firstGpsFix = true;
                     }
                     checkRecenterVisibility();
@@ -4823,7 +4824,7 @@
                     latestLon = tractorLon;
 
                     if (!firstGpsFix) {
-                        map.setView([tractorLat, tractorLon], 19);
+                        map.setView([tractorLat, tractorLon], defaultTractorZoom);
                         firstGpsFix = true;
                     } else if (isHeadingUp && !isPannedAway) {
                         // Tự động kéo bản đồ theo xe khi H-UP được kích hoạt và không bị pan đi
