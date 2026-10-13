@@ -1254,6 +1254,7 @@
         // Trạng thái xoay Map (Mặc định bật)
         let isHeadingUp = true;
         let isPannedAway = false;
+        let isRecentering = false;
 
         // ROS Planner State (1: IDLE, 2: RECORDING, 3: ACTIVE)
         let plannerState = 1;
@@ -2963,6 +2964,7 @@
         let isSatelliteMain = true;
 
         const defaultTractorZoom = 19;
+        const recenterDurationSeconds = 1.5;
         const map = L.map('map', { zoomControl: false, maxZoom: 22 }).setView([22.644689, 120.357255], 7);
         mainSatLayer.addTo(map);
 
@@ -3030,6 +3032,7 @@
 
         map.on('dragstart', function () {
             isPannedAway = true;
+            isRecentering = false;
         });
 
         map.on('move', function () {
@@ -3045,8 +3048,14 @@
         document.getElementById('minimap-swap').addEventListener('click', (e) => { e.stopPropagation(); toggleMapLayer(); });
 
         document.getElementById('btn-recenter').addEventListener('click', function () {
+            map.stop();
             isPannedAway = false;
-            map.setView([latestLat, latestLon], defaultTractorZoom, { animate: true });
+            isRecentering = true;
+            map.once('moveend', function () { isRecentering = false; });
+            map.flyTo([latestLat, latestLon], defaultTractorZoom, {
+                animate: true,
+                duration: recenterDurationSeconds
+            });
         });
 
         const tractorHtml = `
@@ -4826,7 +4835,7 @@
                     if (!firstGpsFix) {
                         map.setView([tractorLat, tractorLon], defaultTractorZoom);
                         firstGpsFix = true;
-                    } else if (isHeadingUp && !isPannedAway) {
+                    } else if (isHeadingUp && !isPannedAway && !isRecentering) {
                         // Tự động kéo bản đồ theo xe khi H-UP được kích hoạt và không bị pan đi
                         map.setView([tractorLat, tractorLon], map.getZoom(), { animate: false });
                     }
