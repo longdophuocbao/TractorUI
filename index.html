@@ -18,7 +18,7 @@
     <!-- Tailwind CSS -->
     <link rel="stylesheet" href="tailwind.min.css">
     <!-- Agriculture High-Contrast Responsive HMI Theme -->
-    <link rel="stylesheet" href="theme-hmi.css">
+    <link rel="stylesheet" href="theme-hmi.css?v=20261013-ab-controls">
 
     <!-- ROSLibJS & EventEmitter2 -->
     <script src="eventemitter2.min.js"></script>
@@ -599,7 +599,7 @@
                 data-i18n="mode-path">Path Mode</button>
         </div>
 
-        <div
+        <div id="action-controls-panel" data-mode="record"
             class="glass-panel p-2 md:p-3 rounded-2xl grid grid-cols-2 md:flex md:flex-row items-center gap-2 pointer-events-auto shadow-2xl w-full max-w-[95vw] md:w-auto md:min-w-[500px]">
 
             <button id="btn-record-vertex"
@@ -648,10 +648,10 @@
             </button>
 
             <div id="ab-library" class="col-span-2 flex flex-col gap-1">
-                <input id="ab-name" maxlength="100" placeholder="Field name" class="bg-gray-900 text-white rounded px-2 py-1" />
-                <button onclick="saveABLine()" class="rounded bg-green-700 px-2 py-1">Save A-B</button>
-                <select id="ab-saved" class="bg-gray-900 text-white rounded px-2 py-1"><option value="">Select reference line</option></select>
-                <div class="flex gap-2"><button onclick="refreshABLines()">↻ Refresh</button><button onclick="loadABLine()">Load</button></div>
+                <input id="ab-name" maxlength="100" placeholder="Field name" aria-label="Field name" class="bg-gray-900 text-white rounded px-2 py-1" />
+                <button id="btn-ab-save" onclick="saveABLine()" class="rounded bg-green-700 px-2 py-1">Save A-B</button>
+                <select id="ab-saved" aria-label="Select reference line" class="bg-gray-900 text-white rounded px-2 py-1"><option value="">Select reference line</option></select>
+                <div class="flex gap-2"><button id="btn-ab-refresh" onclick="refreshABLines()">↻ Refresh</button><button id="btn-ab-load" onclick="loadABLine()">Load</button></div>
             </div>
 
         </div>
@@ -2155,6 +2155,7 @@
             }
 
             currentControlMode = mode;
+            document.getElementById('action-controls-panel').dataset.mode = mode;
             const toggleRecord = document.getElementById('toggle-record');
             const togglePath = document.getElementById('toggle-path');
             const btnVertex = document.getElementById('btn-record-vertex');

@@ -211,6 +211,30 @@ input[type="range"] {
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
 }
 
+#ab-library input,
+#ab-library select,
+#ab-library button {
+    border: 1.5px solid var(--hmi-border-highlight);
+    border-radius: 0.75rem;
+    background-color: var(--hmi-bg-elevated);
+    color: var(--hmi-text-bright);
+    font-weight: 600;
+}
+
+#btn-ab-save {
+    background-color: var(--hmi-col-green-bg) !important;
+    border-color: var(--hmi-col-green) !important;
+}
+
+#btn-ab-load {
+    background-color: var(--hmi-col-blue-bg) !important;
+    border-color: var(--hmi-col-blue) !important;
+}
+
+#ab-library button:active {
+    filter: brightness(1.2);
+}
+
 /* ── Mục E: Depth Control Panel ── */
 #depth-panel {
     z-index: 30;
@@ -564,6 +588,13 @@ input[type="range"]::-moz-range-thumb {
         border: 0 !important;
     }
 
+    #action-controls-panel[data-mode="record"] {
+        background: transparent !important;
+        box-shadow: none !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+
     /* In A-B mode, Record Line stays below the mode selector.  The A-B
        library occupies the remaining width, so no control is pushed to a
        separate vertical panel. */
@@ -579,12 +610,14 @@ input[type="range"]::-moz-range-thumb {
         display: grid !important;
         grid-column: 2 !important;
         grid-row: 1 !important;
+        height: 5rem !important;
         grid-template-columns: minmax(110px, 1fr) max-content minmax(150px, 1.35fr) max-content !important;
-        align-items: center !important;
+        align-items: stretch !important;
         gap: 0.375rem !important;
         min-width: 0 !important;
         max-width: 100% !important;
         overflow-x: auto !important;
+        overflow-y: hidden !important;
         overscroll-behavior-inline: contain;
         scrollbar-width: thin;
     }
@@ -593,7 +626,9 @@ input[type="range"]::-moz-range-thumb {
     #ab-library select,
     #ab-library button {
         min-width: 0 !important;
-        min-height: var(--hit-primary) !important;
+        height: 5rem !important;
+        min-height: 5rem !important;
+        max-height: 5rem !important;
         padding: 0.375rem 0.5rem !important;
         font-size: clamp(0.7rem, 1.8vw, 0.875rem) !important;
     }
@@ -603,11 +638,19 @@ input[type="range"]::-moz-range-thumb {
         font-size: 1rem !important;
     }
 
+    #ab-library button {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        white-space: nowrap;
+    }
+
     #ab-library > div {
         display: flex !important;
         align-items: stretch !important;
         gap: 0.25rem !important;
         min-width: 0 !important;
+        height: 5rem !important;
     }
 
     #ab-library > div button {
