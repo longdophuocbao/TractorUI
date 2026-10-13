@@ -626,6 +626,13 @@
                 <span class="relative z-10 text-sm font-bold text-red-100 drop-shadow" data-i18n="btn-record-line">Record Line</span>
             </button>
 
+            <div id="ab-library" class="col-span-2 flex flex-col gap-1">
+                <input id="ab-name" maxlength="100" placeholder="Tên ruộng / Field name" class="bg-gray-900 text-white rounded px-2 py-1" />
+                <button onclick="saveABLine()" class="rounded bg-green-700 px-2 py-1">Lưu A-B / Save</button>
+                <select id="ab-saved" class="bg-gray-900 text-white rounded px-2 py-1"><option value="">Chọn đường / Select line</option></select>
+                <div class="flex gap-2"><button onclick="refreshABLines()">↻ Danh sách / Refresh</button><button onclick="loadABLine()">Mở / Load</button></div>
+            </div>
+
         </div>
     </div>
 
@@ -2156,6 +2163,8 @@
                 if (btnClearAll) btnClearAll.style.display = 'flex';
                 if (ros.isConnected) selectModePub.publish(new ROSLIB.Message({ data: 2 }));
             }
+            document.getElementById('ab-library').style.display = btnLine.style.display === 'none' ? 'none' : 'flex';
+            if (btnLine.style.display !== 'none' && ros.isConnected) refreshABLines();
             updatePathModeUI();
         }
 
@@ -2193,6 +2202,33 @@
         }
 
         // Action gửi lệnh đi (Command ≠ Status: pending spinner until /steer_planner_node/state_machine arrives)
+        function refreshABLines() {
+            callService('/steer_planner_node/list_reference_lines', null, 'std_srvs/Trigger', (ok, res) => {
+                if (!ok || !res.success) return;
+                const select = document.getElementById('ab-saved');
+                const previous = select.value;
+                select.replaceChildren(new Option('Chọn đường / Select line', ''));
+                res.message.split('\n').filter(Boolean).forEach(name => select.add(new Option(name, name)));
+                select.value = previous;
+            });
+        }
+        let abRequestPending = false;
+        function requestABLine(action, name) {
+            if (!ros.isConnected || abRequestPending) return;
+            if (!name) { showToast('Nhập tên hoặc chọn đường A-B.', 'warn'); return; }
+            abRequestPending = true;
+            const service = new ROSLIB.Service({ros, name: '/steer_planner_node/set_parameters', serviceType: 'rcl_interfaces/srv/SetParameters'});
+            service.callService(new ROSLIB.ServiceRequest({parameters: [{name: 'reference_line_name', value: {type: 4, string_value: name}}]}), res => {
+                if (!res.results || !res.results.every(r => r.successful)) { abRequestPending = false; showToast('Không thể đặt tên đường.', 'error'); return; }
+                callService('/steer_planner_node/' + action + '_reference_line', null, 'std_srvs/Trigger', (ok, result) => {
+                    abRequestPending = false;
+                    if (ok && result.success) { showToast(result.message, 'success'); refreshABLines(); }
+                });
+            }, err => { abRequestPending = false; showToast(String(err), 'error'); });
+        }
+        function saveABLine() { requestABLine('save', document.getElementById('ab-name').value.trim()); }
+        function loadABLine() { requestABLine('load', document.getElementById('ab-saved').value); }
+
         function toggleRecordLine() {
             callService('/steer_planner_node/toggle_line_recording', 'btn-record-line');
         }
@@ -3591,6 +3627,7 @@
             setTimeout(() => { if (ros.isConnected) splashScreen.classList.add('hidden'); }, 700);
             resetSplashBtn();
 
+            refreshABLines();
             // Lắng nghe State Machine từ ROS để update nút Record Line
             subscribeToTopic('/steer_planner_node/state_machine', 'std_msgs/Int32', (m) => {
 
