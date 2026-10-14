@@ -883,6 +883,9 @@ button svg {
 .hmi-bottom-dock {
     width: min(calc(100vw - 2rem), 640px) !important;
     max-width: 640px !important;
+    bottom: max(2px, var(--safe-bottom)) !important;
+    transform: translateX(-50%) scale(0.85) !important;
+    transform-origin: center bottom;
     padding: 16px !important;
     gap: 16px !important;
     border: 1px solid var(--hmi-border-base);
@@ -933,6 +936,9 @@ button svg {
 .hmi-mode-group > button {
     position: relative;
     z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     width: 100%;
     background: transparent !important;
     border-color: transparent !important;
@@ -984,8 +990,25 @@ button svg {
     gap: 2px;
 }
 
-#action-controls-panel > button > .hmi-action-label {
+#action-controls-panel > button > .hmi-action-label,
+.hmi-mode-group .hmi-mode-label,
+#status-text {
+    /* Keep the changing action name available to screen readers. */
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
     white-space: nowrap;
+}
+
+#action-controls-panel .hmi-action-icon,
+#action-controls-panel .hmi-action-icon svg,
+.hmi-mode-group .hmi-icon {
+    width: 32px !important;
+    height: 32px !important;
 }
 
 #action-controls-panel > :is(#divider-path, #divider-start, #divider-clear),

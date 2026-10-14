@@ -18,7 +18,7 @@
     <!-- Tailwind CSS -->
     <link rel="stylesheet" href="tailwind.min.css">
     <!-- Agriculture High-Contrast Responsive HMI Theme -->
-    <link rel="stylesheet" href="theme-hmi.css?v=20261014-mode-anchor">
+    <link rel="stylesheet" href="theme-hmi.css?v=20261014-status-icon">
 
     <!-- ROSLibJS & EventEmitter2 -->
     <script src="eventemitter2.min.js"></script>
@@ -554,11 +554,15 @@
         <div
             class="hmi-mode-group" data-mode="record" role="group" aria-label="Guidance mode">
             <button onclick="setControlMode('record')" id="toggle-record" aria-pressed="true"
-                class="hmi-segment"
-                data-i18n="mode-record">A-B Mode</button>
+                class="hmi-segment" title="A-B Mode" data-i18n-title="mode-record">
+                <svg class="hmi-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="19" r="2"></circle><path d="M6.4 17.6 17.6 6.4"></path><circle cx="19" cy="5" r="2"></circle></svg>
+                <span class="hmi-mode-label" data-i18n="mode-record">A-B Mode</span>
+            </button>
             <button onclick="setControlMode('path')" id="toggle-path" aria-pressed="false"
-                class="hmi-segment"
-                data-i18n="mode-path">Path Mode</button>
+                class="hmi-segment" title="Path Mode" data-i18n-title="mode-path">
+                <svg class="hmi-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="icons/ui-sprite.svg#route"></use></svg>
+                <span class="hmi-mode-label" data-i18n="mode-path">Path Mode</span>
+            </button>
         </div>
 
         <div id="action-controls-panel" data-mode="record"
@@ -5429,11 +5433,23 @@
         document.getElementById('btn-toggle-depth').setAttribute('aria-expanded',
             String(getComputedStyle(document.getElementById('depth-panel')).display !== 'none'));
 
+        // Icon-only actions retain tooltips when language or backend state changes.
+        const actionPanel = document.getElementById('action-controls-panel');
+        const syncActionTitles = () => {
+            actionPanel.querySelectorAll('button').forEach(button => {
+                button.title = button.querySelector('.hmi-action-label').textContent.trim();
+            });
+        };
+        syncActionTitles();
+        new MutationObserver(syncActionTitles).observe(actionPanel, {
+            subtree: true, childList: true, characterData: true
+        });
+
         // Mục F: Tự động đo và ghi biến CSS --dock-h để các panel chống đè dock
         const dockEl = document.querySelector('.hmi-bottom-dock');
         if (dockEl && window.ResizeObserver) {
             new ResizeObserver(() => {
-                document.documentElement.style.setProperty('--dock-h', dockEl.offsetHeight + 'px');
+                document.documentElement.style.setProperty('--dock-h', dockEl.getBoundingClientRect().height + 'px');
             }).observe(dockEl);
         }
 
