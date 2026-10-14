@@ -1071,6 +1071,23 @@ button svg {
     padding: 6px !important;
 }
 
+.hmi-tool-actions {
+    --hmi-control-height: 32px;
+    --hmi-control-gap: 6px;
+    --hmi-control-radius: 8px;
+}
+
+.hmi-tool-actions > button {
+    padding: 4px !important;
+}
+
+.hmi-top-bar .hmi-info-box {
+    --hmi-control-height: 32px;
+    --hmi-control-radius: 8px;
+    padding: 4px 6px !important;
+    gap: 6px !important;
+}
+
 .leaflet-bar a {
     display: flex;
     align-items: center;
