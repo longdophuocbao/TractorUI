@@ -18,7 +18,7 @@
     <!-- Tailwind CSS -->
     <link rel="stylesheet" href="tailwind.min.css">
     <!-- Agriculture High-Contrast Responsive HMI Theme -->
-    <link rel="stylesheet" href="theme-hmi.css?v=20261014-compact-topbar">
+    <link rel="stylesheet" href="theme-hmi.css?v=20261014-delete-reference">
 
     <!-- ROSLibJS & EventEmitter2 -->
     <script src="eventemitter2.min.js"></script>
@@ -648,8 +648,9 @@
                 <select id="ab-saved" name="reference-line" required><option value="">Select reference line</option></select>
                 <button id="btn-ab-refresh" type="button" onclick="refreshABLines()">↻ Refresh</button>
             </div>
-            <div class="ab-dialog-actions">
+            <div class="ab-dialog-actions ab-load-actions">
                 <button type="button" class="ab-dialog-cancel" onclick="closeABDialog('load')">Cancel</button>
+                <button id="btn-ab-delete" type="button" data-variant="danger" onclick="deleteABLine()">Delete</button>
                 <button type="submit" class="ab-dialog-primary ab-dialog-load">Load A-B</button>
             </div>
         </form>
@@ -2266,6 +2267,14 @@
         }
         function saveABLine() { requestABLine('save', document.getElementById('ab-name').value.trim(), () => closeABDialog('save')); }
         function loadABLine() { requestABLine('load', document.getElementById('ab-saved').value, () => closeABDialog('load')); }
+        function deleteABLine() {
+            if (abRequestPending) return;
+            if (!ros.isConnected) { showToast(t('toast-no-ros'), 'error'); return; }
+            const name = document.getElementById('ab-saved').value;
+            if (!name) { showToast('Select a reference line to delete.', 'warn'); return; }
+            if (!window.confirm(`Delete saved reference line "${name}"?\nThis cannot be undone.`)) return;
+            requestABLine('delete', name, refreshABLines);
+        }
 
         function toggleRecordLine() {
             callService('/steer_planner_node/toggle_line_recording', 'btn-record-line');
