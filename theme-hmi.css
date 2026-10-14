@@ -1,15 +1,23 @@
 /* ==============================================================================
-   TractorUI - High-Contrast Agriculture Responsive HMI Theme (theme-hmi.css)
+   TractorUI - Dark Modern Industrial HMI Design System (theme-hmi.css)
    Optimized for: Phone 6" (360x780, 780x360), Tablet 8–11" (768x1024, 1024x768, 1180x820),
    Laptop 13–15" (1366x768, 1920x1080), Cabin Touchscreen (1024x600, 1280x800)
-   Sunlight-proof, glove-friendly, vibration-resistant (>=48px / 56px touch targets)
+   Dark industrial controls with consistent 48px touch targets
    ============================================================================== */
 
 :root {
     /* ── Mục A: Token Kích Thước và Chữ ── */
-    --hit-primary: 56px;
-    --hit-secondary: 48px;
-    --hit-min: 44px;
+    --hmi-control-height: 48px;
+    --hmi-control-font: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --hmi-control-font-size: 14px;
+    --hmi-control-font-weight: 600;
+    --hmi-control-gap: 12px;
+    --hmi-control-radius: 10px;
+    --hmi-control-padding-y: 3px;
+    --hmi-control-padding: 12px;
+    --hit-primary: var(--hmi-control-height);
+    --hit-secondary: var(--hmi-control-height);
+    --hit-min: var(--hmi-control-height);
     --txt-label: 14px;
     --txt-value: 20px;
 
@@ -35,13 +43,13 @@
     --dock-right-w: clamp(280px, 30vw, 360px);
 
     /* ── Sunlight-Proof High Contrast Solid Colors ── */
-    --hmi-bg-main: #0b0f19;
-    --hmi-bg-surface: rgba(10, 14, 20, 0.95);  /* Solid opaque dark base */
-    --hmi-bg-elevated: #1e293b;                 /* Slate 800 */
-    --hmi-bg-inset: #090d16;                    /* Recessed data area */
+    --hmi-bg-main: #0b1018;
+    --hmi-bg-surface: rgba(19, 28, 40, 0.98);  /* Solid opaque dark base */
+    --hmi-bg-elevated: #1b2635;                 /* Slate 800 */
+    --hmi-bg-inset: #0f1722;                    /* Recessed data area */
     
-    --hmi-border-base: #334155;                 /* Slate 700 */
-    --hmi-border-highlight: #475569;            /* Slate 600 */
+    --hmi-border-base: #324154;                 /* Slate 700 */
+    --hmi-border-highlight: #52667f;            /* Slate 600 */
     --hmi-border-active: #3b82f6;               /* Blue 500 */
 
     --hmi-text-bright: #ffffff;
@@ -51,19 +59,19 @@
     /* Status Colors */
     --hmi-col-green: #22c55e;
     --hmi-col-green-bg: #14532d;
-    --hmi-col-yellow: #eab308;
-    --hmi-col-yellow-bg: #713f12;
+    --hmi-col-yellow: var(--hmi-col-orange);
+    --hmi-col-yellow-bg: #49301c;
     --hmi-col-red: #ef4444;
     --hmi-col-red-bg: #7f1d1d;
-    --hmi-col-amber: #f59e0b;
+    --hmi-col-amber: var(--hmi-col-orange);
     --hmi-col-blue: #3b82f6;
     --hmi-col-blue-bg: #1e3a8a;
     --hmi-col-orange: #f97316;
 
     /* Shadows & Radii */
-    --hmi-shadow-card: 0 10px 25px -5px rgba(0, 0, 0, 0.7), 0 8px 10px -6px rgba(0, 0, 0, 0.7);
-    --hmi-radius-card: clamp(0.75rem, 1.2vw, 1.25rem);
-    --hmi-radius-btn: clamp(0.625rem, 1vw, 1rem);
+    --hmi-shadow-card: 0 8px 24px rgba(0, 0, 0, 0.28);
+    --hmi-radius-card: 14px;
+    --hmi-radius-btn: var(--hmi-control-radius);
 }
 
 /* ── Reset & Anti-Vibration Selection (Mục M) ── */
@@ -92,12 +100,6 @@ input[type="range"] {
 }
 
 /* ── Mục B: Top Bar & Nút Công Cụ ── */
-.hmi-top-bar button {
-    min-width: var(--hit-secondary) !important;
-    min-height: var(--hit-secondary) !important;
-    padding: 0.75rem !important; /* p-3 */
-}
-
 .hmi-top-bar {
     top: max(1rem, var(--safe-top)) !important;
     left: max(1rem, var(--safe-left)) !important;
@@ -162,119 +164,9 @@ input[type="range"] {
     z-index: 25;
 }
 
-#top-controls-panel #btn-swath-left,
-#top-controls-panel #btn-swath-right {
-    min-width: var(--hit-primary) !important;
-    min-height: var(--hit-primary) !important;
-}
-
-#top-controls-panel #btn-rotate-left,
-#top-controls-panel #btn-rotate-right {
-    min-width: var(--hit-secondary) !important;
-    min-height: var(--hit-secondary) !important;
-}
-
-#mobile-xte-container {
-    min-height: var(--hit-secondary);
-}
-
 /* ── Mục D: Bottom Dock Action Buttons ── */
 .hmi-bottom-dock {
     max-width: min(96vw, 760px);
-}
-
-#toggle-record,
-#toggle-path {
-    min-height: var(--hit-min) !important;
-    padding-left: 1.25rem !important;
-    padding-right: 1.25rem !important;
-    font-size: var(--txt-label) !important;
-}
-
-#btn-record-vertex,
-#btn-generate-path,
-#btn-start-path,
-#btn-clear-all,
-#btn-record-line {
-    min-height: var(--hit-primary) !important;
-}
-
-#btn-record-vertex span:not(.hold-progress),
-#btn-generate-path span:not(.hold-progress),
-#btn-start-path span:not(.hold-progress),
-#btn-clear-all span:not(.hold-progress),
-#btn-record-line span:not(.hold-progress) {
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
-}
-
-#action-controls-panel[data-mode="record"] {
-    display: grid !important;
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-    align-items: stretch !important;
-    gap: 0.5rem !important;
-    width: min(100%, 36rem) !important;
-    max-width: 36rem !important;
-    min-width: 0 !important;
-    height: var(--hit-primary) !important;
-    min-height: var(--hit-primary) !important;
-    max-height: var(--hit-primary) !important;
-    padding: 0 !important;
-    border: 0 !important;
-    background: transparent !important;
-    box-shadow: none !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-}
-
-#action-controls-panel[data-mode="record"] > #btn-record-line,
-#action-controls-panel[data-mode="record"] > #btn-ab-save,
-#action-controls-panel[data-mode="record"] > #btn-ab-load {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: center !important;
-    grid-column: auto !important;
-    grid-row: auto !important;
-    width: 100% !important;
-    height: var(--hit-primary) !important;
-    min-height: var(--hit-primary) !important;
-    max-height: var(--hit-primary) !important;
-    padding: 0.25rem 0.375rem !important;
-    border-radius: 0.75rem !important;
-    gap: 0.125rem;
-    color: white;
-    font-size: 0.75rem;
-    font-weight: 700;
-    line-height: 1.1;
-    white-space: nowrap;
-}
-
-#action-controls-panel[data-mode="record"] > #btn-record-line span:first-of-type {
-    font-size: 1.125rem !important;
-    line-height: 1 !important;
-    margin: 0 !important;
-}
-
-#action-controls-panel[data-mode="record"] > #btn-ab-save svg,
-#action-controls-panel[data-mode="record"] > #btn-ab-load svg {
-    width: 1.125rem;
-    height: 1.125rem;
-    flex: none;
-}
-
-#btn-ab-save {
-    background: var(--hmi-col-green-bg) !important;
-    border: 1.5px solid var(--hmi-col-green) !important;
-}
-
-#btn-ab-load {
-    background: var(--hmi-col-blue-bg) !important;
-    border: 1.5px solid var(--hmi-col-blue) !important;
-}
-
-#action-controls-panel[data-mode="path"] > #btn-ab-save,
-#action-controls-panel[data-mode="path"] > #btn-ab-load {
-    display: none !important;
 }
 
 .ab-dialog-backdrop {
@@ -352,65 +244,17 @@ input[type="range"] {
     font-weight: 700;
 }
 
-.ab-dialog-save {
-    background: var(--hmi-col-green-bg) !important;
-    border-color: var(--hmi-col-green) !important;
-}
-
-.ab-dialog-load {
-    background: var(--hmi-col-blue-bg) !important;
-    border-color: var(--hmi-col-blue) !important;
-}
-
 /* ── Mục E: Depth Control Panel ── */
 #depth-panel {
     z-index: 30;
-}
-
-#depth-panel #depth-toggle-collapse {
-    min-width: var(--hit-min) !important;
-    min-height: var(--hit-min) !important;
-    padding: 0.5rem !important;
-}
-
-.depth-stepper-btn {
-    min-height: var(--hit-min) !important;
-    min-width: 44px !important;
-    font-size: var(--txt-label) !important;
-}
-
-.depth-preset-chip {
-    min-height: var(--hit-min) !important;
-    font-size: var(--txt-label) !important;
-}
-
-#depth-home-btn {
-    min-height: var(--hit-primary) !important;
-    font-size: 16px !important;
-    background: #d97706 !important; /* Amber 600 */
-    border: 2px solid #f59e0b !important;
-}
-
-#depth-home-btn:hover {
-    background: #b45309 !important;
-}
-
-#depth-active-btn {
-    min-height: var(--hit-primary) !important;
-    font-size: 16px !important;
-}
-
-#depth-target-mm {
-    min-height: var(--hit-min) !important;
-    font-size: 18px !important;
 }
 
 /* ── Mục G: Sliders (32px Thumb & 12px Track) ── */
 input[type="range"] {
     height: 12px !important;
     border-radius: 6px !important;
-    background: #1e293b !important;
-    accent-color: #ea580c !important;
+    background: var(--hmi-bg-elevated) !important;
+    accent-color: var(--hmi-col-blue) !important;
     cursor: pointer !important;
 }
 
@@ -418,7 +262,7 @@ input[type="range"]::-webkit-slider-thumb {
     width: 32px !important;
     height: 32px !important;
     border-radius: 50% !important;
-    background: #f97316 !important;
+    background: var(--hmi-col-blue) !important;
     border: 3px solid #ffffff !important;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.7) !important;
     cursor: pointer !important;
@@ -428,7 +272,7 @@ input[type="range"]::-moz-range-thumb {
     width: 32px !important;
     height: 32px !important;
     border-radius: 50% !important;
-    background: #f97316 !important;
+    background: var(--hmi-col-blue) !important;
     border: 3px solid #ffffff !important;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.7) !important;
     cursor: pointer !important;
@@ -457,23 +301,6 @@ input[type="range"]::-moz-range-thumb {
 }
 
 /* ── Mục H & I: Radar, Minimap, Recenter & Leaflet ── */
-#minimap-swap {
-    width: 48px !important;
-    height: 48px !important;
-}
-
-#btn-recenter {
-    width: 48px !important;
-    height: 48px !important;
-}
-
-.leaflet-bar a {
-    width: 44px !important;
-    height: 44px !important;
-    line-height: 44px !important;
-    font-size: 20px !important;
-}
-
 .leaflet-control-zoom {
     margin-bottom: 24px !important;
     margin-left: 24px !important;
@@ -486,23 +313,6 @@ input[type="range"]::-moz-range-thumb {
 }
 
 /* ── Mục J: Modal Cài Đặt (Engineer & User Tabs) ── */
-#tab-user,
-#tab-engineer {
-    min-height: var(--hit-secondary) !important;
-    font-size: var(--txt-label) !important;
-}
-
-.sl-btn {
-    min-height: var(--hit-secondary) !important;
-    font-size: var(--txt-label) !important;
-}
-
-#lang-toggle {
-    min-height: var(--hit-min) !important;
-    padding-left: 1rem !important;
-    padding-right: 1rem !important;
-}
-
 /* ── Mục K: Splash Screen ── */
 #splash-btn-connect {
     min-height: var(--hit-primary) !important;
@@ -683,29 +493,6 @@ input[type="range"]::-moz-range-thumb {
         gap: 0.5rem !important;
     }
 
-    .hmi-bottom-dock > div.grid,
-    .hmi-bottom-dock > div:last-child {
-        display: grid !important;
-        grid-template-columns: minmax(104px, 0.9fr) minmax(0, 4.1fr) !important;
-        gap: 0.375rem !important;
-        min-width: 0 !important;
-        width: calc(100% - 3.5rem) !important;
-        margin-right: 3.5rem !important;
-        height: 5rem !important;
-        min-height: 5rem !important;
-        max-height: 5rem !important;
-        padding: 0 !important;
-        border: 0 !important;
-    }
-
-    #action-controls-panel[data-mode="record"] {
-        width: min(calc(100% - 3.5rem), 36rem) !important;
-        margin-right: 3.5rem !important;
-        height: var(--hit-primary) !important;
-        min-height: var(--hit-primary) !important;
-        max-height: var(--hit-primary) !important;
-    }
-
     #top-controls-panel {
         top: 0.5rem !important;
         bottom: auto !important;
@@ -719,13 +506,13 @@ input[type="range"]::-moz-range-thumb {
     }
 
     /* The mode selector remains above the A-B controls, centered at the bottom. */
-    .hmi-bottom-dock > div:first-child {
-        position: static !important;
+    .hmi-bottom-dock > .hmi-mode-group {
+        /* Keep the sliding indicator anchored to the mode selector. */
+        position: relative !important;
         left: auto !important;
         right: auto !important;
         bottom: auto !important;
         transform: none !important;
-        width: max-content !important;
         z-index: 55 !important;
     }
 
@@ -780,10 +567,6 @@ input[type="range"]::-moz-range-thumb {
         transform: translateX(-50%) !important;
     }
 
-    #depth-actual {
-        font-size: 1.875rem !important; /* text-3xl */
-    }
-
     /* Thu gọn minimap khi ở chế độ tablet có cả radar */
     #minimap-container.expanded {
         width: min(12rem, 30svh) !important;
@@ -813,9 +596,6 @@ input[type="range"]::-moz-range-thumb {
         bottom: auto !important;
     }
 
-    #depth-actual {
-        font-size: 1.875rem !important; /* text-3xl */
-    }
 }
 
 /* Large control-room displays need proportional side panels rather than fixed 320px cards. */
@@ -827,5 +607,675 @@ input[type="range"]::-moz-range-thumb {
 
     .hmi-bottom-dock {
         max-width: min(90vw, 960px);
+    }
+}
+
+/* Industrial design system: shared controls, semantic roles, backend states. */
+button,
+button.glass-panel,
+.leaflet-bar a,
+.hmi-info-box,
+#mobile-xte-container,
+#xte-header,
+.ab-dialog-panel input,
+.ab-dialog-panel select,
+#depth-target-mm {
+    box-sizing: border-box;
+    height: var(--hmi-control-height) !important;
+    min-height: var(--hmi-control-height) !important;
+    max-height: var(--hmi-control-height) !important;
+    padding: 6px var(--hmi-control-padding) !important;
+    border: 1px solid var(--hmi-border-base) !important;
+    border-radius: var(--hmi-control-radius) !important;
+    font-family: var(--hmi-control-font) !important;
+    font-size: var(--hmi-control-font-size) !important;
+    font-weight: var(--hmi-control-font-weight) !important;
+    line-height: 1.2 !important;
+    letter-spacing: normal !important;
+    font-variant-numeric: tabular-nums;
+}
+
+:is(button, .leaflet-bar a) {
+    --button-bg: var(--hmi-bg-elevated);
+    --button-hover: #263549;
+    --button-border: var(--hmi-border-base);
+    --button-text: #dbe4ef;
+    --button-accent: 37, 99, 235;
+    min-width: var(--hmi-control-height) !important;
+    color: var(--button-text) !important;
+    background: var(--button-bg) !important;
+    border-color: var(--button-border) !important;
+    box-shadow: none !important;
+    cursor: pointer;
+    text-align: center;
+    transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease !important;
+}
+
+button:is([data-variant="primary"], .bg-blue-600, .ab-dialog-load) {
+    --button-bg: #172c48;
+    --button-hover: #1f3c60;
+    --button-border: #30547f;
+    --button-text: #e1edff;
+}
+
+button:is([data-variant="success"], .ab-dialog-save) {
+    --button-bg: #16392c;
+    --button-hover: #1d4d39;
+    --button-border: #2a6248;
+    --button-text: #ddf6e8;
+    --button-accent: 21, 128, 61;
+}
+
+button[data-variant="warning"] {
+    --button-bg: #49301c;
+    --button-hover: #604027;
+    --button-border: #82502a;
+    --button-text: #fff0dd;
+    --button-accent: 194, 89, 24;
+}
+
+button[data-variant="danger"] {
+    --button-bg: #421f27;
+    --button-hover: #5a2933;
+    --button-border: #793841;
+    --button-text: #ffe3e5;
+    --button-accent: 220, 38, 38;
+}
+
+button[aria-pressed="false"] {
+    --button-bg: var(--hmi-bg-elevated);
+    --button-hover: #263549;
+    --button-border: var(--hmi-border-base);
+    --button-text: var(--hmi-text-dim);
+}
+
+button[aria-pressed="true"],
+button[aria-expanded="true"] {
+    --button-bg: #1d4ed8;
+    --button-hover: #2563eb;
+    --button-border: #3b82f6;
+    --button-text: #ffffff;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+}
+
+button[data-ui-state="recording"] {
+    --button-bg: #a84712;
+    --button-hover: #bf561b;
+    --button-border: #ea8a40;
+    --button-text: #ffffff;
+    --button-accent: 194, 89, 24;
+    box-shadow: 0 2px 8px rgba(194, 89, 24, 0.2) !important;
+}
+
+button[data-ui-state="active"] {
+    --button-bg: #b91c1c;
+    --button-hover: #dc2626;
+    --button-border: #ef4444;
+    --button-text: #ffffff;
+    --button-accent: 220, 38, 38;
+    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+
+@media (hover: hover) {
+    :is(button, .leaflet-bar a):not(:disabled):not(.btn-pending):hover {
+        background: var(--button-hover) !important;
+        border-color: #66809e !important;
+        box-shadow: 0 3px 10px rgba(var(--button-accent), 0.16) !important;
+    }
+}
+
+button:focus-visible,
+.leaflet-bar a:focus-visible,
+:is(input, select):focus-visible {
+    outline: 2px solid var(--hmi-col-blue) !important;
+    outline-offset: 3px;
+}
+
+button:not(:disabled):not(.btn-pending):active {
+    transform: scale(0.98);
+}
+
+button:disabled {
+    opacity: 0.4 !important;
+    cursor: not-allowed;
+}
+
+button.btn-set-active {
+    --button-bg: #15803d;
+    --button-text: #ffffff;
+}
+
+button span:not(.hold-progress):not(#depth-active-fill) {
+    color: inherit !important;
+    font-family: var(--hmi-control-font) !important;
+    font-size: var(--hmi-control-font-size) !important;
+    font-weight: var(--hmi-control-font-weight) !important;
+    line-height: 1.2 !important;
+    letter-spacing: normal !important;
+    text-shadow: none !important;
+}
+
+.hmi-icon,
+button svg {
+    flex: none;
+    width: 20px !important;
+    height: 20px !important;
+    stroke-width: 1.8;
+}
+
+.hmi-action-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+}
+
+.hmi-action-icon.is-recording {
+    animation: hmi-recording 1.4s ease-in-out infinite;
+}
+
+@keyframes hmi-recording {
+    50% { opacity: 0.55; }
+}
+
+.hmi-info-box,
+#mobile-xte-container,
+#xte-header {
+    --readout-bg: var(--hmi-bg-elevated);
+    display: flex;
+    align-items: center !important;
+    gap: 8px !important;
+    color: var(--hmi-text-bright);
+    background: var(--readout-bg) !important;
+    box-shadow: none !important;
+}
+
+.hmi-info-box :is(span, div),
+#mobile-xte-container span,
+#xte-header span {
+    font-family: var(--hmi-control-font) !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    letter-spacing: normal !important;
+}
+
+.hmi-info-stack {
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px !important;
+}
+
+.hmi-readout-panel {
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    gap: var(--hmi-control-gap) !important;
+}
+
+#depth-actual {
+    font-size: 22px !important;
+    font-weight: 700 !important;
+}
+
+.glass-panel,
+.hmi-panel,
+.ab-dialog-panel {
+    border-radius: var(--hmi-radius-card) !important;
+    font-family: var(--hmi-control-font);
+}
+
+.hmi-info-box {
+    border-radius: var(--hmi-control-radius) !important;
+}
+
+#deviation-panel,
+#settings-content {
+    background: var(--hmi-bg-surface) !important;
+    border-color: var(--hmi-border-base) !important;
+    border-radius: var(--hmi-radius-card) !important;
+    box-shadow: var(--hmi-shadow-card) !important;
+}
+
+#minimap-container {
+    border-color: var(--hmi-border-base) !important;
+    border-radius: var(--hmi-radius-card) !important;
+}
+
+:is(#xte-header, #mobile-xte-container)[class*="bg-red-"] {
+    --readout-bg: #421f27;
+    border-color: var(--hmi-col-red) !important;
+}
+
+:is(#xte-header, #mobile-xte-container)[class*="bg-orange-"] {
+    --readout-bg: #49301c;
+    border-color: var(--hmi-col-orange) !important;
+}
+
+:is(#xte-header, #mobile-xte-container)[class*="bg-green-"] {
+    --readout-bg: #16392c;
+    border-color: var(--hmi-col-green) !important;
+}
+
+.hmi-top-bar,
+.hmi-telemetry-actions,
+.hmi-tool-actions,
+#top-controls-panel,
+#map-tools,
+.ab-dialog-actions,
+.ab-load-picker,
+.sl-grid,
+.sl-btns,
+#depth-collapsible-content,
+#depth-auto-input,
+#depth-manual-input,
+#depth-collapsible-content > div,
+#depth-auto-input > div,
+#depth-manual-input > div,
+.hmi-readout-panel > .grid {
+    gap: var(--hmi-control-gap) !important;
+}
+
+.hmi-top-bar {
+    align-items: center !important;
+}
+
+.hmi-bottom-dock {
+    width: min(calc(100vw - 2rem), 640px) !important;
+    max-width: 640px !important;
+    padding: 16px !important;
+    gap: 16px !important;
+    border: 1px solid var(--hmi-border-base);
+    border-radius: var(--hmi-radius-card);
+    background: var(--hmi-bg-surface);
+    box-shadow: var(--hmi-shadow-card);
+}
+
+.hmi-mode-group {
+    position: relative;
+    isolation: isolate;
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: var(--hmi-control-height);
+    flex: 0 0 auto;
+    width: 100% !important;
+    height: calc(var(--hmi-control-height) + 10px);
+    min-height: calc(var(--hmi-control-height) + 10px);
+    max-height: calc(var(--hmi-control-height) + 10px);
+    padding: 4px;
+    gap: 4px !important;
+    border: 1px solid var(--hmi-border-base);
+    border-radius: 14px;
+    background: var(--hmi-bg-inset);
+    pointer-events: auto;
+}
+
+.hmi-mode-group::before {
+    content: "";
+    position: absolute;
+    top: 4px;
+    height: var(--hmi-control-height);
+    left: 4px;
+    width: calc(50% - 6px);
+    border: 1px solid #3b82f6;
+    border-radius: var(--hmi-control-radius);
+    background: #1d4ed8;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    pointer-events: none;
+    transform: translateX(0);
+    transition: transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.hmi-mode-group[data-mode="path"]::before {
+    transform: translateX(calc(100% + 4px));
+}
+
+.hmi-mode-group > button {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    background: transparent !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+}
+
+.hmi-mode-group > button:not(:disabled):not(.btn-pending):hover {
+    background: transparent !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+    color: #ffffff !important;
+}
+
+.hmi-mode-group > button[aria-pressed="false"] {
+    --button-bg: transparent;
+    --button-border: transparent;
+}
+
+#action-controls-panel[data-mode] {
+    display: grid !important;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-template-columns: none !important;
+    align-items: stretch !important;
+    gap: var(--hmi-control-gap) !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    height: var(--hmi-control-height) !important;
+    min-height: var(--hmi-control-height) !important;
+    max-height: var(--hmi-control-height) !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    pointer-events: auto;
+}
+
+#action-controls-panel > button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    grid-column: auto !important;
+    grid-row: auto !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    padding: 3px 8px !important;
+    gap: 2px;
+}
+
+#action-controls-panel > button > .hmi-action-label {
+    white-space: nowrap;
+}
+
+#action-controls-panel > :is(#divider-path, #divider-start, #divider-clear),
+#action-controls-panel[data-mode="path"] > :is(#btn-ab-save, #btn-ab-load) {
+    display: none !important;
+}
+
+#action-controls-panel .hold-progress,
+#top-controls-panel .hold-progress {
+    background: rgba(255, 255, 255, 0.2) !important;
+}
+
+#depth-panel {
+    padding: 16px !important;
+    gap: 12px !important;
+    border-radius: var(--hmi-radius-card) !important;
+}
+
+#depth-panel [title="Close Drawer"] {
+    display: none;
+}
+
+#depth-toggle-collapse {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#top-controls-panel button,
+.hmi-tool-actions button,
+#btn-recenter,
+#minimap-swap,
+#depth-toggle-collapse,
+.leaflet-bar a {
+    width: var(--hmi-control-height) !important;
+    padding: 6px !important;
+}
+
+.leaflet-bar a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: var(--hmi-control-gap);
+}
+
+.depth-stepper-btn {
+    flex: 1 1 0;
+    width: 0;
+    min-width: 0 !important;
+    padding: 6px !important;
+}
+
+#depth-target-mm {
+    flex: 1.25 1 0;
+    min-width: 56px;
+    padding: 6px !important;
+    background: var(--hmi-bg-inset) !important;
+    color: var(--hmi-text-bright);
+}
+
+.depth-preset-chip {
+    flex: 1 1 0;
+    min-width: 0 !important;
+}
+
+#depth-mode-auto,
+#depth-mode-manual {
+    width: 100%;
+}
+
+#tab-user,
+#tab-engineer {
+    flex: 1 1 0;
+    justify-content: center;
+}
+
+@media (max-width: 767px), (orientation: landscape) and (max-height: 500px) and (pointer: coarse) {
+    :root {
+        --hmi-control-gap: 8px;
+    }
+
+    .hmi-bottom-dock {
+        width: min(calc(100vw - 1rem), 640px) !important;
+        padding: 12px !important;
+        gap: 12px !important;
+    }
+
+    .hmi-bottom-dock > .hmi-mode-group {
+        width: 100% !important;
+    }
+
+    #depth-panel:not(.depth-open) {
+        display: none !important;
+    }
+
+    #depth-panel [title="Close Drawer"] {
+        display: flex;
+    }
+
+    #depth-toggle-collapse {
+        display: none;
+    }
+}
+
+@media (orientation: landscape) and (max-height: 500px) and (pointer: coarse) {
+    #depth-panel.depth-open {
+        top: max(68px, var(--safe-top)) !important;
+        bottom: max(8px, var(--safe-bottom)) !important;
+        max-height: calc(100dvh - 76px - var(--safe-bottom)) !important;
+    }
+
+    #map-tools {
+        bottom: calc(var(--dock-h) + 16px) !important;
+    }
+
+    #top-controls-panel {
+        top: auto !important;
+        bottom: calc(var(--dock-h) + 16px) !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    button,
+    .hmi-action-icon,
+    .hmi-mode-group::before {
+        transition: none !important;
+        animation: none !important;
+    }
+}
+/* Compact depth panel: all controls fit without replacing the 1 s hold action. */
+#depth-panel {
+    --hmi-control-height: 44px;
+    --hmi-control-gap: 6px;
+    width: 300px !important;
+    bottom: auto !important;
+    max-height: calc(100dvh - 96px - var(--safe-bottom)) !important;
+    padding: 10px !important;
+    gap: 6px !important;
+}
+
+#depth-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 18px;
+}
+
+#depth-header [data-i18n="depth-title"] {
+    font-size: 12px;
+    line-height: 18px;
+}
+
+#depth-summary {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr 1fr;
+    align-items: stretch;
+    gap: 6px !important;
+}
+
+#depth-summary .depth-telemetry {
+    display: contents;
+}
+
+#depth-summary .hmi-info-box {
+    flex-direction: column;
+    justify-content: center !important;
+    padding: 3px 4px !important;
+    gap: 2px !important;
+}
+
+#depth-summary .depth-telemetry > .hmi-info-box > span:first-child {
+    color: var(--hmi-text-dim);
+    font-size: 11px !important;
+    line-height: 13px;
+}
+
+#depth-actual {
+    font-size: 20px !important;
+    line-height: 22px;
+}
+
+#depth-error-badge {
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    line-height: 12px;
+}
+
+#depth-error-badge span {
+    font-size: 11px !important;
+    line-height: 12px;
+}
+
+#depth-summary .depth-gauge {
+    grid-column: 1 / -1;
+    height: 4px !important;
+    margin: 0 !important;
+}
+
+#depth-modes-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) var(--hmi-control-height);
+    gap: 6px !important;
+}
+
+#depth-collapsible-content,
+#depth-auto-input,
+#depth-manual-input {
+    gap: 6px !important;
+}
+
+#depth-auto-input > div,
+#depth-manual-input > div {
+    gap: 6px !important;
+    padding-top: 0 !important;
+}
+
+#depth-collapsible-content label {
+    font-size: 11px;
+    line-height: 14px;
+}
+
+#depth-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+}
+
+#depth-actions > button {
+    min-width: 0 !important;
+    padding: 6px !important;
+    white-space: nowrap;
+}
+
+#depth-hold-hint {
+    margin: 0 !important;
+    font-size: 11px;
+    line-height: 14px;
+}
+
+#depth-alerts {
+    display: none;
+}
+
+#depth-alerts:has(> p:not(.hidden)) {
+    display: grid;
+    gap: 6px;
+}
+
+#depth-alerts p {
+    margin: 0;
+    padding: 4px 6px;
+    font-size: 11px;
+    line-height: 14px;
+}
+
+/* A short landscape screen uses two columns rather than a taller drawer. */
+@media (orientation: landscape) and (max-height: 500px) {
+    #depth-panel.depth-open {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-areas:
+            "header header"
+            "summary settings"
+            "modes settings"
+            "alerts alerts"
+            "actions actions"
+            "hint hint";
+        align-content: start;
+        padding: 8px !important;
+        row-gap: 4px !important;
+        column-gap: 12px !important;
+        top: max(68px, var(--safe-top)) !important;
+        bottom: auto !important;
+        right: max(8px, var(--safe-right)) !important;
+        left: auto !important;
+        width: min(640px, calc(100vw - var(--safe-left) - var(--safe-right) - 16px)) !important;
+        max-width: calc(100vw - var(--safe-left) - var(--safe-right) - 16px) !important;
+        max-height: calc(100dvh - 76px - var(--safe-bottom)) !important;
+    }
+
+    #depth-header { grid-area: header; }
+    #depth-summary { grid-area: summary; }
+    #depth-modes-row { grid-area: modes; }
+    #depth-collapsible-content { grid-area: settings; }
+    #depth-alerts { grid-area: alerts; }
+    #depth-actions { grid-area: actions; }
+    #depth-hold-hint { grid-area: hint; }
+
+    #depth-alerts:has(> #depth-link-error:not(.hidden)):has(> #depth-preempt-notice:not(.hidden)) {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }

@@ -27,6 +27,18 @@ Các tính năng chính:
 - **Chart.js**: `chart.js` vẽ đồ thị telemetry góc lái và góc Yaw trực tiếp.
 - **HTML5 Canvas 2D**: Mô phỏng hoạt họa dẫn đường 2D ở màn hình Splash Screen (`viewOutCanvas`, `viewInCanvas`).
 
+UI sử dụng một design system dark modern industrial trong `theme-hmi.css`:
+nút cao 48px, bo góc 10px, font 14px/600; panel bo góc 14px, khoảng cách 8/12/16px.
+Bốn màu chức năng là Primary (xanh dương), Success (xanh lá), Warning (cam) và
+Danger (đỏ). Segmented control dùng `aria-pressed`; trạng thái ghi/chạy của nút
+dùng `data-ui-state` từ backend để thay nền, shadow và icon mà không đổi kích thước.
+Icon thao tác dùng [Tabler Icons](https://github.com/tabler/tabler-icons), lưu local
+trong `icons/ui-sprite.svg`, kèm giấy phép MIT tại `icons/TABLER-LICENSE.txt`.
+
+Depth Control dùng bố cục gọn với nút 44px, thông số Depth/Lift/Tail cùng hàng và
+HOME/ACTIVATE cạnh nhau. Trên màn hình ngang thấp, panel chuyển sang hai cột để
+không cần cuộn; HOME, ACTIVATE và cảnh báo vẫn hiện khi thu gọn phần cài đặt.
+
 ---
 
 ## 3. Cách chạy dự án
@@ -48,6 +60,11 @@ python3 -m http.server 8000
 Sau đó mở trình duyệt tại:
 - Máy cục bộ: `http://localhost:8000`
 - Thiết bị trên cùng mạng Wi-Fi: `http://<IP_RASPBERRY_PI>:8000`
+
+Để xem và thử bố cục UI khi chưa chạy ROS, mở `http://localhost:8000/?preview=1`.
+Chế độ này mở thẳng buồng lái, hiển thị trạng thái `UI Preview (Offline)` và không
+tự kết nối ROSBridge. Có thể chuyển A-B Mode / Path Mode, mở bảng Depth và Cài đặt;
+các lệnh điều khiển vẫn cần kết nối ROS thực tế.
 
 > **Lưu ý về kết nối WebSocket ROSBridge**:
 > Mặc định giao diện sẽ kết nối tới `ws://<HOSTNAME>:9090`. Nếu truy cập qua Cloudflare HTTPS Tunnel, giao diện tự động nhận diện và chuyển sang `wss://ws.<HOSTNAME>`.

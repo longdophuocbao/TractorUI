@@ -18,7 +18,7 @@
     <!-- Tailwind CSS -->
     <link rel="stylesheet" href="tailwind.min.css">
     <!-- Agriculture High-Contrast Responsive HMI Theme -->
-    <link rel="stylesheet" href="theme-hmi.css?v=20261013-ab-dialogs">
+    <link rel="stylesheet" href="theme-hmi.css?v=20261014-mode-anchor">
 
     <!-- ROSLibJS & EventEmitter2 -->
     <script src="eventemitter2.min.js"></script>
@@ -33,25 +33,18 @@
     <script src="leaflet.js"></script>
 
     <style>
-        :root {
-            --hit-primary: 56px;
-            --hit-secondary: 48px;
-            --hit-min: 44px;
-            --txt-label: 14px;
-            --txt-value: 20px;
-            --dock-h: 120px;
-        }
-
         /* Đảm bảo không bị cuộn trang trên mobile */
         html {
             margin: 0;
             padding: 0;
             width: 100%;
             height: 100%;
+            overflow: clip;
             background-color: #111;
         }
 
         body {
+            position: relative;
             margin: 0;
             padding: 0;
             width: 100%;
@@ -59,6 +52,7 @@
             min-height: 100svh;
             min-height: 100dvh;
             overflow: hidden;
+            overflow: clip;
             overscroll-behavior: none;
             background-color: #111;
         }
@@ -352,18 +346,14 @@
                 </div>
 
                 <div class="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto z-30">
-                    <button id="splash-btn-connect"
+                    <button id="splash-btn-connect" data-variant="primary"
                         class="w-full md:w-auto px-8 py-3.5 min-h-[var(--hit-primary)] rounded-xl font-bold tracking-wider uppercase transition-all duration-300 bg-gray-700 text-gray-400 flex justify-center items-center gap-2 border border-gray-600 text-base">
                         <span data-i18n="splash-btn">Connect System</span>
                     </button>
                     <button onclick="toggleSettings()"
                         class="w-full md:w-auto p-4 min-w-[52px] min-h-[52px] rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white border border-gray-700 transition active:scale-95 flex items-center justify-center"
                         title="Settings & Monitoring">
-                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd"
-                                d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z"
-                                clip-rule="evenodd"></path>
-                        </svg>
+                        <svg class="hmi-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="icons/ui-sprite.svg#settings"></use></svg>
                     </button>
                 </div>
                 <!-- Loading Template -->
@@ -401,7 +391,6 @@
         </div>
     </div>
 
-
     <!-- LỚP 0: BẢN ĐỒ TRÀN VIỀN (Có hỗ trợ xoay khung hình 150%) -->
     <div id="map-wrapper"
         class="absolute top-1/2 left-1/2 w-[150vmax] h-[150vmax] -translate-x-1/2 -translate-y-1/2 z-0 transition-transform duration-[1500ms] ease-linear">
@@ -414,7 +403,7 @@
     <div class="hmi-top-bar absolute top-4 left-4 right-4 z-10 flex justify-between items-start pointer-events-none">
 
         <!-- Cụm Trái: Tên hệ thống & Trạng thái kết nối -->
-        <div class="pointer-events-auto flex items-center gap-3 glass-panel rounded-full px-4 py-2 shadow-lg min-h-[var(--hit-secondary)]">
+        <div class="hmi-info-box pointer-events-auto flex items-center gap-3 glass-panel rounded-full px-4 py-2 shadow-lg min-h-[var(--hit-secondary)]">
             <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z">
@@ -431,8 +420,8 @@
         <!-- Cụm Phải: Thông số Telemetry DJI Style -->
         <div class="hmi-telemetry-actions flex flex-row items-center gap-2 md:gap-3">
             <div
-                class="pointer-events-auto flex items-center gap-4 glass-panel rounded-full px-5 py-2 shadow-lg text-sm font-mono min-h-[var(--hit-secondary)]">
-                
+                class="hmi-info-box pointer-events-auto flex items-center gap-4 glass-panel rounded-full px-5 py-2 shadow-lg text-sm font-mono min-h-[var(--hit-secondary)]">
+
                 <!-- Ping / Latency Display -->
                 <div class="flex items-center gap-1.5" title="Network Latency (Browser to Server)">
                     <span id="data-ping" class="font-bold text-white text-sm">-- ms</span>
@@ -460,10 +449,7 @@
                 <button id="btn-toggle-depth" onclick="toggleDepthPanel()"
                     class="pointer-events-auto glass-panel hover:bg-white/10 p-3 rounded-full shadow-lg transition active:scale-90 flex items-center justify-center text-blue-400 min-w-[var(--hit-secondary)] min-h-[var(--hit-secondary)]"
                     title="Toggle Depth Control" data-i18n-title="depth-toggle-panel" aria-controls="depth-panel" aria-expanded="false">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
-                    </svg>
+                    <svg class="hmi-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="icons/ui-sprite.svg#arrow-down"></use></svg>
                 </button>
 
                 <!-- Nút La Bàn (Chuyển chế độ N-UP / P-UP) -->
@@ -482,23 +468,14 @@
                 <button onclick="toggleFullScreen()"
                     class="pointer-events-auto glass-panel hover:bg-white/10 p-3 rounded-full shadow-lg transition active:scale-90 flex items-center justify-center min-w-[var(--hit-secondary)] min-h-[var(--hit-secondary)]"
                     title="Full Screen">
-                    <svg class="w-5 h-5 text-gray-300 drop-shadow-md" fill="none" stroke="currentColor"
-                        viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4">
-                        </path>
-                    </svg>
+                    <svg class="hmi-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="icons/ui-sprite.svg#arrows-maximize"></use></svg>
                 </button>
 
                 <!-- Nút Mở Cài Đặt (Hình Bánh Răng) -->
                 <button onclick="toggleSettings()"
                     class="pointer-events-auto glass-panel hover:bg-white/10 p-3 rounded-full shadow-lg transition active:scale-90 flex items-center justify-center min-w-[var(--hit-secondary)] min-h-[var(--hit-secondary)]"
                     title="Settings & Monitoring">
-                    <svg class="w-5 h-5 text-gray-300 drop-shadow-md" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd"
-                            d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z"
-                            clip-rule="evenodd"></path>
-                    </svg>
+                    <svg class="hmi-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="icons/ui-sprite.svg#settings"></use></svg>
                 </button>
             </div>
         </div>
@@ -527,28 +504,21 @@
         class="absolute bottom-48 md:bottom-auto md:top-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 md:gap-3 glass-panel p-2 rounded-3xl transition-all duration-500 opacity-0 -translate-y-10 pointer-events-none shadow-2xl">
 
         <!-- Swath Left -->
-        <button id="btn-swath-left"
-            class="relative overflow-hidden group select-none bg-indigo-500/35 hover:bg-indigo-500/50 text-indigo-200 border border-indigo-500/40 p-3 md:p-4 rounded-2xl transition active:scale-95 flex justify-center items-center min-w-[var(--hit-primary)] min-h-[var(--hit-primary)]"
+        <button id="btn-swath-left" data-variant="primary"
+            class="relative overflow-hidden group select-none bg-blue-500/35 hover:bg-blue-500/50 text-blue-200 border border-blue-500/40 p-3 md:p-4 rounded-2xl transition active:scale-95 flex justify-center items-center min-w-[var(--hit-primary)] min-h-[var(--hit-primary)]"
             title="Swath Left">
 
             <!-- Thanh tiến trình (Progress bar) -->
-            <div class="hold-progress absolute left-0 bottom-0 top-0 w-0 bg-indigo-500/50 pointer-events-none"></div>
+            <div class="hold-progress absolute left-0 bottom-0 top-0 w-0 bg-blue-500/50 pointer-events-none"></div>
 
             <!-- Icon -->
-            <svg class="relative z-10 w-6 h-6 md:w-7 md:h-7 group-hover:scale-110 transition-transform" fill="none"
-                stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
-                    d="M17 19V9a5 5 0 0 0-10 0v10M3 15l4 4 4-4"></path>
-            </svg>
+            <svg class="hmi-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="icons/ui-sprite.svg#arrow-back-up"></use></svg>
         </button>
 
-        <button id="btn-rotate-left" onclick="callService('/steer_planner_node/rotate_ref_left', 'btn-rotate-left')"
+        <button id="btn-rotate-left" data-variant="primary" onclick="callService('/steer_planner_node/rotate_ref_left', 'btn-rotate-left')"
             class="bg-white/10 hover:bg-white/20 p-2.5 md:p-3 rounded-xl transition active:scale-90 flex justify-center items-center min-w-[var(--hit-secondary)] min-h-[var(--hit-secondary)] border border-white/10"
             title="Rotate Left">
-            <svg class="w-5 h-5 md:w-6 md:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M12 3v18 M18 12a6 6 0 0 0-12 0 M2 8l4 4 4-4"></path>
-            </svg>
+            <svg class="hmi-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="icons/ui-sprite.svg#arrow-back-up"></use></svg>
         </button>
 
         <!-- Central XTE Display (Mobile-friendly) -->
@@ -557,30 +527,22 @@
             <span id="mobile-xte-value" class="text-lg md:text-xl font-mono font-bold text-white leading-none">-- m</span>
         </div>
 
-        <button id="btn-rotate-right" onclick="callService('/steer_planner_node/rotate_ref_right', 'btn-rotate-right')"
+        <button id="btn-rotate-right" data-variant="primary" onclick="callService('/steer_planner_node/rotate_ref_right', 'btn-rotate-right')"
             class="bg-white/10 hover:bg-white/20 p-2.5 md:p-3 rounded-xl transition active:scale-90 flex justify-center items-center min-w-[var(--hit-secondary)] min-h-[var(--hit-secondary)] border border-white/10"
             title="Rotate Right">
-            <svg class="w-5 h-5 md:w-6 md:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M12 3v18 M6 12a6 6 0 0 1 12 0 M22 8l-4 4-4-4"></path>
-            </svg>
+            <svg class="hmi-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="icons/ui-sprite.svg#arrow-forward-up"></use></svg>
         </button>
 
         <!-- Swath Right -->
-        <button id="btn-swath-right"
-            class="hold-btn relative overflow-hidden group select-none bg-indigo-500/35 hover:bg-indigo-500/50 text-indigo-200 border border-indigo-500/40 p-3 md:p-4 rounded-2xl transition active:scale-95 flex justify-center items-center min-w-[var(--hit-primary)] min-h-[var(--hit-primary)]"
+        <button id="btn-swath-right" data-variant="primary"
+            class="hold-btn relative overflow-hidden group select-none bg-blue-500/35 hover:bg-blue-500/50 text-blue-200 border border-blue-500/40 p-3 md:p-4 rounded-2xl transition active:scale-95 flex justify-center items-center min-w-[var(--hit-primary)] min-h-[var(--hit-primary)]"
             title="Swath Right">
 
             <!-- Thanh tiến trình (Progress bar) -->
-            <div class="hold-progress absolute left-0 bottom-0 top-0 w-0 bg-indigo-500/50 pointer-events-none"></div>
+            <div class="hold-progress absolute left-0 bottom-0 top-0 w-0 bg-blue-500/50 pointer-events-none"></div>
 
             <!-- Icon -->
-            <svg class="relative z-10 w-6 h-6 md:w-7 md:h-7 group-hover:scale-110 transition-transform" fill="none"
-                stroke="currentColor" viewBox="0 0 24 24">
-                <!-- Mũi tên quay đầu sang phải (Mirrored) -->
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
-                    d="M7 19V9a5 5 0 0 1 10 0v10M13 15l4 4 4-4"></path>
-            </svg>
+            <svg class="hmi-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="icons/ui-sprite.svg#arrow-forward-up"></use></svg>
         </button>
     </div>
 
@@ -590,70 +552,69 @@
 
         <!-- Toggle Switch -->
         <div
-            class="glass-panel p-1 rounded-full flex items-center pointer-events-auto shadow-lg backdrop-blur-md bg-black/60 border border-white/20">
-            <button onclick="setControlMode('record')" id="toggle-record"
-                class="px-5 py-2 min-h-[var(--hit-min)] rounded-full text-sm font-bold transition-all bg-blue-600 text-white shadow-md cursor-default"
+            class="hmi-mode-group" data-mode="record" role="group" aria-label="Guidance mode">
+            <button onclick="setControlMode('record')" id="toggle-record" aria-pressed="true"
+                class="hmi-segment"
                 data-i18n="mode-record">A-B Mode</button>
-            <button onclick="setControlMode('path')" id="toggle-path"
-                class="px-5 py-2 min-h-[var(--hit-min)] rounded-full text-sm font-bold transition-all text-gray-300 hover:text-white cursor-pointer"
+            <button onclick="setControlMode('path')" id="toggle-path" aria-pressed="false"
+                class="hmi-segment"
                 data-i18n="mode-path">Path Mode</button>
         </div>
 
         <div id="action-controls-panel" data-mode="record"
-            class="glass-panel p-2 md:p-3 rounded-2xl grid grid-cols-2 md:flex md:flex-row items-center gap-2 pointer-events-auto shadow-2xl w-full max-w-[95vw] md:w-auto md:min-w-[500px]">
+            class="hmi-action-grid">
 
             <button id="btn-record-vertex"
-                class="relative overflow-hidden select-none flex-1 flex flex-col items-center justify-center bg-blue-500/35 hover:bg-blue-500/50 border border-blue-500/40 py-2.5 min-h-[var(--hit-primary)] rounded-xl transition active:scale-95 group">
-                <div class="hold-progress absolute left-0 bottom-0 top-0 w-0 bg-blue-500/50 pointer-events-none"></div>
-                <span class="relative z-10 text-xl mb-0.5 group-hover:scale-110 transition-transform">📍</span>
-                <span class="relative z-10 text-sm font-bold text-blue-100 drop-shadow" data-i18n="btn-record-vertex">Record Vertex</span>
+                class="hmi-action-button relative overflow-hidden select-none" data-variant="primary">
+                <div class="hold-progress absolute left-0 bottom-0 top-0 w-0 pointer-events-none"></div>
+                <span class="hmi-action-icon relative z-10" aria-hidden="true"><svg class="hmi-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="icons/ui-sprite.svg#map-pin"></use></svg></span>
+                <span class="hmi-action-label relative z-10" data-i18n="btn-record-vertex">Record Vertex</span>
             </button>
 
             <div id="divider-path" class="hidden md:block w-px h-10 bg-white/10 mx-1"></div>
 
             <button id="btn-generate-path"
-                class="relative overflow-hidden select-none flex-1 flex flex-col items-center justify-center bg-green-500/35 hover:bg-green-500/50 border border-green-500/40 py-2.5 min-h-[var(--hit-primary)] rounded-xl transition active:scale-95 group">
-                <div class="hold-progress absolute left-0 bottom-0 top-0 w-0 bg-green-500/50 pointer-events-none"></div>
-                <span class="relative z-10 text-xl mb-0.5 group-hover:scale-110 transition-transform">🗺️</span>
-                <span class="relative z-10 text-sm font-bold text-green-100 drop-shadow" data-i18n="btn-generate-path">Generate Path</span>
+                class="hmi-action-button relative overflow-hidden select-none" data-variant="primary">
+                <div class="hold-progress absolute left-0 bottom-0 top-0 w-0 pointer-events-none"></div>
+                <span class="hmi-action-icon relative z-10" aria-hidden="true"><svg class="hmi-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="icons/ui-sprite.svg#route"></use></svg></span>
+                <span class="hmi-action-label relative z-10" data-i18n="btn-generate-path">Generate Path</span>
             </button>
 
             <!-- Divider và nút Start (hiện khi ở Path mode và đã quy hoạch) -->
             <div id="divider-start" class="hidden md:block w-px h-10 bg-white/10 mx-1" style="display: none;"></div>
 
             <button id="btn-start-path"
-                class="relative overflow-hidden select-none flex-1 flex flex-col items-center justify-center bg-blue-500/35 hover:bg-blue-500/50 border border-blue-500/40 py-2.5 min-h-[var(--hit-primary)] rounded-xl transition active:scale-95 group"
-                style="display: none;">
-                <div class="hold-progress absolute left-0 bottom-0 top-0 w-0 bg-blue-500/50 pointer-events-none"></div>
-                <span class="relative z-10 text-xl mb-0.5 group-hover:scale-110 transition-transform">🚀</span>
-                <span class="relative z-10 text-sm font-bold text-blue-100 drop-shadow" data-i18n="btn-start-path">Start</span>
+                style="display: none;" class="hmi-action-button relative overflow-hidden select-none" data-variant="success">
+                <div class="hold-progress absolute left-0 bottom-0 top-0 w-0 pointer-events-none"></div>
+                <span class="hmi-action-icon relative z-10" aria-hidden="true"><svg class="hmi-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="icons/ui-sprite.svg#player-play"></use></svg></span>
+                <span class="hmi-action-label relative z-10" data-i18n="btn-start-path">Start</span>
             </button>
 
             <!-- Divider và nút Clear All nằm chung hàng -->
             <div id="divider-clear" class="hidden md:block w-px h-10 bg-white/10 mx-1"></div>
 
             <button id="btn-clear-all"
-                class="relative overflow-hidden select-none flex-1 flex flex-col items-center justify-center bg-red-500/35 hover:bg-red-500/50 border border-red-500/40 py-2.5 min-h-[var(--hit-primary)] rounded-xl transition active:scale-95 group col-span-2">
-                <div class="hold-progress absolute left-0 bottom-0 top-0 w-0 bg-red-500/50 pointer-events-none"></div>
-                <span class="relative z-10 text-xl mb-0.5 group-hover:scale-110 transition-transform">🗑️</span>
-                <span class="relative z-10 text-sm font-bold text-red-100 drop-shadow" data-i18n="btn-clear-all">Clear All</span>
+                class="hmi-action-button relative overflow-hidden select-none" data-variant="danger">
+                <div class="hold-progress absolute left-0 bottom-0 top-0 w-0 pointer-events-none"></div>
+                <span class="hmi-action-icon relative z-10" aria-hidden="true"><svg class="hmi-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="icons/ui-sprite.svg#trash"></use></svg></span>
+                <span class="hmi-action-label relative z-10" data-i18n="btn-clear-all">Clear All</span>
             </button>
 
             <!-- Nút Record Line (sẽ tự thay đổi UI dựa trên Topic state_machine) -->
             <button id="btn-record-line"
-                class="relative overflow-hidden select-none flex-1 flex flex-col items-center justify-center bg-red-500/35 hover:bg-red-500/50 border border-red-500/40 py-2.5 min-h-[var(--hit-primary)] rounded-xl transition active:scale-95 group col-span-2">
-                <div class="hold-progress absolute left-0 bottom-0 top-0 w-0 bg-white/30 pointer-events-none"></div>
-                <span class="relative z-10 text-xl mb-0.5 group-hover:scale-110 transition-transform text-red-400">⏺</span>
-                <span class="relative z-10 text-sm font-bold text-red-100 drop-shadow" data-i18n="btn-record-line">Record Line</span>
+                class="hmi-action-button relative overflow-hidden select-none" data-variant="primary">
+                <div class="hold-progress absolute left-0 bottom-0 top-0 w-0 pointer-events-none"></div>
+                <span class="hmi-action-icon relative z-10" aria-hidden="true"><svg class="hmi-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="icons/ui-sprite.svg#circle"></use></svg></span>
+                <span class="hmi-action-label relative z-10" data-i18n="btn-record-line">Record Line</span>
             </button>
 
-            <button id="btn-ab-save" type="button" onclick="openABDialog('save')" aria-haspopup="dialog" aria-controls="ab-save-dialog">
-                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 3h13l3 3v15H4zM7 3v6h10V3M7 21v-8h10v8"/></svg>
-                <span>Save A-B</span>
+            <button id="btn-ab-save" type="button" onclick="openABDialog('save')" aria-haspopup="dialog" aria-controls="ab-save-dialog" class="hmi-action-button relative overflow-hidden select-none" data-variant="success">
+                <span class="hmi-action-icon relative z-10" aria-hidden="true"><svg class="hmi-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="icons/ui-sprite.svg#device-floppy"></use></svg></span>
+                <span class="hmi-action-label relative z-10" data-i18n="btn-ab-save">Save A-B</span>
             </button>
-            <button id="btn-ab-load" type="button" onclick="openABDialog('load')" aria-haspopup="dialog" aria-controls="ab-load-dialog">
-                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V5a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v2M3 9h18l-2 12H5z"/></svg>
-                <span>Load A-B</span>
+            <button id="btn-ab-load" type="button" onclick="openABDialog('load')" aria-haspopup="dialog" aria-controls="ab-load-dialog" class="hmi-action-button relative overflow-hidden select-none" data-variant="primary">
+                <span class="hmi-action-icon relative z-10" aria-hidden="true"><svg class="hmi-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="icons/ui-sprite.svg#folder-open"></use></svg></span>
+                <span class="hmi-action-label relative z-10" data-i18n="btn-ab-load">Load A-B</span>
             </button>
 
         </div>
@@ -693,10 +654,7 @@
         <button id="btn-recenter"
             class="opacity-0 pointer-events-none translate-y-4 w-12 h-12 min-w-[var(--hit-secondary)] min-h-[var(--hit-secondary)] glass-panel rounded-full flex items-center justify-center hover:bg-white/20 transition-all duration-300 active:scale-90 shadow-[0_0_10px_rgba(0,0,0,0.5)] group self-start"
             data-i18n-title="btn-recenter" title="Recenter Map">
-            <svg class="w-6 h-6 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="#3b82f6"
-                stroke="white" stroke-width="1.5" xmlns="http://www.w3.org/2000/svg">
-                <polygon points="12,2 22,20 12,17 2,20" />
-            </svg>
+            <svg class="hmi-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="icons/ui-sprite.svg#current-location"></use></svg>
         </button>
 
         <!-- Minimap Container -->
@@ -715,201 +673,213 @@
             <!-- Nút đổi lớp bản đồ (vệ tinh / đường phố): chỉ hiện khi đã mở rộng -->
             <button id="minimap-swap" type="button" title="Switch map"
                 class="absolute bottom-1 right-1 z-[1002] w-12 h-12 min-w-[var(--hit-secondary)] min-h-[var(--hit-secondary)] rounded-full glass-panel items-center justify-center pointer-events-auto active:scale-90">
-                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
-                </svg>
+                <svg class="hmi-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="icons/ui-sprite.svg#arrows-exchange"></use></svg>
             </button>
         </div>
     </div>
 
-    <!-- RIGHT PANEL: Depth Control -->
-    <div id="depth-panel"
-        class="absolute right-4 top-28 md:top-20 z-20 w-[280px] glass-panel rounded-2xl shadow-2xl border border-white/10 p-3.5 flex flex-col gap-2.5 pointer-events-auto transition-all duration-300 hidden md:flex">
-
-        <!-- Mobile Drawer Grab Handle (Chỉ hiện trên màn hình nhỏ) -->
-        <div class="md:hidden w-full flex flex-col items-center justify-center pt-1 pb-2">
-            <div class="w-12 h-1.5 bg-gray-600 rounded-full"></div>
-        </div>
-
-        <!-- Header: title + live depth link dot + collapse button + mobile close -->
-        <div class="flex items-center justify-between">
+    <!-- RIGHT PANEL: Compact Depth Control -->
+    <div class="absolute right-4 top-28 md:top-20 z-20 w-[280px] glass-panel rounded-2xl shadow-2xl border border-white/10 p-3.5 flex flex-col gap-2.5 pointer-events-auto transition-all duration-300 hidden md:flex" id="depth-panel">
+        <div class="depth-header" id="depth-header">
             <div class="flex items-center gap-2">
-                <span class="text-xs font-bold text-gray-200 uppercase tracking-wider flex items-center gap-1.5"
-                    data-i18n="depth-title">
+                <span class="text-xs font-bold text-gray-200 uppercase tracking-wider flex items-center gap-1.5" data-i18n="depth-title">
                     <svg class="w-3.5 h-3.5 text-blue-400 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+                        <path d="M19 14l-7 7m0 0l-7-7m7 7V3" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                        </path>
                     </svg>
                     Depth Control
                 </span>
             </div>
             <div class="flex items-center gap-2">
-                <span id="depth-link-dot" class="w-2.5 h-2.5 rounded-full bg-gray-500 transition-colors" title="depth link"></span>
-                <button id="depth-toggle-collapse" type="button" onclick="toggleDepthCollapse()"
-                    class="hidden md:inline-flex text-gray-400 hover:text-white p-1 rounded transition active:scale-90" title="Collapse/Expand">
-                    <svg id="depth-collapse-icon" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                    </svg>
-                </button>
-                <!-- Nút Đóng Bottom Drawer trên Mobile -->
-                <button type="button" onclick="toggleDepthPanel()"
-                    class="md:hidden text-gray-400 hover:text-white p-2 rounded-lg bg-white/5 active:scale-90" title="Close Drawer">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
+                <span class="w-2.5 h-2.5 rounded-full bg-gray-500 transition-colors" id="depth-link-dot" title="depth link">
+                </span>
             </div>
         </div>
-
-        <!-- Main Readout: Depth actual + error badge + telemetry badges -->
-        <div class="bg-black/30 rounded-xl p-2.5 border border-white/5 flex flex-col gap-1.5">
-            <div class="flex items-baseline justify-between">
+        <div class="hmi-readout-panel bg-black/30 rounded-xl p-2.5 border border-white/5 flex flex-col gap-1.5 depth-summary" id="depth-summary">
+            <div class="hmi-info-box flex items-baseline justify-between">
                 <div class="flex items-baseline gap-1">
-                    <span id="depth-actual" class="text-2xl md:text-3xl font-mono font-bold text-white tracking-tight">--</span>
-                    <span class="text-sm font-mono text-gray-300">mm</span>
+                    <span class="text-2xl md:text-3xl font-mono font-bold text-white tracking-tight" id="depth-actual">
+                        --
+                    </span>
+                    <span class="text-sm font-mono text-gray-300">
+                        mm
+                    </span>
                 </div>
-                <div id="depth-error-badge" class="text-xs font-mono font-semibold px-2.5 py-1 rounded-md bg-gray-800 text-gray-300 border border-white/10">
-                    <span data-i18n="depth-error">Err</span>: <span id="depth-error-val">--</span>
+                <div class="text-xs font-mono font-semibold px-2.5 py-1 rounded-md bg-gray-800 text-gray-300 border border-white/10" id="depth-error-badge">
+                    <span data-i18n="depth-error">
+                        Err
+                    </span>
+                    :
+                    <span id="depth-error-val">
+                        --
+                    </span>
                 </div>
             </div>
-
             <!-- Telemetry Details: Lift angle & Tailboard angle -->
-            <div class="grid grid-cols-2 gap-1.5 pt-1 border-t border-white/5 text-xs font-mono text-gray-300">
-                <div class="flex items-center justify-between bg-white/5 px-2.5 py-1.5 rounded">
-                    <span data-i18n="depth-lift">Lift</span>
-                    <span class="text-white font-bold"><span id="depth-lift-actual">--.-</span>°</span>
+            <div class="grid grid-cols-2 gap-1.5 pt-1 border-t border-white/5 text-xs font-mono text-gray-300 depth-telemetry">
+                <div class="hmi-info-box flex items-center justify-between bg-white/5 px-2.5 py-1.5 rounded">
+                    <span data-i18n="depth-lift">
+                        Lift
+                    </span>
+                    <span class="text-white font-bold">
+                        <span id="depth-lift-actual">
+                            --.-
+                        </span>
+                        °
+                    </span>
                 </div>
-                <div class="flex items-center justify-between bg-white/5 px-2.5 py-1.5 rounded">
-                    <span data-i18n="depth-tail">Tail</span>
-                    <span class="text-white font-bold"><span id="depth-tail-actual">--.-</span>°</span>
+                <div class="hmi-info-box flex items-center justify-between bg-white/5 px-2.5 py-1.5 rounded">
+                    <span data-i18n="depth-tail">
+                        Tail
+                    </span>
+                    <span class="text-white font-bold">
+                        <span id="depth-tail-actual">
+                            --.-
+                        </span>
+                        °
+                    </span>
                 </div>
             </div>
-
             <!-- Depth Gauge Bar -->
-            <div class="relative w-full h-2 bg-gray-800 rounded-full overflow-hidden mt-0.5" title="Depth Gauge">
-                <div id="depth-gauge-actual" class="absolute top-0 bottom-0 left-0 bg-blue-500 rounded-full transition-all duration-200" style="width: 0%;"></div>
-                <div id="depth-gauge-target" class="absolute top-0 bottom-0 w-1.5 bg-yellow-400 -translate-x-1/2 transition-all duration-200" style="left: 0%;"></div>
+            <div class="relative w-full h-2 bg-gray-800 rounded-full overflow-hidden mt-0.5 depth-gauge" title="Depth Gauge">
+                <div class="absolute top-0 bottom-0 left-0 bg-blue-500 rounded-full transition-all duration-200" id="depth-gauge-actual" style="width: 0%;">
+                </div>
+                <div class="absolute top-0 bottom-0 w-1.5 bg-orange-400 -translate-x-1/2 transition-all duration-200" id="depth-gauge-target" style="left: 0%;">
+                </div>
             </div>
         </div>
-
-        <!-- Collapsible Content (Mode, Inputs, Steppers, Controls) -->
-        <!-- Why depth control is not working right now (link to the depth system) -->
-        <p id="depth-link-error"
-            class="hidden text-xs font-semibold text-center leading-tight px-2 py-1.5 rounded-lg bg-rose-900/70 text-rose-100 border border-rose-500/50"></p>
-
-        <!-- HOME: one tap lifts the implement. Kept outside the collapsible part so it is always reachable -->
-        <button id="depth-home-btn" type="button" onclick="sendDepthHome()"
-            class="w-full py-3 min-h-[var(--hit-primary)] rounded-xl font-bold text-base bg-amber-600 hover:bg-amber-500 text-white transition-colors select-none active:scale-95 shadow-md shadow-amber-900/40 tracking-wider"
-            data-i18n="depth-home">HOME (LIFT)</button>
-
-        <div id="depth-collapsible-content" class="flex flex-col gap-2.5 transition-all duration-300">
-            <!-- Mode selector -->
-            <div class="grid grid-cols-2 gap-2">
-                <button id="depth-mode-auto" data-depth-mode="0"
-                    class="depth-mode-btn py-2 min-h-[var(--hit-min)] rounded-lg text-sm font-bold bg-blue-600 text-white transition-colors active:scale-95"
-                    data-i18n="depth-mode-auto">AUTO</button>
-                <button id="depth-mode-manual" data-depth-mode="1"
-                    class="depth-mode-btn py-2 min-h-[var(--hit-min)] rounded-lg text-sm font-bold bg-gray-700 text-gray-300 transition-colors active:scale-95"
-                    data-i18n="depth-mode-manual">MANUAL</button>
-            </div>
-
+        <div class="depth-modes-row" id="depth-modes-row">
+            <button aria-pressed="true" class="depth-mode-btn py-2 min-h-[var(--hit-min)] rounded-lg text-sm font-bold bg-blue-600 text-white transition-colors active:scale-95" data-depth-mode="0" data-i18n="depth-mode-auto" id="depth-mode-auto">
+                AUTO
+            </button>
+            <button aria-pressed="false" class="depth-mode-btn py-2 min-h-[var(--hit-min)] rounded-lg text-sm font-bold bg-gray-700 text-gray-300 transition-colors active:scale-95" data-depth-mode="1" data-i18n="depth-mode-manual" id="depth-mode-manual">
+                MANUAL
+            </button>
+            <button aria-controls="depth-collapsible-content" aria-expanded="true" class="hidden md:inline-flex text-gray-400 hover:text-white p-1 rounded transition active:scale-90" id="depth-toggle-collapse" onclick="toggleDepthCollapse()" title="Collapse/Expand" type="button">
+                <svg aria-hidden="true" class="hmi-icon" fill="none" id="depth-collapse-icon" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24">
+                    <use href="icons/ui-sprite.svg#chevron-down">
+                    </use>
+                </svg>
+            </button>
+            <button class="md:hidden text-gray-400 hover:text-white p-2 rounded-lg bg-white/5 active:scale-90" onclick="toggleDepthPanel()" title="Close Drawer" type="button">
+                <svg aria-hidden="true" class="hmi-icon" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24">
+                    <use href="icons/ui-sprite.svg#x">
+                    </use>
+                </svg>
+            </button>
+        </div>
+        <div class="flex flex-col gap-2.5 transition-all duration-300" id="depth-collapsible-content">
             <!-- AUTO: depth setpoint in mm with steppers and presets -->
-            <div id="depth-auto-input" class="flex flex-col gap-1.5">
+            <div class="flex flex-col gap-1.5" id="depth-auto-input">
                 <div class="flex items-center justify-between">
-                    <label class="text-xs text-gray-300 uppercase tracking-wider font-semibold"
-                        data-i18n="depth-set-mm">Target depth (mm)</label>
+                    <label class="text-xs text-gray-300 uppercase tracking-wider font-semibold" data-i18n="depth-set-mm" for="depth-target-mm">
+                        Target depth (mm)
+                    </label>
                 </div>
                 <div class="flex items-center gap-1.5">
-                    <button type="button" onclick="adjustDepthTarget(-20)"
-                        class="depth-stepper-btn px-2.5 py-2 min-h-[var(--hit-min)] min-w-[44px] rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-200 text-sm font-mono font-bold active:scale-90 transition">
+                    <button class="depth-stepper-btn px-2.5 py-2 min-h-[var(--hit-min)] min-w-[44px] rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-200 text-sm font-mono font-bold active:scale-90 transition" onclick="adjustDepthTarget(-20)" type="button">
                         -20
                     </button>
-                    <button type="button" onclick="adjustDepthTarget(-10)"
-                        class="depth-stepper-btn px-2.5 py-2 min-h-[var(--hit-min)] min-w-[44px] rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-200 text-sm font-mono font-bold active:scale-90 transition">
+                    <button class="depth-stepper-btn px-2.5 py-2 min-h-[var(--hit-min)] min-w-[44px] rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-200 text-sm font-mono font-bold active:scale-90 transition" onclick="adjustDepthTarget(-10)" type="button">
                         -10
                     </button>
-                    <input id="depth-target-mm" type="number" min="50" max="150" step="5" value="120"
-                        class="flex-1 min-w-0 bg-gray-900/90 border border-gray-600 rounded-lg px-1 py-1.5 text-center text-white font-mono text-lg font-bold focus:outline-none focus:border-blue-500 min-h-[var(--hit-min)]">
-                    <button type="button" onclick="adjustDepthTarget(10)"
-                        class="depth-stepper-btn px-2.5 py-2 min-h-[var(--hit-min)] min-w-[44px] rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-200 text-sm font-mono font-bold active:scale-90 transition">
+                    <input class="flex-1 min-w-0 bg-gray-900/90 border border-gray-600 rounded-lg px-1 py-1.5 text-center text-white font-mono text-lg font-bold focus:outline-none focus:border-blue-500 min-h-[var(--hit-min)]" id="depth-target-mm" max="150" min="50" step="5" type="number" value="120"/>
+                    <button class="depth-stepper-btn px-2.5 py-2 min-h-[var(--hit-min)] min-w-[44px] rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-200 text-sm font-mono font-bold active:scale-90 transition" onclick="adjustDepthTarget(10)" type="button">
                         +10
                     </button>
-                    <button type="button" onclick="adjustDepthTarget(20)"
-                        class="depth-stepper-btn px-2.5 py-2 min-h-[var(--hit-min)] min-w-[44px] rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-200 text-sm font-mono font-bold active:scale-90 transition">
+                    <button class="depth-stepper-btn px-2.5 py-2 min-h-[var(--hit-min)] min-w-[44px] rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-200 text-sm font-mono font-bold active:scale-90 transition" onclick="adjustDepthTarget(20)" type="button">
                         +20
                     </button>
                 </div>
                 <!-- Preset chips -->
                 <div class="flex items-center justify-between gap-1.5 pt-0.5">
-                    <button type="button" onclick="setDepthTargetPreset(80)"
-                        class="depth-preset-chip flex-1 py-1.5 min-h-[var(--hit-min)] text-sm font-mono font-semibold rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-gray-200 transition active:scale-95">80</button>
-                    <button type="button" onclick="setDepthTargetPreset(100)"
-                        class="depth-preset-chip flex-1 py-1.5 min-h-[var(--hit-min)] text-sm font-mono font-semibold rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-gray-200 transition active:scale-95">100</button>
-                    <button type="button" onclick="setDepthTargetPreset(120)"
-                        class="depth-preset-chip flex-1 py-1.5 min-h-[var(--hit-min)] text-sm font-mono font-semibold rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-gray-200 transition active:scale-95">120</button>
-                    <button type="button" onclick="setDepthTargetPreset(150)"
-                        class="depth-preset-chip flex-1 py-1.5 min-h-[var(--hit-min)] text-sm font-mono font-semibold rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-gray-200 transition active:scale-95">150</button>
+                    <button class="depth-preset-chip flex-1 py-1.5 min-h-[var(--hit-min)] text-sm font-mono font-semibold rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-gray-200 transition active:scale-95" onclick="setDepthTargetPreset(80)" type="button">
+                        80
+                    </button>
+                    <button class="depth-preset-chip flex-1 py-1.5 min-h-[var(--hit-min)] text-sm font-mono font-semibold rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-gray-200 transition active:scale-95" onclick="setDepthTargetPreset(100)" type="button">
+                        100
+                    </button>
+                    <button class="depth-preset-chip flex-1 py-1.5 min-h-[var(--hit-min)] text-sm font-mono font-semibold rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-gray-200 transition active:scale-95" onclick="setDepthTargetPreset(120)" type="button">
+                        120
+                    </button>
+                    <button class="depth-preset-chip flex-1 py-1.5 min-h-[var(--hit-min)] text-sm font-mono font-semibold rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-gray-200 transition active:scale-95" onclick="setDepthTargetPreset(150)" type="button">
+                        150
+                    </button>
                 </div>
             </div>
-
             <!-- MANUAL: lift arm angle with steppers and presets -->
-            <div id="depth-manual-input" class="flex-col gap-1.5 hidden">
+            <div class="flex-col gap-1.5 hidden" id="depth-manual-input">
                 <div class="flex items-center justify-between">
-                    <label class="text-xs text-gray-300 uppercase tracking-wider font-semibold"
-                        data-i18n="depth-set-angle">Lift arm angle</label>
-                    <span class="text-sm text-white font-mono font-bold"><span id="depth-angle-value">20.0</span>°</span>
+                    <label class="text-xs text-gray-300 uppercase tracking-wider font-semibold" data-i18n="depth-set-angle" for="depth-target-deg">
+                        Lift arm angle
+                    </label>
+                    <span class="text-sm text-white font-mono font-bold">
+                        <span id="depth-angle-value">
+                            20.0
+                        </span>
+                        °
+                    </span>
                 </div>
                 <div class="flex items-center gap-2">
-                    <button type="button" onclick="adjustDepthAngle(-1.0)"
-                        class="depth-stepper-btn px-3 py-2 min-h-[var(--hit-min)] min-w-[44px] rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-200 text-sm font-mono font-bold active:scale-90 transition">
+                    <button class="depth-stepper-btn px-3 py-2 min-h-[var(--hit-min)] min-w-[44px] rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-200 text-sm font-mono font-bold active:scale-90 transition" onclick="adjustDepthAngle(-1.0)" type="button">
                         -1°
                     </button>
-                    <input id="depth-target-deg" type="range" min="0" max="35" step="0.5" value="20"
-                        class="flex-1 accent-blue-500 h-3 bg-gray-700 rounded-lg cursor-pointer">
-                    <button type="button" onclick="adjustDepthAngle(1.0)"
-                        class="depth-stepper-btn px-3 py-2 min-h-[var(--hit-min)] min-w-[44px] rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-200 text-sm font-mono font-bold active:scale-90 transition">
+                    <input class="flex-1 accent-blue-500 h-3 bg-gray-700 rounded-lg cursor-pointer" id="depth-target-deg" max="35" min="0" step="0.5" type="range" value="20"/>
+                    <button class="depth-stepper-btn px-3 py-2 min-h-[var(--hit-min)] min-w-[44px] rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-200 text-sm font-mono font-bold active:scale-90 transition" onclick="adjustDepthAngle(1.0)" type="button">
                         +1°
                     </button>
                 </div>
                 <!-- Angle Presets -->
                 <div class="flex items-center justify-between gap-1.5 pt-0.5">
-                    <button type="button" onclick="setDepthAnglePreset(10.0)"
-                        class="depth-preset-chip flex-1 py-1.5 min-h-[var(--hit-min)] text-sm font-mono font-semibold rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-gray-200 transition active:scale-95">10°</button>
-                    <button type="button" onclick="setDepthAnglePreset(15.0)"
-                        class="depth-preset-chip flex-1 py-1.5 min-h-[var(--hit-min)] text-sm font-mono font-semibold rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-gray-200 transition active:scale-95">15°</button>
-                    <button type="button" onclick="setDepthAnglePreset(20.0)"
-                        class="depth-preset-chip flex-1 py-1.5 min-h-[var(--hit-min)] text-sm font-mono font-semibold rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-gray-200 transition active:scale-95">20°</button>
-                    <button type="button" onclick="setDepthAnglePreset(25.0)"
-                        class="depth-preset-chip flex-1 py-1.5 min-h-[var(--hit-min)] text-sm font-mono font-semibold rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-gray-200 transition active:scale-95">25°</button>
+                    <button class="depth-preset-chip flex-1 py-1.5 min-h-[var(--hit-min)] text-sm font-mono font-semibold rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-gray-200 transition active:scale-95" onclick="setDepthAnglePreset(10.0)" type="button">
+                        10°
+                    </button>
+                    <button class="depth-preset-chip flex-1 py-1.5 min-h-[var(--hit-min)] text-sm font-mono font-semibold rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-gray-200 transition active:scale-95" onclick="setDepthAnglePreset(15.0)" type="button">
+                        15°
+                    </button>
+                    <button class="depth-preset-chip flex-1 py-1.5 min-h-[var(--hit-min)] text-sm font-mono font-semibold rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-gray-200 transition active:scale-95" onclick="setDepthAnglePreset(20.0)" type="button">
+                        20°
+                    </button>
+                    <button class="depth-preset-chip flex-1 py-1.5 min-h-[var(--hit-min)] text-sm font-mono font-semibold rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-gray-200 transition active:scale-95" onclick="setDepthAnglePreset(25.0)" type="button">
+                        25°
+                    </button>
                 </div>
             </div>
-
-            <!-- Tap to engage, hold 1 s to disengage -->
-            <button id="depth-active-btn"
-                class="relative overflow-hidden w-full py-3.5 min-h-[var(--hit-primary)] rounded-xl font-bold text-base bg-emerald-600 hover:bg-emerald-500 text-white transition-colors select-none touch-none shadow-md shadow-emerald-900/40 tracking-wider">
-                <span id="depth-active-fill"
-                    class="absolute inset-y-0 left-0 w-0 bg-white/35 pointer-events-none"></span>
-                <span id="depth-active-label" class="relative" data-i18n="depth-activate">ACTIVATE</span>
-            </button>
-            <p class="text-xs text-gray-300 text-center leading-tight mt-0.5" data-i18n="depth-hold-hint">
-                Tap to engage &middot; hold 1 s to disengage</p>
-            <!-- Shown while the controller at the depth system has taken control -->
-            <p id="depth-preempt-notice"
-                class="hidden text-xs font-semibold text-center leading-tight px-2 py-1.5 rounded-lg bg-amber-900/60 text-amber-200 border border-amber-500/40"
-                data-i18n="depth-preempted">Local controller took over. Tap ACTIVATE to control from here again.</p>
         </div>
+        <div id="depth-alerts">
+            <p class="hidden text-xs font-semibold text-center leading-tight px-2 py-1.5 rounded-lg bg-red-900/70 text-red-100 border border-red-500/50" id="depth-link-error">
+            </p>
+            <p class="hidden text-xs font-semibold text-center leading-tight px-2 py-1.5 rounded-lg bg-orange-900/60 text-orange-200 border border-orange-500/40" data-i18n="depth-preempted" id="depth-preempt-notice">
+                Local controller took over. Tap ACTIVATE to control from here again.
+            </p>
+        </div>
+        <div class="depth-actions-row" id="depth-actions">
+            <button class="w-full py-3 min-h-[var(--hit-primary)] rounded-xl font-bold text-base bg-orange-600 hover:bg-orange-500 text-white transition-colors select-none active:scale-95 shadow-md shadow-orange-900/40 tracking-wider" data-i18n="depth-home" data-variant="warning" id="depth-home-btn" onclick="sendDepthHome()" type="button">
+                HOME (LIFT)
+            </button>
+            <button class="relative overflow-hidden w-full py-3.5 min-h-[var(--hit-primary)] rounded-xl font-bold text-base bg-green-600 hover:bg-green-500 text-white transition-colors select-none touch-none shadow-md shadow-green-900/40 tracking-wider" data-variant="success" id="depth-active-btn">
+                <span class="absolute inset-y-0 left-0 w-0 bg-white/35 pointer-events-none" id="depth-active-fill">
+                </span>
+                <span class="relative" data-i18n="depth-activate" id="depth-active-label">
+                    ACTIVATE
+                </span>
+            </button>
+        </div>
+        <p class="text-xs text-gray-300 text-center leading-tight mt-0.5" data-i18n="depth-hold-hint" id="depth-hold-hint">
+            Tap to engage · hold 1 s to disengage
+        </p>
     </div>
+
 
     <!-- BOTTOM RIGHT: Coordinates Display -->
     <div id="coordinates-display" class="absolute bottom-6 right-12 z-20 pointer-events-none hidden md:block">
         <div
-            class="glass-panel px-4 py-2 rounded-full shadow-lg text-[10px] md:text-xs font-mono text-gray-300 flex flex-row items-center gap-3">
+            class="hmi-info-box glass-panel px-4 py-2 rounded-full shadow-lg text-[10px] md:text-xs font-mono text-gray-300 flex flex-row items-center gap-3">
             <div> <span id="data-lat" class="text-white font-bold tracking-wider">--.------</span></div>
             <div class="w-px h-3 bg-white/20"></div>
             <div> <span id="data-lon" class="text-white font-bold tracking-wider">--.------</span></div>
         </div>
     </div>
-
 
     <!-- LỚP 2: CỬA SỔ CÀI ĐẶT (SETTINGS MODAL) -->
     <div id="settings-modal" style="z-index: 9999;"
@@ -919,7 +889,7 @@
 
             <!-- Modal Header -->
             <div class="flex justify-between items-center p-4 border-b border-gray-800 bg-gray-800/50">
-                <h2 class="text-lg font-bold flex items-center gap-2"><span>⚙️</span> <span
+                <h2 class="text-lg font-bold flex items-center gap-2"><svg class="hmi-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="icons/ui-sprite.svg#settings"></use></svg> <span
                         data-i18n="set-title">Settings & Monitoring</span></h2>
                 <div class="flex items-center gap-4">
                     <!-- Language Toggle Button -->
@@ -938,11 +908,11 @@
 
             <!-- Tab Navigation -->
             <div class="flex border-b border-gray-800 bg-gray-900/50 px-6">
-                <button id="tab-user" onclick="switchSettingsTab('user')"
+                <button id="tab-user" onclick="switchSettingsTab('user')" aria-pressed="true"
                     class="py-3 px-5 min-h-[var(--hit-secondary)] text-sm font-semibold border-b-2 border-blue-500 text-blue-400 transition-all focus:outline-none flex items-center gap-2">
                     👤 <span data-i18n="tab-user">User Settings</span>
                 </button>
-                <button id="tab-engineer" onclick="switchSettingsTab('engineer')"
+                <button id="tab-engineer" onclick="switchSettingsTab('engineer')" aria-pressed="false"
                     class="py-3 px-5 min-h-[var(--hit-secondary)] text-sm font-semibold border-b-2 border-transparent text-gray-400 hover:text-gray-200 transition-all focus:outline-none flex items-center gap-2">
                     🛠️ <span data-i18n="tab-engineer">Engineer Settings</span>
                 </button>
@@ -964,7 +934,7 @@
                                     <div class="flex items-center justify-center bg-gray-950 border border-gray-800 rounded-2xl p-4 w-36 relative overflow-hidden shadow-inner">
                                         <!-- Highlight Bar Overlay -->
                                         <div class="absolute left-0 right-0 h-[44px] top-[calc(50%-22px)] border-t border-b border-blue-500/30 bg-blue-500/5 pointer-events-none"></div>
-                                        
+
                                         <!-- Swath Wheel -->
                                         <div id="picker-swath" class="ios-picker-container w-full" onscroll="onPickerScroll()">
                                             <!-- generated dynamic items -->
@@ -975,7 +945,7 @@
                                 </div>
                             </div>
                         </div>
-                        <button id="btn-set-swath-width" onclick="setUserSwathWidth()"
+                        <button id="btn-set-swath-width" data-variant="primary" onclick="setUserSwathWidth()"
                             class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg text-sm font-semibold transition active:scale-95 shadow-md w-full mt-4">
                             SET
                         </button>
@@ -985,12 +955,12 @@
                     <div class="bg-gray-800/50 p-5 rounded-xl border border-gray-700/50 flex flex-col items-center">
                         <h3 class="text-sm font-bold text-gray-300 mb-3 uppercase tracking-wider self-start" data-i18n="swath-simulation">
                             Simulation Visualization</h3>
-                        
+
                         <!-- Cấu hình Working Width -->
                         <div class="w-full mb-4 flex items-center justify-between bg-gray-900/50 p-3 rounded-lg border border-gray-700/50 text-xs">
                             <span class="text-gray-400" data-i18n="lbl-working-width">Implement Working Width:</span>
                             <div class="flex items-center gap-2">
-                                <input type="range" id="sim-working-width" min="1.0" max="4.0" step="0.1" value="2.0" 
+                                <input type="range" id="sim-working-width" min="1.0" max="4.0" step="0.1" value="2.0"
                                     class="accent-blue-500 w-24 h-1.5 bg-gray-750 rounded-lg appearance-none cursor-pointer"
                                     oninput="updateSwathSimulation()">
                                 <span id="display-sim-working-width" class="font-mono font-bold text-blue-400">2.0</span>m
@@ -1008,7 +978,7 @@
 
                 <!-- Panel 2: Engineer Settings -->
                 <div id="panel-engineer" class="space-y-6 hidden">
-                    
+
                     <!-- Authentication Card -->
                     <div id="engineer-auth" class="bg-gray-800/50 p-6 rounded-xl border border-gray-700/50 flex flex-col items-center justify-center py-12 text-center">
                         <span class="text-4xl mb-3">🔒</span>
@@ -1042,7 +1012,7 @@
                                 <input type="text" id="ws-url"
                                     class="flex-1 bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-blue-500 font-mono text-sm"
                                     placeholder="ws://IP_JETSON:9090">
-                                <button id="btn-connect"
+                                <button id="btn-connect" data-variant="primary"
                                     class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg text-sm font-semibold transition shadow-md whitespace-nowrap"
                                     data-i18n="btn-connect">Connect</button>
                             </div>
@@ -1124,19 +1094,19 @@
 
                             <!-- Giá trị hiện tại -->
                             <div class="sl-grid mb-3">
-                                <div class="bg-gray-900 rounded-lg p-2 text-center">
+                                <div class="hmi-info-box hmi-info-stack bg-gray-900 rounded-lg p-2 text-center">
                                     <div class="text-xs text-gray-500" data-i18n="sl-actual">Actual (rad)</div>
                                     <div id="sl-val-actual" class="text-white font-mono text-sm">--</div>
                                 </div>
-                                <div class="bg-gray-900 rounded-lg p-2 text-center">
+                                <div class="hmi-info-box hmi-info-stack bg-gray-900 rounded-lg p-2 text-center">
                                     <div class="text-xs text-gray-500" data-i18n="sl-left">Left limit</div>
                                     <div id="sl-val-left" class="text-green-400 font-mono text-sm">--</div>
                                 </div>
-                                <div class="bg-gray-900 rounded-lg p-2 text-center">
+                                <div class="hmi-info-box hmi-info-stack bg-gray-900 rounded-lg p-2 text-center">
                                     <div class="text-xs text-gray-500" data-i18n="sl-right">Right limit</div>
                                     <div id="sl-val-right" class="text-green-400 font-mono text-sm">--</div>
                                 </div>
-                                <div class="bg-gray-900 rounded-lg p-2 text-center">
+                                <div class="hmi-info-box hmi-info-stack bg-gray-900 rounded-lg p-2 text-center">
                                     <div class="text-xs text-gray-500" data-i18n="sl-iq">Current Iq (A)</div>
                                     <div id="sl-val-iq" class="text-white font-mono text-sm">--</div>
                                 </div>
@@ -1169,13 +1139,13 @@
 
                             <!-- Các bước lưu -->
                             <div class="sl-btns">
-                                <button id="sl-btn-center" onclick="slSetCenter()"
+                                <button id="sl-btn-center" data-variant="primary" onclick="slSetCenter()"
                                     class="sl-btn bg-blue-600 hover:bg-blue-700 text-white px-3 py-2.5 min-h-[var(--hit-secondary)] rounded-lg text-sm font-semibold transition active:scale-95"
                                     data-i18n="sl-btn-center">1. Set Center</button>
-                                <button id="sl-btn-left" onclick="slCapture('left')" disabled
+                                <button id="sl-btn-left" data-variant="primary" onclick="slCapture('left')" disabled
                                     class="sl-btn bg-blue-600 hover:bg-blue-700 text-white px-3 py-2.5 min-h-[var(--hit-secondary)] rounded-lg text-sm font-semibold transition active:scale-95"
                                     data-i18n="sl-btn-left">2. Capture Left</button>
-                                <button id="sl-btn-right" onclick="slCapture('right')" disabled
+                                <button id="sl-btn-right" data-variant="success" onclick="slCapture('right')" disabled
                                     class="sl-btn bg-green-600 text-white px-3 py-2.5 min-h-[var(--hit-secondary)] rounded-lg text-sm font-semibold transition active:scale-95"
                                     data-i18n="sl-btn-right">3. Capture Right &amp; Save</button>
                                 <button id="sl-btn-cancel" onclick="slCancel()" disabled
@@ -1193,7 +1163,6 @@
                                 <canvas id="steerChart"></canvas>
                             </div>
                         </div>
-
 
 
                         <!-- Giám sát Topic (Topic Explorer) -->
@@ -1230,6 +1199,7 @@
 
     <script>
         // --- 1. Global Variables & DOM Elements ---
+        const isUIPreview = new URLSearchParams(window.location.search).get('preview') === '1';
         const btnConnect = document.getElementById('btn-connect');
         const statusText = document.getElementById('status-text');
         const statusDot = document.getElementById('status-dot');
@@ -1344,6 +1314,9 @@
         const translations = {
             en: {
                 "hud-disconnected": "Disconnected",
+                "hud-preview": "UI Preview (Offline)",
+                "btn-ab-save": "Save A-B",
+                "btn-ab-load": "Load A-B",
                 "hud-connected": "Connected",
                 "hud-error": "Error",
                 "ctrl-fine-tune": "Fine Tune",
@@ -1450,6 +1423,9 @@
             },
             zh: {
                 "hud-disconnected": "已斷開",
+                "hud-preview": "介面預覽（離線）",
+                "btn-ab-save": "儲存 A-B",
+                "btn-ab-load": "載入 A-B",
                 "hud-connected": "已連接",
                 "hud-error": "錯誤",
                 "ctrl-fine-tune": "微調",
@@ -1588,7 +1564,7 @@
                 statusText.innerText = t('hud-connected');
             } else {
                 btnConnect.innerText = t('btn-connect');
-                statusText.innerText = t('hud-disconnected');
+                statusText.innerText = t(isUIPreview ? 'hud-preview' : 'hud-disconnected');
             }
 
             // No status overview to update
@@ -1628,7 +1604,6 @@
             localStorage.setItem('app-lang', currentLang);
             applyLanguage();
         });
-
 
         // --- Splash Screen Auto-Steer Simulation Logic ---
         const SPLASH_STATE_IDLE = 0;
@@ -1752,7 +1727,7 @@
                 case SPLASH_STATE_MANUAL:
                     if (statusInd) {
                         statusInd.innerText = "Bước 1: Lái thủ công";
-                        statusInd.className = "px-6 py-2 rounded-full text-sm font-bold bg-yellow-900 text-yellow-300 border border-yellow-500 shadow-lg";
+                        statusInd.className = "px-6 py-2 rounded-full text-sm font-bold bg-orange-900 text-orange-300 border border-orange-500 shadow-lg";
                     }
                     if (outOverlay) outOverlay.innerText = "Recording trajectory...";
                     if (inOverlay) inOverlay.innerText = "Just hold on tight to the steering wheel!";
@@ -2115,7 +2090,6 @@
             }
         });
 
-
         // --- 3. UI Control & Navigation ---
         let lastUIState = { mode: null, planner: null, follower: null, lang: null, steer: null };
         function updatePathModeUI() {
@@ -2131,31 +2105,22 @@
 
             const btnStart = document.getElementById('btn-start-path');
             const divStart = document.getElementById('divider-start');
-            const btnClearAll = document.getElementById('btn-clear-all');
             if (!btnStart || !divStart) return;
 
             if (currentControlMode === 'path' && (fieldPlannerState === 3 || pathFollowerState === 4)) {
                 btnStart.style.display = 'flex';
                 divStart.style.display = 'block';
 
-                if (btnClearAll) {
-                    btnClearAll.classList.remove('col-span-2');
-                    btnClearAll.classList.add('col-span-1');
-                }
-
                 const icon = btnStart.querySelectorAll('span')[0];
                 const text = btnStart.querySelectorAll('span')[1];
 
+                btnStart.dataset.uiState = pathFollowerState === 4 ? 'active' : 'idle';
                 if (pathFollowerState === 4) {
-                    btnStart.className = "relative overflow-hidden select-none flex-1 flex flex-col items-center justify-center bg-red-500/20 hover:bg-red-500/40 border border-red-500/30 py-2 rounded-xl transition active:scale-95 group";
-                    icon.innerText = "🛑";
-                    text.className = "relative z-10 text-xs font-bold text-red-100";
+                    icon.querySelector('use').setAttribute('href', 'icons/ui-sprite.svg#player-stop');
                     text.innerText = t('btn-stop-path') || "Stop";
                     text.setAttribute('data-i18n', 'btn-stop-path');
                 } else {
-                    btnStart.className = "relative overflow-hidden select-none flex-1 flex flex-col items-center justify-center bg-blue-500/20 hover:bg-blue-500/40 border border-blue-500/30 py-2 rounded-xl transition active:scale-95 group";
-                    icon.innerText = "🚀";
-                    text.className = "relative z-10 text-xs font-bold text-blue-100";
+                    icon.querySelector('use').setAttribute('href', 'icons/ui-sprite.svg#player-play');
                     text.innerText = t('btn-start-path') || "Start";
                     text.setAttribute('data-i18n', 'btn-start-path');
                 }
@@ -2164,11 +2129,6 @@
                 btnStart.style.display = 'none';
                 divStart.style.display = 'none';
                 setButtonPending('btn-start-path', false);
-
-                if (btnClearAll) {
-                    btnClearAll.classList.remove('col-span-1');
-                    btnClearAll.classList.add('col-span-2');
-                }
             }
         }
 
@@ -2185,8 +2145,11 @@
 
             currentControlMode = mode;
             document.getElementById('action-controls-panel').dataset.mode = mode;
+            document.querySelector('.hmi-mode-group').dataset.mode = mode;
             const toggleRecord = document.getElementById('toggle-record');
             const togglePath = document.getElementById('toggle-path');
+            toggleRecord.setAttribute('aria-pressed', String(mode === 'record'));
+            togglePath.setAttribute('aria-pressed', String(mode === 'path'));
             const btnVertex = document.getElementById('btn-record-vertex');
             const btnGen = document.getElementById('btn-generate-path');
             const btnLine = document.getElementById('btn-record-line');
@@ -2195,8 +2158,6 @@
             const dividerClear = document.getElementById('divider-clear');
 
             if (mode === 'record') {
-                toggleRecord.className = "px-4 py-1.5 rounded-full text-xs font-bold transition-all bg-blue-500/80 text-white shadow-md cursor-default";
-                togglePath.className = "px-4 py-1.5 rounded-full text-xs font-bold transition-all text-gray-400 hover:text-white cursor-pointer";
                 btnVertex.style.display = 'none';
                 divider.style.display = 'none';
                 btnGen.style.display = 'none';
@@ -2205,8 +2166,6 @@
                 btnLine.style.display = 'flex';
                 if (ros.isConnected) selectModePub.publish(new ROSLIB.Message({ data: 1 }));
             } else {
-                togglePath.className = "px-4 py-1.5 rounded-full text-xs font-bold transition-all bg-blue-500/80 text-white shadow-md cursor-default";
-                toggleRecord.className = "px-4 py-1.5 rounded-full text-xs font-bold transition-all text-gray-400 hover:text-white cursor-pointer";
                 btnLine.style.display = 'none';
                 btnVertex.style.display = 'flex';
                 divider.style.display = 'block';
@@ -2313,30 +2272,22 @@
             if (!btn) return;
             const icon = btn.querySelectorAll('span')[0];
             const text = btn.querySelectorAll('span')[1];
-            btn.className = "relative overflow-hidden select-none flex-1 flex flex-col items-center justify-center py-2 rounded-xl transition active:scale-95 group border col-span-2";
+
+            icon.classList.toggle('is-recording', plannerState === 2);
+            btn.dataset.uiState = plannerState === 2 ? 'recording' : plannerState === 3 ? 'active' : 'idle';
 
             // plannerState: 1 = IDLE, 2 = RECORDING, 3 = ACTIVE (Đang lái bám theo vạch)
             if (plannerState === 2) {
                 // Đang ghi quỹ đạo (chờ bấm điểm thứ 2)
-                btn.classList.add('bg-orange-500/20', 'hover:bg-orange-500/40', 'border-orange-500/30');
-                icon.className = "relative z-10 text-xl mb-1 group-hover:scale-110 transition-transform text-orange-400 animate-pulse";
-                icon.innerText = "⏺";
-                text.className = "relative z-10 text-xs font-bold text-orange-100";
+                icon.querySelector('use').setAttribute('href', 'icons/ui-sprite.svg#circle');
                 text.innerText = t('btn-recording-line');
             } else if (plannerState === 3) {
                 // Đang theo vạch (Active), nhấp vào để Hủy (Cancel)
-                btn.classList.add('bg-red-500/20', 'hover:bg-red-500/40', 'border-red-500/30');
-                icon.className = "relative z-10 text-xl mb-1 group-hover:scale-110 transition-transform text-red-400";
-                icon.innerText = "✖";
-                text.className = "relative z-10 text-xs font-bold text-red-100";
+                icon.querySelector('use').setAttribute('href', 'icons/ui-sprite.svg#x');
                 text.innerText = t('btn-cancel');
             } else {
                 // Trạng thái bình thường (IDLE) - Cho phép bấm ghi (Record)
-                // Đổi nền màu đỏ để gợi nhớ nút Record quen thuộc.
-                btn.classList.add('bg-red-500/20', 'hover:bg-red-500/40', 'border-red-500/30');
-                icon.className = "relative z-10 text-xl mb-1 group-hover:scale-110 transition-transform text-red-400";
-                icon.innerText = "⏺";
-                text.className = "relative z-10 text-xs font-bold text-red-100";
+                icon.querySelector('use').setAttribute('href', 'icons/ui-sprite.svg#circle');
                 text.innerText = t('btn-record-line');
             }
             setButtonPending('btn-record-line', false);
@@ -2405,6 +2356,9 @@
             const panelUser = document.getElementById('panel-user');
             const panelEngineer = document.getElementById('panel-engineer');
 
+            tabUser.setAttribute('aria-pressed', String(tab === 'user'));
+            tabEngineer.setAttribute('aria-pressed', String(tab === 'engineer'));
+
             if (tab === 'user') {
                 tabUser.className = "py-3 px-4 text-sm font-semibold border-b-2 border-blue-500 text-blue-400 transition-all focus:outline-none flex items-center gap-2";
                 tabEngineer.className = "py-3 px-4 text-sm font-semibold border-b-2 border-transparent text-gray-400 hover:text-gray-200 transition-all focus:outline-none flex items-center gap-2";
@@ -2423,15 +2377,15 @@
 
                 const authCard = document.getElementById('engineer-auth');
                 const contentsCard = document.getElementById('engineer-contents');
-                
+
                 if (isEngineerUnlocked) {
                     authCard.classList.add('hidden');
                     contentsCard.classList.remove('hidden');
-                    
+
                     if (ros.isConnected) refreshNodes();
-                    setTimeout(() => { 
+                    setTimeout(() => {
                         if (chart) {
-                            chart.resize(); 
+                            chart.resize();
                             chart.update();
                         }
 
@@ -2446,7 +2400,7 @@
         function unlockEngineer() {
             const passwordInput = document.getElementById('engineer-password');
             const errorText = document.getElementById('engineer-auth-error');
-            
+
             if (passwordInput.value === '8888') {
                 isEngineerUnlocked = true;
                 localStorage.setItem('is-engineer-unlocked', 'true');
@@ -2472,7 +2426,7 @@
 
         function loadUserSwathWidth() {
             if (!ros.isConnected) return;
-            
+
             const getClient = new ROSLIB.Service({
                 ros: ros,
                 name: '/steer_planner_node/get_parameters',
@@ -2591,7 +2545,7 @@
                 item.className = 'ios-picker-item';
                 item.innerText = val.toFixed(1);
                 item.dataset.value = val;
-                
+
                 const targetIdx = index;
                 item.onclick = () => {
                     container.scrollTo({ top: targetIdx * PICKER_ITEM_HEIGHT, behavior: 'smooth' });
@@ -2599,7 +2553,7 @@
                 container.appendChild(item);
                 index++;
             }
-            
+
             // Set initial state (default 2.0m if not already loaded)
             selectSwathInPickers(2.0);
         }
@@ -2611,7 +2565,7 @@
 
             const items = container.querySelectorAll('.ios-picker-item');
             const index = Math.round(container.scrollTop / PICKER_ITEM_HEIGHT);
-            
+
             items.forEach((item, idx) => {
                 const distance = Math.abs(idx - index);
                 let scale = 1 - Math.min(distance * 0.12, 0.35);
@@ -2950,7 +2904,7 @@
                 // Overlap
                 const overlapVal = -diff;
                 drawDimensionLine(rightFieldLeft, 105, leftFieldRight, 105, '#F59E0B', `Overlap: ${overlapVal.toFixed(2)}m`, 'arrow-orange');
-                
+
                 // Helper reference lines
                 const lineL = document.createElementNS('http://www.w3.org/2000/svg', 'line');
                 lineL.setAttribute('x1', rightFieldLeft);
@@ -3111,7 +3065,7 @@
             <div id="tractor-wrapper" class="relative flex flex-col items-center justify-center w-full h-full transition-transform duration-100">
                 <div class="absolute bottom-full mb-2 bg-gray-900/80 backdrop-blur border border-white/20 px-2 py-1 rounded text-[10px] font-mono text-center shadow-lg pointer-events-none whitespace-nowrap">
                     <div class="text-orange-400 font-bold tracking-wide">CMD: <span id="marker-cmd">--</span></div>
-                    <div class="text-purple-400 font-bold tracking-wide">Speed: <span id="marker-speed">--</span></div>
+                    <div class="text-blue-400 font-bold tracking-wide">Speed: <span id="marker-speed">--</span></div>
                 </div>
                 <div id="marker-arrow" class="w-6 h-6 flex items-center justify-center transition-transform duration-100 drop-shadow-[0_0_8px_rgba(37,99,235,0.6)]" style="transform: rotate(0rad);">
                     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
@@ -3447,7 +3401,6 @@
         }
 
 
-
         // --- 7. ROS 2 Parameter Logic ---
         function refreshNodes() {
             if (!ros.isConnected) {
@@ -3771,10 +3724,10 @@
 
         ros.on('error', (error) => {
             statusText.innerText = t('hud-error');
-            statusDot.className = 'w-2.5 h-2.5 rounded-full bg-yellow-500 shadow-[0_0_6px_#eab308]';
+            statusDot.className = 'w-2.5 h-2.5 rounded-full bg-orange-500 shadow-[0_0_6px_#eab308]';
 
             // Hiển thị lại Splash Screen khi lỗi và khởi động lại Animation
-            if (splashScreen.classList.contains('hidden') || splashScreen.classList.contains('opacity-0')) {
+            if (!isUIPreview && (splashScreen.classList.contains('hidden') || splashScreen.classList.contains('opacity-0'))) {
                 splashScreen.classList.remove('hidden');
                 void splashScreen.offsetWidth; // Force reflow
                 splashScreen.classList.remove('opacity-0', 'pointer-events-none');
@@ -3841,7 +3794,7 @@
             paramsList.innerHTML = `<div class="text-xs text-gray-500 italic text-center py-4">${t('msg-select-node')}</div>`;
 
             // Hiển thị lại Splash Screen khi mất kết nối và chạy Animation
-            if (splashScreen.classList.contains('hidden') || splashScreen.classList.contains('opacity-0')) {
+            if (!isUIPreview && (splashScreen.classList.contains('hidden') || splashScreen.classList.contains('opacity-0'))) {
                 splashScreen.classList.remove('hidden');
                 void splashScreen.offsetWidth; // Force reflow
                 splashScreen.classList.remove('opacity-0', 'pointer-events-none');
@@ -4234,7 +4187,7 @@
             if (!btn) return;
             const lit = reportedHome === true;
             btn.classList.toggle('ring-2', lit);
-            btn.classList.toggle('ring-amber-300', lit);
+            btn.classList.toggle('ring-orange-300', lit);
             const key = lit ? 'depth-home-active' : 'depth-home';
             if (btn.getAttribute('data-i18n') !== key) {
                 btn.setAttribute('data-i18n', key);
@@ -4290,32 +4243,19 @@
             const autoInput = document.getElementById('depth-auto-input');
             const manualInput = document.getElementById('depth-manual-input');
 
+            if (btnAuto) btnAuto.setAttribute('aria-pressed', String(actualMode === 0));
+            if (btnManual) btnManual.setAttribute('aria-pressed', String(actualMode === 1));
+
             setButtonPending('depth-mode-auto', false);
             setButtonPending('depth-mode-manual', false);
 
             if (actualMode === 0) {
-                if (btnAuto) {
-                    btnAuto.classList.remove('bg-gray-700', 'text-gray-300');
-                    btnAuto.classList.add('bg-blue-600', 'text-white');
-                }
-                if (btnManual) {
-                    btnManual.classList.remove('bg-blue-600', 'text-white');
-                    btnManual.classList.add('bg-gray-700', 'text-gray-300');
-                }
                 if (autoInput) autoInput.classList.remove('hidden');
                 if (manualInput) {
                     manualInput.classList.add('hidden');
                     manualInput.classList.remove('flex');
                 }
             } else if (actualMode === 1) {
-                if (btnManual) {
-                    btnManual.classList.remove('bg-gray-700', 'text-gray-300');
-                    btnManual.classList.add('bg-blue-600', 'text-white');
-                }
-                if (btnAuto) {
-                    btnAuto.classList.remove('bg-blue-600', 'text-white');
-                    btnAuto.classList.add('bg-gray-700', 'text-gray-300');
-                }
                 if (manualInput) {
                     manualInput.classList.remove('hidden');
                     manualInput.classList.add('flex');
@@ -4330,14 +4270,12 @@
             const label = document.getElementById('depth-active-label');
             if (!btn || !label) return;
 
+            btn.dataset.uiState = enabled ? 'active' : 'idle';
+
             if (enabled) {
-                btn.classList.remove('bg-emerald-600', 'hover:bg-emerald-500', 'shadow-emerald-900/40', 'bg-gray-700', 'text-gray-200');
-                btn.classList.add('bg-red-600', 'hover:bg-red-500', 'text-white', 'shadow-lg', 'shadow-red-900/50');
                 label.setAttribute('data-i18n', 'depth-deactivate');
                 label.innerText = t('depth-deactivate');
             } else {
-                btn.classList.remove('bg-red-600', 'hover:bg-red-500', 'shadow-lg', 'shadow-red-900/50', 'bg-gray-700', 'text-gray-200');
-                btn.classList.add('bg-emerald-600', 'hover:bg-emerald-500', 'text-white', 'shadow-md', 'shadow-emerald-900/40');
                 label.setAttribute('data-i18n', 'depth-activate');
                 label.innerText = t('depth-activate');
             }
@@ -4416,6 +4354,7 @@
             isDepthCollapsed = !isDepthCollapsed;
             const content = document.getElementById('depth-collapsible-content');
             const icon = document.getElementById('depth-collapse-icon');
+            document.getElementById('depth-toggle-collapse').setAttribute('aria-expanded', String(!isDepthCollapsed));
             if (content) {
                 if (isDepthCollapsed) {
                     content.classList.add('hidden');
@@ -4753,7 +4692,7 @@
                 }
                 else if (status === 'RTK Float') {
                     // Màu Vàng (Đang nhận corrections nhưng chưa fix)
-                    rtkIcon.setAttribute('class', 'w-5 h-5 text-yellow-400 drop-shadow-[0_0_6px_rgba(250,204,21,0.8)] transition-colors');
+                    rtkIcon.setAttribute('class', 'w-5 h-5 text-orange-400 drop-shadow-[0_0_6px_rgba(250,204,21,0.8)] transition-colors');
                 }
                 else {
                     // Màu Đỏ (No RTK)
@@ -4974,7 +4913,6 @@
             },100);
 
 
-
             subscribeToTopic('/reference_line', 'nav_msgs/msg/Path', (m) => {
                 if (m.poses && m.poses.length > 0) {
                     hasReferenceLine = true;
@@ -5000,7 +4938,7 @@
                     hasReferenceLine = false;
                     referencePathLayer.setLatLngs([]);
                     refLinePoints = []; // Xoá tọa độ trên Radar 2D
-                    trailSegments = []; //Xóa vệt cày 
+                    trailSegments = []; //Xóa vệt cày
                     currentTrailSegment = null;
                     trailLayer.setLatLngs([]); // Xóa vệt cày màu đất
                     centerTrailLayer.setLatLngs([]); // Xóa vệt tâm đậm
@@ -5209,11 +5147,11 @@
                         }
                         if (depthErrorBadge) {
                             if (Math.abs(err) <= 20) {
-                                depthErrorBadge.className = 'text-[11px] font-mono font-semibold px-2 py-0.5 rounded-md bg-emerald-900/60 text-emerald-300 border border-emerald-500/30';
+                                depthErrorBadge.className = 'text-[11px] font-mono font-semibold px-2 py-0.5 rounded-md bg-green-900/60 text-green-300 border border-green-500/30';
                             } else if (Math.abs(err) <= 50) {
-                                depthErrorBadge.className = 'text-[11px] font-mono font-semibold px-2 py-0.5 rounded-md bg-amber-900/60 text-amber-300 border border-amber-500/30';
+                                depthErrorBadge.className = 'text-[11px] font-mono font-semibold px-2 py-0.5 rounded-md bg-orange-900/60 text-orange-300 border border-orange-500/30';
                             } else {
-                                depthErrorBadge.className = 'text-[11px] font-mono font-semibold px-2 py-0.5 rounded-md bg-rose-900/60 text-rose-300 border border-rose-500/30';
+                                depthErrorBadge.className = 'text-[11px] font-mono font-semibold px-2 py-0.5 rounded-md bg-red-900/60 text-red-300 border border-red-500/30';
                             }
                         }
                     } else if (depthErrorVal) {
@@ -5433,9 +5371,9 @@
                     if (!res.ok) throw new Error('Network response was not ok');
                     const endTime = performance.now();
                     const pingTime = endTime - startTime;
-                    
+
                     const pingEl = document.getElementById('data-ping');
-                    
+
 
                     if (pingEl ) {
                         pingEl.innerText = pingTime.toFixed(0) + ' ms';
@@ -5443,7 +5381,7 @@
                         if (pingTime < 50) {
                             pingEl.className = 'font-bold text-green-400 text-sm';
                         } else if (pingTime < 150) {
-                            pingEl.className = 'font-bold text-yellow-400 text-sm';
+                            pingEl.className = 'font-bold text-orange-400 text-sm';
                         } else {
                             pingEl.className = 'font-bold text-red-500 text-sm';
                         }
@@ -5451,7 +5389,7 @@
                 })
                 .catch(err => {
                     const pingEl = document.getElementById('data-ping');
-                    
+
                     if (pingEl ) {
                         pingEl.innerText = 'DISC';
                         pingEl.className = 'font-bold text-red-500 text-sm';
@@ -5488,6 +5426,8 @@
 
         // Khởi tạo Depth Control panel
         initDepthControl();
+        document.getElementById('btn-toggle-depth').setAttribute('aria-expanded',
+            String(getComputedStyle(document.getElementById('depth-panel')).display !== 'none'));
 
         // Mục F: Tự động đo và ghi biến CSS --dock-h để các panel chống đè dock
         const dockEl = document.querySelector('.hmi-bottom-dock');
@@ -5499,6 +5439,13 @@
 
         // Chạy ngay lập tức Animation nền của màn hình chờ
         setTimeout(() => {
+            // Local UI preview opens the cockpit without a ROS connection.
+            if (isUIPreview) {
+                splashScreen.classList.add('hidden');
+                map.invalidateSize();
+                return;
+            }
+
             resizeSplashCanvases();
             startSplashSimulation();
             splashLastTime = performance.now();
