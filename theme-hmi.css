@@ -150,6 +150,30 @@ input[type="range"] {
     stroke-linejoin: round;
 }
 
+#landscape-required .orientation-phone {
+    transform-box: view-box;
+    transform-origin: center;
+    animation: orientation-rotate 3s ease-in-out infinite;
+}
+
+#landscape-required .orientation-arrow {
+    opacity: 0.55;
+}
+
+@keyframes orientation-rotate {
+    0%, 15% { transform: rotate(0deg); opacity: 1; }
+    60%, 85% { transform: rotate(90deg); opacity: 1; }
+    95% { transform: rotate(90deg); opacity: 0; }
+    100% { transform: rotate(0deg); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #landscape-required .orientation-phone {
+        animation: none;
+        transform: rotate(90deg);
+    }
+}
+
 #landscape-required strong {
     font-size: 1.25rem;
 }

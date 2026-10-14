@@ -18,7 +18,7 @@
     <!-- Tailwind CSS -->
     <link rel="stylesheet" href="tailwind.min.css">
     <!-- Agriculture High-Contrast Responsive HMI Theme -->
-    <link rel="stylesheet" href="theme-hmi.css?v=20261014-status-icon">
+    <link rel="stylesheet" href="theme-hmi.css?v=20261014-rotate-hint">
 
     <!-- ROSLibJS & EventEmitter2 -->
     <script src="eventemitter2.min.js"></script>
@@ -310,11 +310,15 @@
 <body class="text-white font-sans text-sm select-none bg-[#111]">
     <!-- Điện thoại chỉ dùng giao diện điều khiển khi xoay ngang. -->
     <div id="landscape-required" role="alert" aria-live="assertive">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M7 2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Zm1 3v14h8V5H8Zm11.5 2.5 2 2-2 2" />
+        <svg viewBox="0 0 64 64" aria-hidden="true">
+            <path class="orientation-arrow" d="M13 24a22 22 0 0 1 38-4m-8-1 8 1 1-8" />
+            <g class="orientation-phone">
+                <rect x="21" y="13" width="22" height="38" rx="4" />
+                <path d="M28 17h8M29 46h6" />
+            </g>
         </svg>
-        <strong>Hãy xoay điện thoại ngang</strong>
-        <span>Rotate phone to landscape to use the controls.</span>
+        <strong lang="en">Please rotate your phone to landscape</strong>
+        <span lang="zh-Hant">請將手機轉為橫向，以使用控制功能。</span>
     </div>
     <!-- Toast notification container -->
     <div id="ui-toast-container"></div>
