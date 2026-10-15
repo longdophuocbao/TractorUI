@@ -18,7 +18,7 @@
     <!-- Tailwind CSS -->
     <link rel="stylesheet" href="tailwind.min.css">
     <!-- Agriculture High-Contrast Responsive HMI Theme -->
-    <link rel="stylesheet" href="theme-hmi.css?v=20261014-delete-reference">
+    <link rel="stylesheet" href="theme-hmi.css?v=20261015-settings-fit">
 
     <!-- ROSLibJS & EventEmitter2 -->
     <script src="eventemitter2.min.js"></script>
@@ -3419,13 +3419,19 @@
 
 
         // --- 7. ROS 2 Parameter Logic ---
+        let parameterLoadGeneration = 0;
+
         function refreshNodes() {
+            const generation = ++parameterLoadGeneration;
+            const previous = nodeSelector.value;
+            paramsList.textContent = t('msg-select-node');
             if (!ros.isConnected) {
                 nodeSelector.innerHTML = `<option value="">${t('opt-connect-ros')}</option>`;
                 return;
             }
             nodeSelector.innerHTML = `<option value="">${t('opt-loading')}</option>`;
             ros.getNodes((nodes) => {
+                if (generation !== parameterLoadGeneration || !ros.isConnected) return;
                 nodeSelector.innerHTML = `<option value="">${t('opt-select-node')}</option>`;
                 nodes.sort().forEach(node => {
                     const opt = document.createElement('option');
@@ -3433,52 +3439,99 @@
                     opt.textContent = node;
                     nodeSelector.appendChild(opt);
                 });
-            }, (err) => console.error(err));
+                if (nodes.includes(previous)) {
+                    nodeSelector.value = previous;
+                    loadParamsForNode();
+                }
+            }, (err) => {
+                if (generation !== parameterLoadGeneration) return;
+                nodeSelector.replaceChildren(new Option('Could not load nodes. Refresh to retry.', ''));
+                console.warn('Parameter Explorer nodes:', err);
+            });
         }
 
-        function loadParamsForNode() {
-            const nodeName = document.getElementById('node-selector').value;
-            if (!nodeName) {
-                paramsList.innerHTML = `<div class="text-xs text-gray-500 italic text-center py-4">${t('msg-select-node')}</div>`;
+        async function callParameterService(nodeName, action, serviceType, request, isCurrent, timeoutMs = 6000) {
+            for (let attempt = 0; attempt < 3; attempt++) {
+                if (!isCurrent() || !ros.isConnected) throw new Error('Parameter load cancelled.');
+                try {
+                    return await new Promise((resolve, reject) => {
+                        let settled = false;
+                        const finish = (error, result) => {
+                            if (settled) return;
+                            settled = true;
+                            clearTimeout(timer);
+                            if (!isCurrent()) reject(new Error('Parameter load cancelled.'));
+                            else if (error) reject(error);
+                            else resolve(result);
+                        };
+                        const timer = setTimeout(() => finish(new Error('Parameter request timed out.')), timeoutMs);
+                        try {
+                            const client = new ROSLIB.Service({ros, name: nodeName + '/' + action, serviceType});
+                            client.callService(new ROSLIB.ServiceRequest(request),
+                                result => {
+                                    const valid = action === 'list_parameters'
+                                        ? Array.isArray(result?.result?.names)
+                                        : Array.isArray(result?.values) && result.values.length === request.names.length
+                                            && result.values.every(value => value && Number.isInteger(value.type));
+                                    finish(valid ? null : new Error('Incomplete parameter response.'), result);
+                                }, error => finish(new Error(String(error))));
+                        } catch (error) { finish(error); }
+                    });
+                } catch (error) {
+                    if (!isCurrent() || !ros.isConnected || attempt === 2) throw error;
+                    await new Promise(resolve => setTimeout(resolve, 400 * (attempt + 1)));
+                }
+            }
+        }
+
+        async function loadParamsForNode() {
+            const generation = ++parameterLoadGeneration;
+            const nodeName = nodeSelector.value;
+            const isCurrent = () => generation === parameterLoadGeneration && nodeSelector.value === nodeName;
+            const showMessage = (message, retry = false) => {
+                const row = document.createElement('div');
+                row.className = 'col-span-full text-xs text-gray-400 text-center py-4';
+                row.textContent = message;
+                if (retry) {
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.textContent = 'Retry';
+                    button.className = 'ml-2';
+                    button.onclick = loadParamsForNode;
+                    row.appendChild(button);
+                }
+                paramsList.replaceChildren(row);
+            };
+            if (!nodeName || !ros.isConnected) {
+                showMessage(t(!ros.isConnected ? 'opt-connect-ros' : 'msg-select-node'));
                 return;
             }
-
-            paramsList.innerHTML = `<div class="text-xs text-blue-400 animate-pulse text-center py-4">${t('opt-loading')}</div>`;
-
-            // Gọi trực tiếp Service list_parameters chuẩn của ROS 2 để lấy danh sách
-            const listClient = new ROSLIB.Service({
-                ros: ros,
-                name: nodeName + '/list_parameters',
-                serviceType: 'rcl_interfaces/srv/ListParameters'
-            });
-
-            const request = new ROSLIB.ServiceRequest({
-                prefixes: [],
-                depth: 0
-            });
-
-            listClient.callService(request, (result) => {
-                let paramNames = result.result.names;
-
-                // Lọc bỏ những param hệ thống mặc định (qos_overrides) để UI gọn hơn
-                paramNames = paramNames.filter(p => !p.startsWith('qos_overrides'));
-
-                if (!paramNames || paramNames.length === 0) {
-                    paramsList.innerHTML = `<div class="text-xs text-gray-500 text-center py-4">No parameters found for ${nodeName}</div>`;
-                    return;
+            showMessage(t('opt-loading'));
+            try {
+                const result = await callParameterService(nodeName, 'list_parameters',
+                    'rcl_interfaces/srv/ListParameters', {prefixes: [], depth: 0}, isCurrent);
+                if (!isCurrent()) return;
+                const names = [...new Set(result.result.names)].filter(name => !name.startsWith('qos_overrides')).sort();
+                if (!names.length) { showMessage('No parameters found for ' + nodeName); return; }
+                const values = [];
+                // One request at a time keeps rosbridge responsive on a busy robot.
+                for (let offset = 0; offset < names.length; offset += 32) {
+                    const response = await callParameterService(nodeName, 'get_parameters',
+                        'rcl_interfaces/srv/GetParameters', {names: names.slice(offset, offset + 32)}, isCurrent);
+                    if (!isCurrent()) return;
+                    values.push(...response.values);
                 }
-
-                paramsList.innerHTML = '';
-                paramNames.sort().forEach(paramName => {
-                    renderParamUI_ROS2(nodeName, paramName);
-                });
-            }, (error) => {
-                console.error("ListParameters error:", error);
-                paramsList.innerHTML = `<div class="text-xs text-red-500 text-center py-4">Failed to load parameters. Ensure node is active.</div>`;
-            });
+                if (!isCurrent()) return;
+                paramsList.replaceChildren();
+                names.forEach((name, index) => renderParamUI_ROS2(nodeName, name, values[index]));
+            } catch (error) {
+                if (!isCurrent()) return;
+                console.warn('Parameter Explorer:', nodeName, error);
+                showMessage('Could not load parameters. Check the ROS connection and node, then retry.', true);
+            }
         }
 
-        function renderParamUI_ROS2(nodeName, paramName) {
+        function renderParamUI_ROS2(nodeName, paramName, pVal) {
             const item = document.createElement('div');
             item.className = "glass-panel p-3 rounded-xl border border-gray-700 bg-gray-900/40 flex flex-col gap-2";
 
@@ -3516,86 +3569,76 @@
 
             paramsList.appendChild(item);
 
-            // Gọi Service get_parameters để lấy giá trị hiện tại
-            const getClient = new ROSLIB.Service({
-                ros: ros,
-                name: nodeName + '/get_parameters',
-                serviceType: 'rcl_interfaces/srv/GetParameters'
-            });
+            let valStr = '';
+            let pType = pVal.type;
 
-            const getReq = new ROSLIB.ServiceRequest({
-                names: [paramName]
-            });
+            // Giải mã dựa trên type của rcl_interfaces/msg/ParameterType
+            if (pType === 1) valStr = pVal.bool_value.toString();
+            else if (pType === 2) {
+                valStr = pVal.integer_value.toString();
+                setupSlider(pType, pVal.integer_value);
+            }
+            else if (pType === 3) {
+                valStr = pVal.double_value.toString();
+                setupSlider(pType, pVal.double_value);
+            }
+            else if (pType === 4) valStr = pVal.string_value;
+            else {
+                inputEl.value = pType === 0 ? 'Not set' : JSON.stringify(
+                    pVal.byte_array_value?.length ? pVal.byte_array_value :
+                    pVal.bool_array_value?.length ? pVal.bool_array_value :
+                    pVal.integer_array_value?.length ? pVal.integer_array_value :
+                    pVal.double_array_value?.length ? pVal.double_array_value :
+                    pVal.string_array_value || []);
+                inputEl.title = 'This parameter type is read-only in the explorer.';
+                return;
+            }
 
-            getClient.callService(getReq, (res) => {
-                if (res.values && res.values.length > 0) {
-                    const pVal = res.values[0];
-                    let valStr = '';
-                    let pType = pVal.type;
+            inputEl.value = valStr;
+            inputEl.disabled = false;
+            inputEl.classList.remove('text-gray-500');
+            inputEl.classList.add('text-white');
 
-                    // Giải mã dựa trên type của rcl_interfaces/msg/ParameterType
-                    if (pType === 1) valStr = pVal.bool_value.toString();
-                    else if (pType === 2) {
-                        valStr = pVal.integer_value.toString();
-                        setupSlider(pType, pVal.integer_value);
-                    }
-                    else if (pType === 3) {
-                        valStr = pVal.double_value.toString();
-                        setupSlider(pType, pVal.double_value);
-                    }
-                    else if (pType === 4) valStr = pVal.string_value;
-                    else valStr = "Unsupported Array/Type";
+            btnEl.disabled = false;
+            btnEl.classList.remove('bg-gray-600', 'opacity-50', 'cursor-not-allowed');
+            btnEl.classList.add('bg-blue-600', 'hover:bg-blue-700', 'active:scale-95');
 
-                    inputEl.value = valStr;
-                    inputEl.disabled = false;
+            // Gắn sự kiện ghi param với đúng type được nhận diện
+            btnEl.onclick = () => setParamValue_ROS2(nodeName, paramName, pType, inputEl, btnEl);
+
+            function setupSlider(type, currentVal) {
+                sliderContainer.classList.remove('hidden');
+                let min = (type === 2) ? 0 : -1.0;
+                let max = (type === 2) ? 100 : 1.0;
+                let step = (type === 2) ? 1 : 0.01;
+
+                // Tự điều chỉnh nếu giá trị hiện tại nằm ngoài range mặc định
+                if (currentVal < min) min = currentVal - Math.abs(currentVal * 0.5);
+                if (currentVal > max) max = currentVal + Math.abs(currentVal * 0.5);
+
+                // Đảm bảo min < max cho input type range
+                if (min >= max) max = min + 10;
+
+                sliderEl.min = min;
+                sliderEl.max = max;
+                sliderEl.step = step;
+                sliderEl.value = currentVal;
+
+                sliderEl.oninput = () => {
+                    inputEl.value = sliderEl.value;
                     inputEl.classList.remove('text-gray-500');
                     inputEl.classList.add('text-white');
+                };
 
-                    btnEl.disabled = false;
-                    btnEl.classList.remove('bg-gray-600', 'opacity-50', 'cursor-not-allowed');
-                    btnEl.classList.add('bg-blue-600', 'hover:bg-blue-700', 'active:scale-95');
-
-                    // Gắn sự kiện ghi param với đúng type được nhận diện
-                    btnEl.onclick = () => setParamValue_ROS2(nodeName, paramName, pType, inputEl, btnEl);
-
-                    function setupSlider(type, currentVal) {
-                        sliderContainer.classList.remove('hidden');
-                        let min = (type === 2) ? 0 : -1.0;
-                        let max = (type === 2) ? 100 : 1.0;
-                        let step = (type === 2) ? 1 : 0.01;
-
-                        // Tự điều chỉnh nếu giá trị hiện tại nằm ngoài range mặc định
-                        if (currentVal < min) min = currentVal - Math.abs(currentVal * 0.5);
-                        if (currentVal > max) max = currentVal + Math.abs(currentVal * 0.5);
-
-                        // Đảm bảo min < max cho input type range
-                        if (min >= max) max = min + 10;
-
-                        sliderEl.min = min;
-                        sliderEl.max = max;
-                        sliderEl.step = step;
-                        sliderEl.value = currentVal;
-
-                        sliderEl.oninput = () => {
-                            inputEl.value = sliderEl.value;
-                            inputEl.classList.remove('text-gray-500');
-                            inputEl.classList.add('text-white');
-                        };
-
-                        inputEl.addEventListener('input', () => {
-                            const v = parseFloat(inputEl.value);
-                            if (!isNaN(v)) {
-                                if (v < parseFloat(sliderEl.min)) sliderEl.min = v - Math.abs(v * 0.2) - 1;
-                                if (v > parseFloat(sliderEl.max)) sliderEl.max = v + Math.abs(v * 0.2) + 1;
-                                sliderEl.value = v;
-                            }
-                        });
+                inputEl.addEventListener('input', () => {
+                    const v = parseFloat(inputEl.value);
+                    if (!isNaN(v)) {
+                        if (v < parseFloat(sliderEl.min)) sliderEl.min = v - Math.abs(v * 0.2) - 1;
+                        if (v > parseFloat(sliderEl.max)) sliderEl.max = v + Math.abs(v * 0.2) + 1;
+                        sliderEl.value = v;
                     }
-                }
-            }, (err) => {
-                inputEl.value = "Error";
-                inputEl.classList.replace('text-gray-500', 'text-red-400');
-            });
+                });
+            }
         }
 
         function setParamValue_ROS2(nodeName, paramName, pType, inputEl, btnEl) {
@@ -3807,6 +3850,7 @@
             topicSelector.innerHTML = `<option value="">${t('opt-connect-ros')}</option>`;
             topicRawData.innerText = t('msg-select-topic');
 
+            ++parameterLoadGeneration;
             nodeSelector.innerHTML = `<option value="">${t('opt-connect-ros')}</option>`;
             paramsList.innerHTML = `<div class="text-xs text-gray-500 italic text-center py-4">${t('msg-select-node')}</div>`;
 
