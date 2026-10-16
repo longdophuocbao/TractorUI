@@ -89,6 +89,11 @@ input[type="range"] {
     touch-action: manipulation;
 }
 
+#depth-active-btn {
+    touch-action: none;
+    -webkit-touch-callout: none;
+}
+
 /* ── Mục M: Glass Panel Đặc Tương Phản Cao cho Ngoài Nắng ── */
 .glass-panel,
 .hmi-panel {

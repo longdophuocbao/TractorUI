@@ -18,7 +18,7 @@
     <!-- Tailwind CSS -->
     <link rel="stylesheet" href="tailwind.min.css">
     <!-- Agriculture High-Contrast Responsive HMI Theme -->
-    <link rel="stylesheet" href="theme-hmi.css?v=20261015-settings-fit">
+    <link rel="stylesheet" href="theme-hmi.css?v=20261016-depth-hold">
 
     <!-- ROSLibJS & EventEmitter2 -->
     <script src="eventemitter2.min.js"></script>
@@ -4332,6 +4332,8 @@
             if (!btn || !label) return;
 
             btn.dataset.uiState = enabled ? 'active' : 'idle';
+            // Live telemetry must not restart the user's hold animation.
+            if (isDepthHolding && enabled) return;
 
             if (enabled) {
                 label.setAttribute('data-i18n', 'depth-deactivate');
@@ -4619,10 +4621,17 @@
             }
 
             if (activeBtn) {
+                let activePointerId = null;
+                let pressWasEnabled = false;
                 const startActivePress = (e) => {
                     if (e.type === 'mousedown' && e.button !== 0) return;
                     if (e.pointerType === 'mouse' && e.button !== 0) return;
+                    if (isDepthHolding || activeBtn.disabled) return;
+                    if (!ros.isConnected) { showToast(t('toast-no-ros'), 'error'); return; }
                     e.preventDefault();
+                    activePointerId = e.pointerId;
+                    pressWasEnabled = depthEnabled;
+                    activeBtn.setPointerCapture(e.pointerId);
 
                     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                     if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -4667,7 +4676,7 @@
                 };
 
                 const endActivePress = (e) => {
-                    if (!isDepthHolding) return;
+                    if (!isDepthHolding || e.pointerId !== activePointerId) return;
                     const elapsed = performance.now() - depthPressStartTime;
                     isDepthHolding = false;
 
@@ -4676,7 +4685,7 @@
                         depthHoldTimer = null;
                     }
 
-                    if (!depthEnabled) {
+                    if (!pressWasEnabled && !depthEnabled) {
                         // Đang TẮT: Tap (<1000ms) để BẬT (Engage)
                         if (elapsed < 1000) {
                             if (!ros.isConnected) {
@@ -4701,12 +4710,13 @@
                             activeFill.style.width = '0%';
                         }
                         if (activeLabel) {
-                            activeLabel.innerText = t('depth-deactivate');
+                            activeLabel.innerText = t(depthEnabled ? 'depth-deactivate' : 'depth-activate');
                         }
                     }
                 };
 
-                const cancelActivePress = () => {
+                const cancelActivePress = (e) => {
+                    if (e && e.pointerId !== activePointerId) return;
                     if (!isDepthHolding) return;
                     isDepthHolding = false;
                     if (depthHoldTimer) {
@@ -4719,15 +4729,18 @@
                             activeFill.style.width = '0%';
                         }
                         if (activeLabel) {
-                            activeLabel.innerText = t('depth-deactivate');
+                            activeLabel.innerText = t(depthEnabled ? 'depth-deactivate' : 'depth-activate');
                         }
                     }
                 };
 
                 activeBtn.addEventListener('pointerdown', startActivePress);
                 activeBtn.addEventListener('pointerup', endActivePress);
-                activeBtn.addEventListener('pointerleave', cancelActivePress);
+                activeBtn.addEventListener('pointerleave', e => {
+                    if (!activeBtn.hasPointerCapture(e.pointerId)) cancelActivePress(e);
+                });
                 activeBtn.addEventListener('pointercancel', cancelActivePress);
+                activeBtn.addEventListener('lostpointercapture', cancelActivePress);
                 activeBtn.addEventListener('contextmenu', e => e.preventDefault());
             }
 
