@@ -18,7 +18,7 @@
     <!-- Tailwind CSS -->
     <link rel="stylesheet" href="tailwind.min.css">
     <!-- Agriculture High-Contrast Responsive HMI Theme -->
-    <link rel="stylesheet" href="theme-hmi.css?v=20261016-depth-hold">
+    <link rel="stylesheet" href="theme-hmi.css?v=20261016-restore-swath-icons">
 
     <!-- ROSLibJS & EventEmitter2 -->
     <script src="eventemitter2.min.js"></script>
@@ -516,13 +516,20 @@
             <div class="hold-progress absolute left-0 bottom-0 top-0 w-0 bg-blue-500/50 pointer-events-none"></div>
 
             <!-- Icon -->
-            <svg class="hmi-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="icons/ui-sprite.svg#arrow-back-up"></use></svg>
+            <svg class="hmi-icon relative z-10" aria-hidden="true" fill="none"
+                stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
+                    d="M17 19V9a5 5 0 0 0-10 0v10M3 15l4 4 4-4"></path>
+            </svg>
         </button>
 
         <button id="btn-rotate-left" data-variant="primary" onclick="callService('/steer_planner_node/rotate_ref_left', 'btn-rotate-left')"
             class="bg-white/10 hover:bg-white/20 p-2.5 md:p-3 rounded-xl transition active:scale-90 flex justify-center items-center min-w-[var(--hit-secondary)] min-h-[var(--hit-secondary)] border border-white/10"
             title="Rotate Left">
-            <svg class="hmi-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="icons/ui-sprite.svg#arrow-back-up"></use></svg>
+            <svg class="hmi-icon relative z-10" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 3v18 M18 12a6 6 0 0 0-12 0 M2 8l4 4 4-4"></path>
+            </svg>
         </button>
 
         <!-- Central XTE Display (Mobile-friendly) -->
@@ -534,7 +541,10 @@
         <button id="btn-rotate-right" data-variant="primary" onclick="callService('/steer_planner_node/rotate_ref_right', 'btn-rotate-right')"
             class="bg-white/10 hover:bg-white/20 p-2.5 md:p-3 rounded-xl transition active:scale-90 flex justify-center items-center min-w-[var(--hit-secondary)] min-h-[var(--hit-secondary)] border border-white/10"
             title="Rotate Right">
-            <svg class="hmi-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="icons/ui-sprite.svg#arrow-forward-up"></use></svg>
+            <svg class="hmi-icon relative z-10" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 3v18 M6 12a6 6 0 0 1 12 0 M22 8l-4 4-4-4"></path>
+            </svg>
         </button>
 
         <!-- Swath Right -->
@@ -546,7 +556,12 @@
             <div class="hold-progress absolute left-0 bottom-0 top-0 w-0 bg-blue-500/50 pointer-events-none"></div>
 
             <!-- Icon -->
-            <svg class="hmi-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><use href="icons/ui-sprite.svg#arrow-forward-up"></use></svg>
+            <svg class="hmi-icon relative z-10" aria-hidden="true" fill="none"
+                stroke="currentColor" viewBox="0 0 24 24">
+                <!-- Mũi tên quay đầu sang phải (Mirrored) -->
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
+                    d="M7 19V9a5 5 0 0 1 10 0v10M13 15l4 4 4-4"></path>
+            </svg>
         </button>
     </div>
 

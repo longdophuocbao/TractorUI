@@ -116,6 +116,17 @@ input[type="range"] {
     flex-wrap: nowrap;
 }
 
+/* Restore the larger, distinct Swath/Rotate symbols from September's cockpit. */
+#top-controls-panel :is(#btn-swath-left, #btn-swath-right) svg {
+    width: 28px !important;
+    height: 28px !important;
+}
+
+#top-controls-panel :is(#btn-rotate-left, #btn-rotate-right) svg {
+    width: 24px !important;
+    height: 24px !important;
+}
+
 .hmi-bottom-dock {
     bottom: max(1.5rem, var(--safe-bottom)) !important;
 }
