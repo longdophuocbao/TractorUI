@@ -1419,6 +1419,8 @@
                 "depth-err-no-port": "ESP-NOW master is not connected to the tractor computer (USB). Commands are not being sent.",
                 "depth-err-no-master": "ESP-NOW master is connected but not responding. Commands are not being sent.",
                 "depth-err-no-gateway": "No signal from the depth gateway (ESP-NOW). Commands may not arrive.",
+                "depth-err-gateway-uart": "Gateway is online, but sensor UART data is stale or missing. Check the depth controller, wiring and power.",
+                "depth-err-gateway-forward": "Gateway and sensor UART are online, but depth telemetry is not reaching the tractor.",
                 "depth-err-write": "Commands to the ESP-NOW master are being dropped (USB link busy or stalled).",
                 "depth-lift": "Lift",
                 "depth-tail": "Tail",
@@ -1532,6 +1534,8 @@
                 "depth-err-no-port": "ESP-NOW 主機未連接到曳引機電腦（USB），指令無法送出。",
                 "depth-err-no-master": "ESP-NOW 主機已連接但沒有回應，指令無法送出。",
                 "depth-err-no-gateway": "收不到深度閘道器的訊號（ESP-NOW），指令可能無法送達。",
+                "depth-err-gateway-uart": "閘道器在線，但感測器 UART 資料逾時或未收到。請檢查深度控制器、接線與電源。",
+                "depth-err-gateway-forward": "閘道器與感測器 UART 均在線，但深度遙測尚未傳至曳引機。",
                 "depth-err-write": "送往 ESP-NOW 主機的指令被丟棄（USB 連線忙碌或停滯）。",
                 "depth-lift": "提升臂",
                 "depth-tail": "尾門",
@@ -4508,7 +4512,11 @@
                 else if (!m) key = null;   // just connected, nothing heard yet
                 else if (m.serial_port_open === false) key = 'depth-err-no-port';
                 else if (!m.serial_ok) key = 'depth-err-no-master';
-                else if (!m.depth_link_ok) key = 'depth-err-no-gateway';
+                else if (!m.depth_link_ok) {
+                    key = m.gateway_heartbeat_seen && m.gateway_link_ok
+                        ? (m.gateway_uart_ok ? 'depth-err-gateway-forward' : 'depth-err-gateway-uart')
+                        : 'depth-err-no-gateway';
+                }
                 else if (now - depthWriteErrorAt < 5000) key = 'depth-err-write';
             }
             el.classList.toggle('hidden', key === null);
