@@ -3195,6 +3195,14 @@
         setTimeout(() => { map.invalidateSize(); minimap.invalidateSize(); }, 500);
 
         // --- 5. Deviation 2D Radar ---
+        function formatCrossTrackError(offset, pathYaw, vehicleYaw) {
+            // Positive normal is left of the path; reverse it on the return pass.
+            const signed = offset * (Math.cos(vehicleYaw - pathYaw) >= 0 ? 1 : -1);
+            if (Math.abs(signed) < 0.005) return '0.00 m';
+            const magnitude = Math.abs(signed).toFixed(2);
+            return signed > 0 ? '← +' + magnitude + ' m' : '−' + magnitude + ' m →';
+        }
+
         function drawDeviation() {
             const canvas = document.getElementById('devCanvas');
             if (!canvas) {
@@ -3295,9 +3303,10 @@
                 const mobileXteEl = document.getElementById('mobile-xte-value');
                 const mobileXteContainer = document.getElementById('mobile-xte-container');
                 const err = Math.abs(t_d);
+                const errorText = formatCrossTrackError(t_d, bestPathMathYaw, tractorMathYaw);
 
                 if (xteEl && xteHeader) {
-                    xteEl.innerText = err.toFixed(2) + ' m';
+                    xteEl.innerText = errorText;
                     xteEl.className = 'text-xl font-mono font-bold text-white drop-shadow-md';
 
                     if (err > 0.5) {
@@ -3310,7 +3319,7 @@
                 }
 
                 if (mobileXteEl && mobileXteContainer) {
-                    mobileXteEl.innerText = err.toFixed(2) + ' m';
+                    mobileXteEl.innerText = errorText;
                     if (err > 0.5) {
                         mobileXteEl.className = 'text-xs md:text-sm font-mono font-bold text-red-400 leading-none';
                         mobileXteContainer.className = 'flex flex-col items-center justify-center px-3 py-1 bg-red-950/40 border border-red-500/30 rounded-2xl min-w-[75px] md:min-w-[90px] shadow-inner select-none';
