@@ -2423,6 +2423,7 @@
                 modal.classList.add('opacity-0', 'pointer-events-none');
                 modalContent.classList.replace('scale-100', 'scale-95');
             }
+            syncOptionalSubscriptions();
         }
 
         function switchSettingsTab(tab) {
@@ -2471,6 +2472,7 @@
                     contentsCard.classList.add('hidden');
                 }
             }
+            syncOptionalSubscriptions();
         }
 
         function unlockEngineer() {
@@ -3469,7 +3471,7 @@
 
         // Tiết lưu cập nhật đồ thị (10Hz) chỉ khi Settings đang mở
         setInterval(() => {
-            if (isSettingsOpen) {
+            if (isEngineerPanelOpen()) {
                 if (chartUpdatePending && chart) {
                     chart.update();
                     chartUpdatePending = false;
@@ -3478,7 +3480,7 @@
         }, 100);
 
         function updateChart(datasetIndex, value) {
-            if (!chart) return;
+            if (!chart || !isEngineerPanelOpen()) return;
             const data = chart.data.datasets[datasetIndex].data;
             data.push(value);
             data.shift();
@@ -3780,35 +3782,34 @@
         }
 
         // --- 8. ROS Topics & Services ---
+        let topicRefreshGeneration = 0;
         function refreshTopics() {
-            if (!ros.isConnected) { topicRawData.innerText = t('msg-connect-ros'); return; }
-            topicSelector.innerHTML = `<option value="">${t('opt-loading')}</option>`;
+            if (!ros.isConnected || !isEngineerPanelOpen()) return;
+            const generation = ++topicRefreshGeneration;
+            const selected = topicSelector.value;
             ros.getTopics((result) => {
+                if (generation !== topicRefreshGeneration || !ros.isConnected || !isEngineerPanelOpen()) return;
                 topicSelector.innerHTML = `<option value="">${t('opt-select-topic')}</option>`;
                 result.topics.forEach((topic, index) => {
-                    let option = document.createElement('option'); option.value = topic; option.dataset.type = result.types[index];
-                    option.text = `${topic} (${result.types[index]})`; topicSelector.appendChild(option);
+                    const option = document.createElement('option');
+                    option.value = topic;
+                    option.dataset.type = result.types[index];
+                    option.text = `${topic} (${result.types[index]})`;
+                    topicSelector.appendChild(option);
                 });
+                topicSelector.value = selected;
+                syncDebugSubscription();
             });
         }
 
-        topicSelector.addEventListener('change', (e) => {
-            if (currentTopicSub) currentTopicSub.unsubscribe();
-            const selectedTopic = e.target.value;
-            if (!selectedTopic) { topicRawData.innerText = t('msg-select-topic'); return; }
-            const topicType = e.target.options[e.target.selectedIndex].dataset.type;
-            topicRawData.innerText = t('msg-listening').replace('{topic}', selectedTopic);
-            currentTopicSub = new ROSLIB.Topic({ ros: ros, name: selectedTopic, messageType: topicType });
-            currentTopicSub.subscribe((message) => topicRawData.innerText = JSON.stringify(message, null, 2));
-        });
+        topicSelector.addEventListener('change', syncDebugSubscription);
 
         ros.on('connection', () => {
             applyLanguage();
             statusText.className = 'text-xs font-semibold text-green-400 uppercase';
             statusDot.className = 'w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_6px_#22c55e]';
             btnConnect.classList.replace('bg-blue-600', 'bg-red-600');
-            refreshTopics();
-            if (isSettingsOpen) refreshNodes();
+            if (isEngineerPanelOpen()) refreshNodes();
 
             // Ẩn Splash Screen khi kết nối thành công và dừng Animation nền
             splashScreen.classList.add('opacity-0', 'pointer-events-none');
@@ -3914,7 +3915,9 @@
             updatePathModeUI(); // UPDATE THIS TOO
             updateDynamicPanelsVisibility();
 
-            if (currentTopicSub) currentTopicSub.unsubscribe();
+            clearTopicSubscriptions();
+            currentTopicSub = null;
+            ++topicRefreshGeneration;
             topicSelector.innerHTML = `<option value="">${t('opt-connect-ros')}</option>`;
             topicRawData.innerText = t('msg-select-topic');
 
@@ -4221,20 +4224,15 @@
             subscribeToTopic('/steering_angle_actual', 'std_msgs/Float64', (m) => {
                 slState.actual = m.data;
                 updateSteerLimitUI();
-            }, 100);
+            }, 100, 'engineer');
             subscribeToTopic('/steer_motor_node/iq', 'std_msgs/Float64', (m) => {
                 const el = document.getElementById('sl-val-iq');
                 if (el) el.innerText = m.data.toFixed(2);
-            }, 200);
+            }, 200, 'engineer');
             subscribeToTopic('/steer_motor_node/calibrated', 'std_msgs/Bool', (m) => {
                 slState.calibrated = m.data;
                 updateSteerLimitUI();
-            });
-            subscribeToTopic('/steer_motor_node/fault', 'std_msgs/Bool', (m) => {
-                slState.fault = m.data;
-                if (m.data) setJogEnabled(false);
-                updateSteerLimitUI();
-            });
+            }, 500, 'engineer');
             // [center_offset_rad, left_limit_rad, right_limit_rad, step]
             subscribeToTopic('/steer_motor_node/calibration', 'std_msgs/Float64MultiArray', (m) => {
                 const stepChanged = slState.step !== Math.round(m.data[3]);
@@ -4244,7 +4242,7 @@
                 slState.step = Math.round(m.data[3]);
                 if (stepChanged && !slBusy && slState.step !== 0) slShowStep();
                 updateSteerLimitUI();
-            });
+            }, 500, 'engineer');
             slShowStep();
         }
 
@@ -4819,15 +4817,82 @@
             updateDepthGauge();
         }
 
-        function subscribeToTopic(name, type, callback, throttleRate=0) {
-            new ROSLIB.Topic({ ros: ros, name: name, messageType: type, throttle_rate: throttleRate }).subscribe(callback);
+        // Own subscription lifetimes; ROSLIB must not auto-resubscribe obsolete topics.
+        const topicSubscriptions = new Map();
+        function subscribeToTopic(name, type, callback, throttleRate=0, group='core') {
+            const key = `${group}:${name}`;
+            if (topicSubscriptions.has(key)) topicSubscriptions.get(key).unsubscribe();
+            const topic = new ROSLIB.Topic({
+                ros, name, messageType: type, throttle_rate: throttleRate,
+                queue_length: 1, reconnect_on_close: false
+            });
+            topic.subscribe(callback);
+            topicSubscriptions.set(key, topic);
+            return topic;
         }
+
+        function clearTopicSubscriptions(group) {
+            for (const [key, topic] of topicSubscriptions) {
+                if (!group || key.startsWith(`${group}:`)) {
+                    topic.unsubscribe();
+                    topicSubscriptions.delete(key);
+                }
+            }
+        }
+
+        function isEngineerPanelOpen() {
+            return isSettingsOpen && currentSettingsTab === 'engineer' && isEngineerUnlocked && !document.hidden;
+        }
+
+        function syncDebugSubscription() {
+            const selected = topicSelector.value;
+            if (!ros.isConnected || !isEngineerPanelOpen() || !selected) {
+                clearTopicSubscriptions('debug');
+                currentTopicSub = null;
+                return;
+            }
+            if (currentTopicSub && currentTopicSub.name === selected) return;
+            clearTopicSubscriptions('debug');
+            const type = topicSelector.options[topicSelector.selectedIndex].dataset.type;
+            topicRawData.innerText = t('msg-listening').replace('{topic}', selected);
+            currentTopicSub = subscribeToTopic(selected, type, (message) => {
+                if (isEngineerPanelOpen()) topicRawData.innerText = JSON.stringify(message, null, 2);
+            }, 200, 'debug');
+        }
+
+        function syncOptionalSubscriptions() {
+            if (!ros.isConnected || !isEngineerPanelOpen()) {
+                clearTopicSubscriptions('engineer');
+                clearTopicSubscriptions('debug');
+                currentTopicSub = null;
+                ++topicRefreshGeneration;
+                return;
+            }
+            if (!topicSubscriptions.has('engineer:/imu')) {
+                subscribeSteerLimitTopics();
+                subscribeToTopic('/imu', 'sensor_msgs/Imu', (m) => {
+                    const markerYawDisplay = document.getElementById('marker-yaw');
+                    if (markerYawDisplay) markerYawDisplay.innerText = m.orientation.z.toFixed(4);
+                    if (m.orientation) {
+                        let q = m.orientation;
+                        let siny_cosp = 2 * (q.w * q.z + q.x * q.y);
+                        let cosy_cosp = 1 - 2 * (q.y * q.y + q.z * q.z);
+                        let imuYaw = Math.atan2(siny_cosp, cosy_cosp) * 180 / Math.PI;
+                        updateChart(0, imuYaw);
+                    }
+                }, 100, 'engineer');
+
+                refreshTopics();
+            }
+            syncDebugSubscription();
+        }
+        document.addEventListener('visibilitychange', syncOptionalSubscriptions);
 
         // --- 9. Subscribe to specific topics ---
         ros.on('connection', () => {
             loadUserSwathWidth();
 
-            subscribeToTopic('/f9r/num_sv', 'std_msgs/Int32', (m) => numSvDisplay.innerText = m.data);
+            subscribeToTopic('/f9r/num_sv', 'std_msgs/Int32', (m) => numSvDisplay.innerText = m.data, 1000);
 
             subscribeToTopic('/f9r/rtk_status', 'std_msgs/String', (m) => {
                 const status = m.data;
@@ -4844,7 +4909,7 @@
                     // Màu Đỏ (No RTK)
                     rtkIcon.setAttribute('class', 'w-5 h-5 text-red-500 drop-shadow-[0_0_6px_rgba(239,68,68,0.8)] transition-colors');
                 }
-            },100);
+            }, 1000);
 
             subscribeToTopic('/gps/fix', 'sensor_msgs/NavSatFix', (m) => {
                 if (m.latitude !== 0) {
@@ -4864,7 +4929,7 @@
             subscribeToTopic('/f9r/speed', 'std_msgs/Float32', (m) => {
                 const markerCmdDisplay = document.getElementById('marker-speed');
                 if (markerCmdDisplay) markerCmdDisplay.innerText = m.data.toFixed(1);
-            },100);
+            }, 200);
 
             subscribeToTopic('/steering_command', 'std_msgs/Float64', (m) => {
                 lastSteeringCmd = m.data;
@@ -4874,21 +4939,13 @@
             subscribeToTopic('/steer_motor_node/state', 'std_msgs/Int32', (m) => {
                 steerMotorState = m.data;
                 updateMarkerCmdUI();
-            },100);
+            }, 200);
 
-            subscribeSteerLimitTopics();
-
-            subscribeToTopic('/imu', 'sensor_msgs/Imu', (m) => {
-                const markerYawDisplay = document.getElementById('marker-yaw');
-                if (markerYawDisplay) markerYawDisplay.innerText = m.orientation.z.toFixed(4);
-                if (m.orientation) {
-                    let q = m.orientation;
-                    let siny_cosp = 2 * (q.w * q.z + q.x * q.y);
-                    let cosy_cosp = 1 - 2 * (q.y * q.y + q.z * q.z);
-                    let imuYaw = Math.atan2(siny_cosp, cosy_cosp) * 180 / Math.PI;
-                    updateChart(0, imuYaw);
-                }
-            },100);
+            subscribeToTopic('/steer_motor_node/fault', 'std_msgs/Bool', (m) => {
+                slState.fault = m.data;
+                if (m.data) setJogEnabled(false);
+                updateSteerLimitUI();
+            });
 
             subscribeToTopic('/odom/absolute', 'nav_msgs/Odometry', (m) => {
                 let rawOdomX = m.pose.pose.position.x;
@@ -5242,7 +5299,7 @@
                 mapOriginLat = m.latitude;
                 mapOriginLon = m.longitude;
                 console.log("✅ Đã nhận mốc gốc đồng bộ: ", mapOriginLat, mapOriginLon);
-            },100);
+            }, 1000);
 
             // Theo dõi trạng thái Path Follower Bridge để hiện nút Stop/Start hoặc báo lỗi
             subscribeToTopic('/path_follower_bridge/state', 'std_msgs/Int32', (m) => {
@@ -5251,13 +5308,13 @@
                 }
                 pathFollowerState = m.data;
                 updatePathModeUI();
-            },100);
+            }, 200);
 
             // BỔ SUNG: Theo dõi trạng thái Path Planner để hiện nút Start
             subscribeToTopic('/field_planner/state', 'std_msgs/Int32', (m) => {
                 fieldPlannerState = m.data;
                 updatePathModeUI();
-            },100);
+            }, 200);
 
             // --- Depth Control Subscriptions ---
             subscribeToTopic('/depth_link/status', 'tractor_espnow_bridge/msg/DepthLinkStatus', (m) => {
@@ -5344,6 +5401,7 @@
                     }
                 }
             }, 100);
+            syncOptionalSubscriptions();
         });
 
         let isPathPaused = false;
