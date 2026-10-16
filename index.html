@@ -2220,17 +2220,46 @@
         }
 
         // Action gửi lệnh đi (Command ≠ Status: pending spinner until /steer_planner_node/state_machine arrives)
-        function refreshABLines() {
-            callService('/steer_planner_node/list_reference_lines', null, 'std_srvs/Trigger', (ok, res) => {
-                if (!ok || !res.success) return;
+        let abRequestPending = false;
+        let abListGeneration = 0;
+        function callABService(name, serviceType, request = {}) {
+            if (!ros.isConnected) return Promise.reject(new Error(t('toast-no-ros')));
+            return new Promise((resolve, reject) => {
+                const timer = setTimeout(() => reject(new Error(
+                    'No response from ' + name + '. Check that the planner is running and rebuilt. Refresh the list before retrying.')), 8000);
+                const finish = (error, result) => {
+                    clearTimeout(timer);
+                    if (error) reject(new Error(String(error)));
+                    else resolve(result);
+                };
+                try {
+                    const service = new ROSLIB.Service({ros, name, serviceType});
+                    service.callService(new ROSLIB.ServiceRequest(request),
+                        result => finish(null, result), error => finish(error));
+                } catch (error) { finish(error); }
+            });
+        }
+        async function refreshABLines() {
+            const generation = ++abListGeneration;
+            try {
+                const result = await callABService('/steer_planner_node/list_reference_lines', 'std_srvs/Trigger');
+                if (generation !== abListGeneration) return;
+                if (!result?.success || typeof result.message !== 'string') throw new Error(result?.message || 'Could not list reference lines.');
                 const select = document.getElementById('ab-saved');
                 const previous = select.value;
                 select.replaceChildren(new Option('Select reference line', ''));
-                res.message.split('\n').filter(Boolean).forEach(name => select.add(new Option(name, name)));
-                select.value = previous;
-            });
+                result.message.split('\n').filter(Boolean).forEach(name => select.add(new Option(name, name)));
+                select.value = Array.from(select.options).some(option => option.value === previous) ? previous : '';
+            } catch (error) {
+                if (generation === abListGeneration) showToast('Could not refresh reference lines: ' + error.message, 'error', 6000);
+            }
         }
-        let abRequestPending = false;
+        function setABRequestPending(pending) {
+            abRequestPending = pending;
+            document.querySelectorAll('#ab-save-dialog button[type="submit"], #ab-load-dialog button[type="submit"], #btn-ab-delete, #btn-ab-refresh, #ab-saved')
+                .forEach(element => { element.disabled = pending; });
+            document.getElementById('btn-ab-delete').textContent = pending ? 'Please wait…' : 'Delete';
+        }
         function openABDialog(action) {
             const dialog = document.getElementById(action === 'save' ? 'ab-save-dialog' : 'ab-load-dialog');
             dialog.hidden = false;
@@ -2249,21 +2278,25 @@
             if (!document.getElementById('ab-save-dialog').hidden) closeABDialog('save');
             if (!document.getElementById('ab-load-dialog').hidden) closeABDialog('load');
         });
-        function requestABLine(action, name, onSuccess) {
-            if (!ros.isConnected || abRequestPending) return;
-            if (!name) { showToast('Nhập tên hoặc chọn đường A-B.', 'warn'); return; }
-            abRequestPending = true;
-            const service = new ROSLIB.Service({ros, name: '/steer_planner_node/set_parameters', serviceType: 'rcl_interfaces/srv/SetParameters'});
-            service.callService(new ROSLIB.ServiceRequest({parameters: [{name: 'reference_line_name', value: {type: 4, string_value: name}}]}), res => {
-                if (!res.results || !res.results.every(r => r.successful)) { abRequestPending = false; showToast('Không thể đặt tên đường.', 'error'); return; }
-                callService('/steer_planner_node/' + action + '_reference_line', null, 'std_srvs/Trigger', (ok, result) => {
-                    abRequestPending = false;
-                    if (ok && result.success) {
-                        showToast(result.message, 'success');
-                        if (onSuccess) onSuccess();
-                    }
-                });
-            }, err => { abRequestPending = false; showToast(String(err), 'error'); });
+        async function requestABLine(action, name, onSuccess) {
+            if (abRequestPending) { showToast('A reference line request is still pending.', 'warn'); return; }
+            if (!ros.isConnected) { showToast(t('toast-no-ros'), 'error'); return; }
+            if (!name) { showToast('Enter a name or select a reference line.', 'warn'); return; }
+            setABRequestPending(true);
+            try {
+                const response = await callABService('/steer_planner_node/set_parameters', 'rcl_interfaces/srv/SetParameters',
+                    {parameters: [{name: 'reference_line_name', value: {type: 4, string_value: name}}]});
+                if (!response?.results?.length || !response.results.every(result => result.successful))
+                    throw new Error(response?.results?.find(result => !result.successful)?.reason || 'Could not set reference line name.');
+                const result = await callABService('/steer_planner_node/' + action + '_reference_line', 'std_srvs/Trigger');
+                if (!result?.success) throw new Error(result?.message || 'Reference line request failed.');
+                showToast(result.message, 'success');
+                if (onSuccess) await onSuccess();
+            } catch (error) {
+                showToast(error.message, 'error', 7000);
+            } finally {
+                setABRequestPending(false);
+            }
         }
         function saveABLine() { requestABLine('save', document.getElementById('ab-name').value.trim(), () => closeABDialog('save')); }
         function loadABLine() { requestABLine('load', document.getElementById('ab-saved').value, () => closeABDialog('load')); }
@@ -2273,7 +2306,14 @@
             const name = document.getElementById('ab-saved').value;
             if (!name) { showToast('Select a reference line to delete.', 'warn'); return; }
             if (!window.confirm(`Delete saved reference line "${name}"?\nThis cannot be undone.`)) return;
-            requestABLine('delete', name, refreshABLines);
+            requestABLine('delete', name, async () => {
+                // Invalidate any list response sent before the deletion succeeded.
+                ++abListGeneration;
+                const select = document.getElementById('ab-saved');
+                Array.from(select.options).filter(option => option.value === name).forEach(option => option.remove());
+                select.value = '';
+                await refreshABLines();
+            });
         }
 
         function toggleRecordLine() {
