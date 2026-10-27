@@ -2655,7 +2655,7 @@
 
         let isSatelliteMain = true;
 
-        const defaultTractorZoom = 19;
+        const defaultTractorZoom = 21;
         const recenterDurationSeconds = 1.5;
         const map = L.map('map', { zoomControl: false, maxZoom: 22 }).setView([22.644689, 120.357255], 7);
         mainSatLayer.addTo(map);
@@ -2756,6 +2756,7 @@
                     <div class="text-orange-400 font-bold tracking-wide">CMD: <span id="marker-cmd">--</span></div>
                     <div class="text-blue-400 font-bold tracking-wide">Speed: <span id="marker-speed">--</span></div>
                 </div>
+                <div id="marker-footprint" class="absolute left-1/2 top-1/2 pointer-events-none rounded-sm" style="width: 0px; height: 0px; transform: translate(-50%, -50%); opacity: 0; box-sizing: border-box; border: 1px solid rgba(96,165,250,0.9); background: rgba(37,99,235,0.18);"></div>
                 <div id="marker-arrow" class="w-6 h-6 flex items-center justify-center transition-transform duration-100 drop-shadow-[0_0_8px_rgba(37,99,235,0.6)]" style="transform: rotate(0rad);">
                     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
                         <rect x="2" y="12" width="5" height="10" rx="1.5" fill="#1f2937"/><rect x="17" y="12" width="5" height="10" rx="1.5" fill="#1f2937"/>
@@ -2768,6 +2769,7 @@
 
         const tractorIcon = L.divIcon({ className: 'custom-tractor-icon', html: tractorHtml, iconSize: [30, 30], iconAnchor: [15, 15] });
         const miniTractorHtml = `
+            <div id="mini-marker-footprint" class="absolute left-1/2 top-1/2 pointer-events-none rounded-sm" style="width: 0px; height: 0px; transform: translate(-50%, -50%); opacity: 0; box-sizing: border-box; border: 1px solid rgba(248,113,113,0.9); background: rgba(239,68,68,0.18);"></div>
             <div id="mini-marker-arrow" class="w-5 h-5 flex items-center justify-center transition-transform duration-100" style="transform: rotate(0rad);">
                 <svg viewBox="0 0 24 24" fill="#ef4444" stroke="white" stroke-width="2" xmlns="http://www.w3.org/2000/svg" class="w-full h-full drop-shadow-md"><polygon points="12,2 22,20 12,17 2,20" /></svg>
             </div>`;
@@ -2785,7 +2787,7 @@
         let currentTrailSegment = null; // Đoạn đường hiện tại
         let trailLayer = L.polyline([], {
             color: '#8b4513', // Màu xanh lục (hoặc #8b4513 nếu muốn màu đất)
-            weight: 18,       // Kích thước 30px bằng đúng bề ngang icon máy cày
+            weight: 18,       // Giá trị khởi tạo, được ghi đè theo tỉ lệ thực trong updateTractorScale()
             opacity: 0.4,
             lineCap: 'butt',
             lineJoin: 'round'
@@ -2799,6 +2801,65 @@
             lineJoin: 'round'
         }).addTo(map);
         // ------------------------------------------------
+
+        // --- Tỉ lệ thực tế cho marker (Phương án B: footprint đúng scale + icon tối thiểu) ---
+        const TRACTOR_TRACK_WIDTH_M = 1.4;
+        const SVG_VIEWBOX_SIZE = 24;
+        const SVG_TRACK_SPAN_UNITS = 20; // Bề ngang bánh xích trong viewBox: x=2 -> x=22
+        const MIN_VISIBLE_TRACTOR_PX = 18;
+        const MIN_VISIBLE_MINI_PX = 12;
+
+        function metersPerPixel(lat, zoom) {
+            const earthCircumferenceM = 40075016.686;
+            const tileSizePx = 256;
+            return (earthCircumferenceM * Math.cos(lat * Math.PI / 180)) / (tileSizePx * Math.pow(2, zoom));
+        }
+
+        function setMarkerVisualScale(marker, arrowId, footprintId, svgPx, trackPx, minPx) {
+            const visiblePx = Math.max(svgPx, minPx);
+            const iconEl = marker.getElement();
+            const arrowEl = document.getElementById(arrowId);
+            const footprintEl = document.getElementById(footprintId);
+
+            if (!iconEl) return;
+
+            iconEl.style.width = visiblePx + 'px';
+            iconEl.style.height = visiblePx + 'px';
+            iconEl.style.marginLeft = (-visiblePx / 2) + 'px';
+            iconEl.style.marginTop = (-visiblePx / 2) + 'px';
+
+            if (arrowEl) {
+                arrowEl.style.width = visiblePx + 'px';
+                arrowEl.style.height = visiblePx + 'px';
+            }
+
+            if (footprintEl) {
+                footprintEl.style.width = trackPx + 'px';
+                footprintEl.style.height = trackPx + 'px';
+                footprintEl.style.opacity = (svgPx < minPx) ? '1' : '0';
+            }
+        }
+
+        function updateTractorScale() {
+            const lat = Number.isFinite(latestLat) ? latestLat : map.getCenter().lat;
+            const mainMpp = metersPerPixel(lat, map.getZoom());
+            const mainTrackPx = TRACTOR_TRACK_WIDTH_M / mainMpp;
+            const mainSvgPx = mainTrackPx * (SVG_VIEWBOX_SIZE / SVG_TRACK_SPAN_UNITS);
+
+            setMarkerVisualScale(tractorMarker, 'marker-arrow', 'marker-footprint', mainSvgPx, mainTrackPx, MIN_VISIBLE_TRACTOR_PX);
+
+            // Vệt cày luôn giữ đúng bề ngang thực tế của máy
+            trailLayer.setStyle({ weight: mainTrackPx });
+
+            const miniMpp = metersPerPixel(lat, minimap.getZoom());
+            const miniTrackPx = TRACTOR_TRACK_WIDTH_M / miniMpp;
+            const miniSvgPx = miniTrackPx * (SVG_VIEWBOX_SIZE / SVG_TRACK_SPAN_UNITS);
+            setMarkerVisualScale(miniTractorMarker, 'mini-marker-arrow', 'mini-marker-footprint', miniSvgPx, miniTrackPx, MIN_VISIBLE_MINI_PX);
+        }
+
+        map.on('zoomend', updateTractorScale);
+        minimap.on('zoomend', updateTractorScale);
+        updateTractorScale();
 
         let vertexMarkersLayer = L.layerGroup().addTo(map); // Lớp chứa các điểm đánh dấu (vertices, endpoints)
 
