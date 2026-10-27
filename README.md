@@ -35,9 +35,19 @@ dùng `data-ui-state` từ backend để thay nền, shadow và icon mà không 
 Icon thao tác dùng [Tabler Icons](https://github.com/tabler/tabler-icons), lưu local
 trong `icons/ui-sprite.svg`, kèm giấy phép MIT tại `icons/TABLER-LICENSE.txt`.
 
-Depth Control dùng bố cục gọn với nút 44px, thông số Depth/Lift/Tail cùng hàng và
-HOME/ACTIVATE cạnh nhau. Trên màn hình ngang thấp, panel chuyển sang hai cột để
-không cần cuộn; HOME, ACTIVATE và cảnh báo vẫn hiện khi thu gọn phần cài đặt.
+Depth Control hiển thị Depth/Lift/Tail và một nút ACTIVATE/DEACTIVATE.
+Giữ ACTIVATE 1 giây để chạy AUTO với độ sâu đã SET trong User Settings; giữ
+DEACTIVATE 1 giây để gửi HOME và nâng dàn cày. Thả trước 1 giây hủy thao tác ở
+cả hai chiều. HOME vẫn gửi `enable=true` để gateway thực thi
+lệnh nâng. Nút chỉ hiện hoạt động khi telemetry xác nhận AUTO và streaming;
+HOME hiện không hoạt động. Kết nối lại hoặc bộ điều khiển cabin tiếp quản không
+tự phát lệnh thay đổi chế độ.
+
+Trong **User Settings → Depth Settings**, bánh xe cuộn chọn mục tiêu AUTO từ
+50–150 mm theo bước 5 mm rồi nhấn **SET**. Khối này nằm cạnh Swath Width và thay
+thế hoàn toàn khối minh họa cũ. Giá trị dùng chung với bảng Depth; khi
+đang hoạt động, UI chờ phản hồi xác nhận từ backend. Khi không hoạt động hoặc chưa
+kết nối, SET lưu mục tiêu trên trình duyệt cho lần ACTIVATE tiếp theo.
 
 ---
 
@@ -65,6 +75,46 @@ Sau đó mở trình duyệt tại:
 Chế độ này mở thẳng buồng lái, hiển thị trạng thái `UI Preview (Offline)` và không
 tự kết nối ROSBridge. Có thể chuyển A-B Mode / Path Mode, mở bảng Depth và Cài đặt;
 các lệnh điều khiển vẫn cần kết nối ROS thực tế.
+
+### Chạy giao diện với dữ liệu ROS giả lập bằng Python
+
+Cách ngắn nhất, chạy từ thư mục repository:
+
+```bash
+cd /home/long/agent_tractor
+python3 run_tractor_ui.py
+```
+
+Giữ terminal này mở trong lúc sử dụng và nhấn `Ctrl+C` để dừng server.
+
+Hoặc chạy server trực tiếp với đầy đủ tuỳ chọn:
+
+```bash
+cd /home/long/agent_tractor/TractorUI
+python3 -m pip install -r requirements-sim.txt
+python3 simulate_ros.py --host 0.0.0.0 --port 8000
+```
+
+Mở **http://localhost:8000/?sim=1** hoặc `http://<IP_MÁY_CHẠY_SERVER>:8000/?sim=1`
+từ thiết bị cùng mạng. Không cần cài ROS hoặc chạy `start_all_v1.sh`.
+Server phục vụ cả file giao diện và WebSocket `/rosbridge` trên cổng 8000;
+UI tự kết nối và hiển thị nhãn **ROS SIMULATOR**.
+
+Python phát 25 topic ở 10 Hz: GPS/RTK, vị trí và hướng xe, tốc độ, góc lái,
+trạng thái motor, đường AB, ranh giới ruộng, đường cày mẫu và telemetry độ sâu.
+Các thao tác ghi đường AB, dịch/xoay luống, lưu/nạp đường AB, ghi đỉnh ruộng,
+tạo đường, chạy/dừng Path, cân chỉnh lái, đổi parameter và điều khiển độ sâu
+có phản hồi trạng thái giả lập. Lưu AB và parameter chỉ tồn tại trong bộ nhớ;
+đường cày và chuyển động xe là dữ liệu mẫu phục vụ thử giao diện, không mô phỏng
+thuật toán bám đường hoặc động học máy kéo. Các tab cùng dùng chung trạng thái.
+Simulator không kết nối ROS hoặc phần cứng; giữ nguyên thao tác nhấn giữ của UI.
+
+Tuỳ chọn: `--hz 20`, `--speed 1.5` (m/s), `--rtk 'RTK Float'`,
+`--latitude 22.644689 --longitude 120.357255`. Kiểm tra server tại
+`http://localhost:8000/api/sim/status`. Dừng bằng `Ctrl+C`.
+
+Chạy kiểm thử simulator: `python3 -m unittest discover -s tests -v`.
+Mở URL không có `sim=1` vẫn sử dụng ROSBridge thật như trước.
 
 > **Lưu ý về kết nối WebSocket ROSBridge**:
 > Mặc định giao diện sẽ kết nối tới `ws://<HOSTNAME>:9090`. Nếu truy cập qua Cloudflare HTTPS Tunnel, giao diện tự động nhận diện và chuyển sang `wss://ws.<HOSTNAME>`.

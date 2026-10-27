@@ -18,7 +18,7 @@
     <!-- Tailwind CSS -->
     <link rel="stylesheet" href="tailwind.min.css">
     <!-- Agriculture High-Contrast Responsive HMI Theme -->
-    <link rel="stylesheet" href="theme-hmi.css?v=20261016-restore-swath-icons">
+    <link rel="stylesheet" href="theme-hmi.css?v=20261027-depth-auto-home">
 
     <!-- ROSLibJS & EventEmitter2 -->
     <script src="eventemitter2.min.js"></script>
@@ -486,7 +486,7 @@
     </div>
 
     <!-- LEFT PANEL: Deviation Radar 2D View -->
-    <div id="deviation-panel"
+    <!-- <div id="deviation-panel"
         class="absolute left-4 top-20 bottom-56 w-[30%] min-w-[220px] max-w-[320px] bg-white/90 backdrop-blur-md border border-gray-200 rounded-2xl shadow-2xl transition-all duration-500 hidden md:flex flex-col overflow-hidden opacity-0 pointer-events-none -translate-x-10">
         <!-- Header -->
         <div id="xte-header"
@@ -501,7 +501,7 @@
             </div>
             <canvas id="devCanvas" class="absolute inset-0 w-full h-full"></canvas>
         </div>
-    </div>
+    </div> -->
 
     <!-- TOP CENTER CONTROLS: Tinh chỉnh bẻ lái & Chuyển luống -->
     <div id="top-controls-panel"
@@ -534,7 +534,7 @@
 
         <!-- Central XTE Display (Mobile-friendly) -->
         <div id="mobile-xte-container" class="flex flex-col items-center justify-center px-3 py-1 bg-black/60 border border-white/20 rounded-2xl min-w-[85px] md:min-w-[100px] shadow-inner select-none min-h-[var(--hit-secondary)]">
-            <span class="text-xs text-gray-300 font-bold uppercase tracking-wider leading-none mb-0.5">XTE</span>
+            <!-- <span class="text-xs text-gray-300 font-bold uppercase tracking-wider leading-none mb-0.5">XTE</span> -->
             <span id="mobile-xte-value" class="text-lg md:text-xl font-mono font-bold text-white leading-none">-- m</span>
         </div>
 
@@ -705,7 +705,7 @@
     <!-- RIGHT PANEL: Compact Depth Control -->
     <div class="absolute right-4 top-28 md:top-20 z-20 w-[280px] glass-panel rounded-2xl shadow-2xl border border-white/10 p-3.5 flex flex-col gap-2.5 pointer-events-auto transition-all duration-300 hidden md:flex" id="depth-panel">
         <div class="depth-header" id="depth-header">
-            <div class="flex items-center gap-2">
+            <!-- <div class="flex items-center gap-2">
                 <span class="text-xs font-bold text-gray-200 uppercase tracking-wider flex items-center gap-1.5" data-i18n="depth-title">
                     <svg class="w-3.5 h-3.5 text-blue-400 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path d="M19 14l-7 7m0 0l-7-7m7 7V3" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
@@ -713,7 +713,7 @@
                     </svg>
                     Depth Control
                 </span>
-            </div>
+            </div> -->
             <div class="flex items-center gap-2">
                 <span class="w-2.5 h-2.5 rounded-full bg-gray-500 transition-colors" id="depth-link-dot" title="depth link">
                 </span>
@@ -772,104 +772,8 @@
                 </div>
             </div>
         </div>
-        <div class="depth-modes-row" id="depth-modes-row">
-            <button aria-pressed="true" class="depth-mode-btn py-2 min-h-[var(--hit-min)] rounded-lg text-sm font-bold bg-blue-600 text-white transition-colors active:scale-95" data-depth-mode="0" data-i18n="depth-mode-auto" id="depth-mode-auto">
-                AUTO
-            </button>
-            <button aria-pressed="false" class="depth-mode-btn py-2 min-h-[var(--hit-min)] rounded-lg text-sm font-bold bg-gray-700 text-gray-300 transition-colors active:scale-95" data-depth-mode="1" data-i18n="depth-mode-manual" id="depth-mode-manual">
-                MANUAL
-            </button>
-            <button aria-controls="depth-collapsible-content" aria-expanded="true" class="hidden md:inline-flex text-gray-400 hover:text-white p-1 rounded transition active:scale-90" id="depth-toggle-collapse" onclick="toggleDepthCollapse()" title="Collapse/Expand" type="button">
-                <svg aria-hidden="true" class="hmi-icon" fill="none" id="depth-collapse-icon" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24">
-                    <use href="icons/ui-sprite.svg#chevron-down">
-                    </use>
-                </svg>
-            </button>
-            <button class="md:hidden text-gray-400 hover:text-white p-2 rounded-lg bg-white/5 active:scale-90" onclick="toggleDepthPanel()" title="Close Drawer" type="button">
-                <svg aria-hidden="true" class="hmi-icon" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewBox="0 0 24 24">
-                    <use href="icons/ui-sprite.svg#x">
-                    </use>
-                </svg>
-            </button>
-        </div>
-        <div class="flex flex-col gap-2.5 transition-all duration-300" id="depth-collapsible-content">
-            <!-- AUTO: depth setpoint in mm with steppers and presets -->
-            <div class="flex flex-col gap-1.5" id="depth-auto-input">
-                <div class="flex items-center justify-between">
-                    <label class="text-xs text-gray-300 uppercase tracking-wider font-semibold" data-i18n="depth-set-mm" for="depth-target-mm">
-                        Target depth (mm)
-                    </label>
-                </div>
-                <div class="flex items-center gap-1.5">
-                    <button class="depth-stepper-btn px-2.5 py-2 min-h-[var(--hit-min)] min-w-[44px] rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-200 text-sm font-mono font-bold active:scale-90 transition" onclick="adjustDepthTarget(-20)" type="button">
-                        -20
-                    </button>
-                    <button class="depth-stepper-btn px-2.5 py-2 min-h-[var(--hit-min)] min-w-[44px] rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-200 text-sm font-mono font-bold active:scale-90 transition" onclick="adjustDepthTarget(-10)" type="button">
-                        -10
-                    </button>
-                    <input class="flex-1 min-w-0 bg-gray-900/90 border border-gray-600 rounded-lg px-1 py-1.5 text-center text-white font-mono text-lg font-bold focus:outline-none focus:border-blue-500 min-h-[var(--hit-min)]" id="depth-target-mm" max="150" min="50" step="5" type="number" value="120"/>
-                    <button class="depth-stepper-btn px-2.5 py-2 min-h-[var(--hit-min)] min-w-[44px] rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-200 text-sm font-mono font-bold active:scale-90 transition" onclick="adjustDepthTarget(10)" type="button">
-                        +10
-                    </button>
-                    <button class="depth-stepper-btn px-2.5 py-2 min-h-[var(--hit-min)] min-w-[44px] rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-200 text-sm font-mono font-bold active:scale-90 transition" onclick="adjustDepthTarget(20)" type="button">
-                        +20
-                    </button>
-                </div>
-                <!-- Preset chips -->
-                <div class="flex items-center justify-between gap-1.5 pt-0.5">
-                    <button class="depth-preset-chip flex-1 py-1.5 min-h-[var(--hit-min)] text-sm font-mono font-semibold rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-gray-200 transition active:scale-95" onclick="setDepthTargetPreset(80)" type="button">
-                        80
-                    </button>
-                    <button class="depth-preset-chip flex-1 py-1.5 min-h-[var(--hit-min)] text-sm font-mono font-semibold rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-gray-200 transition active:scale-95" onclick="setDepthTargetPreset(100)" type="button">
-                        100
-                    </button>
-                    <button class="depth-preset-chip flex-1 py-1.5 min-h-[var(--hit-min)] text-sm font-mono font-semibold rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-gray-200 transition active:scale-95" onclick="setDepthTargetPreset(120)" type="button">
-                        120
-                    </button>
-                    <button class="depth-preset-chip flex-1 py-1.5 min-h-[var(--hit-min)] text-sm font-mono font-semibold rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-gray-200 transition active:scale-95" onclick="setDepthTargetPreset(150)" type="button">
-                        150
-                    </button>
-                </div>
-            </div>
-            <!-- MANUAL: lift arm angle with steppers and presets -->
-            <div class="flex-col gap-1.5 hidden" id="depth-manual-input">
-                <div class="flex items-center justify-between">
-                    <label class="text-xs text-gray-300 uppercase tracking-wider font-semibold" data-i18n="depth-set-angle" for="depth-target-deg">
-                        Lift arm angle
-                    </label>
-                    <span class="text-sm text-white font-mono font-bold">
-                        <span id="depth-angle-value">
-                            20.0
-                        </span>
-                        °
-                    </span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <button class="depth-stepper-btn px-3 py-2 min-h-[var(--hit-min)] min-w-[44px] rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-200 text-sm font-mono font-bold active:scale-90 transition" onclick="adjustDepthAngle(-1.0)" type="button">
-                        -1°
-                    </button>
-                    <input class="flex-1 accent-blue-500 h-3 bg-gray-700 rounded-lg cursor-pointer" id="depth-target-deg" max="35" min="0" step="0.5" type="range" value="20"/>
-                    <button class="depth-stepper-btn px-3 py-2 min-h-[var(--hit-min)] min-w-[44px] rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-200 text-sm font-mono font-bold active:scale-90 transition" onclick="adjustDepthAngle(1.0)" type="button">
-                        +1°
-                    </button>
-                </div>
-                <!-- Angle Presets -->
-                <div class="flex items-center justify-between gap-1.5 pt-0.5">
-                    <button class="depth-preset-chip flex-1 py-1.5 min-h-[var(--hit-min)] text-sm font-mono font-semibold rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-gray-200 transition active:scale-95" onclick="setDepthAnglePreset(10.0)" type="button">
-                        10°
-                    </button>
-                    <button class="depth-preset-chip flex-1 py-1.5 min-h-[var(--hit-min)] text-sm font-mono font-semibold rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-gray-200 transition active:scale-95" onclick="setDepthAnglePreset(15.0)" type="button">
-                        15°
-                    </button>
-                    <button class="depth-preset-chip flex-1 py-1.5 min-h-[var(--hit-min)] text-sm font-mono font-semibold rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-gray-200 transition active:scale-95" onclick="setDepthAnglePreset(20.0)" type="button">
-                        20°
-                    </button>
-                    <button class="depth-preset-chip flex-1 py-1.5 min-h-[var(--hit-min)] text-sm font-mono font-semibold rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 text-gray-200 transition active:scale-95" onclick="setDepthAnglePreset(25.0)" type="button">
-                        25°
-                    </button>
-                </div>
-            </div>
-        </div>
+        <!-- Desired values remain as state for ROS commands; editing lives in User Settings. -->
+        <input id="depth-target-mm" type="hidden" value="120">
         <div id="depth-alerts">
             <p class="hidden text-xs font-semibold text-center leading-tight px-2 py-1.5 rounded-lg bg-red-900/70 text-red-100 border border-red-500/50" id="depth-link-error">
             </p>
@@ -878,10 +782,7 @@
             </p>
         </div>
         <div class="depth-actions-row" id="depth-actions">
-            <button class="w-full py-3 min-h-[var(--hit-primary)] rounded-xl font-bold text-base bg-orange-600 hover:bg-orange-500 text-white transition-colors select-none active:scale-95 shadow-md shadow-orange-900/40 tracking-wider" data-i18n="depth-home" data-variant="warning" id="depth-home-btn" onclick="sendDepthHome()" type="button">
-                HOME (LIFT)
-            </button>
-            <button class="relative overflow-hidden w-full py-3.5 min-h-[var(--hit-primary)] rounded-xl font-bold text-base bg-green-600 hover:bg-green-500 text-white transition-colors select-none touch-none shadow-md shadow-green-900/40 tracking-wider" data-variant="success" id="depth-active-btn">
+            <button class="relative overflow-hidden w-full py-3.5 min-h-[var(--hit-primary)] rounded-xl font-bold text-base bg-green-600 hover:bg-green-500 text-white transition-colors select-none touch-none shadow-md shadow-green-900/40 tracking-wider" data-variant="success" id="depth-active-btn" type="button" aria-pressed="false">
                 <span class="absolute inset-y-0 left-0 w-0 bg-white/35 pointer-events-none" id="depth-active-fill">
                 </span>
                 <span class="relative" data-i18n="depth-activate" id="depth-active-label">
@@ -890,7 +791,7 @@
             </button>
         </div>
         <p class="text-xs text-gray-300 text-center leading-tight mt-0.5" data-i18n="depth-hold-hint" id="depth-hold-hint">
-            Tap to engage · hold 1 s to disengage
+            Hold 1 s to activate / return HOME
         </p>
     </div>
 
@@ -934,11 +835,11 @@
             <div class="flex border-b border-gray-800 bg-gray-900/50 px-6">
                 <button id="tab-user" onclick="switchSettingsTab('user')" aria-pressed="true"
                     class="py-3 px-5 min-h-[var(--hit-secondary)] text-sm font-semibold border-b-2 border-blue-500 text-blue-400 transition-all focus:outline-none flex items-center gap-2">
-                    👤 <span data-i18n="tab-user">User Settings</span>
+                    <span data-i18n="tab-user">User Settings</span>
                 </button>
                 <button id="tab-engineer" onclick="switchSettingsTab('engineer')" aria-pressed="false"
                     class="py-3 px-5 min-h-[var(--hit-secondary)] text-sm font-semibold border-b-2 border-transparent text-gray-400 hover:text-gray-200 transition-all focus:outline-none flex items-center gap-2">
-                    🛠️ <span data-i18n="tab-engineer">Engineer Settings</span>
+                    <span data-i18n="tab-engineer">Engineer Settings</span>
                 </button>
             </div>
 
@@ -975,28 +876,23 @@
                         </button>
                     </div>
 
-                    <!-- Hình mô phỏng (Simulation drawing) -->
-                    <div class="bg-gray-800/50 p-5 rounded-xl border border-gray-700/50 flex flex-col items-center">
-                        <h3 class="text-sm font-bold text-gray-300 mb-3 uppercase tracking-wider self-start" data-i18n="swath-simulation">
-                            Simulation Visualization</h3>
-
-                        <!-- Cấu hình Working Width -->
-                        <div class="w-full mb-4 flex items-center justify-between bg-gray-900/50 p-3 rounded-lg border border-gray-700/50 text-xs">
-                            <span class="text-gray-400" data-i18n="lbl-working-width">Implement Working Width:</span>
-                            <div class="flex items-center gap-2">
-                                <input type="range" id="sim-working-width" min="1.0" max="4.0" step="0.1" value="2.0"
-                                    class="accent-blue-500 w-24 h-1.5 bg-gray-750 rounded-lg appearance-none cursor-pointer"
-                                    oninput="updateSwathSimulation()">
-                                <span id="display-sim-working-width" class="font-mono font-bold text-blue-400">2.0</span>m
+                    <!-- Cấu hình độ sâu, cùng kiểu bánh xe với Swath Width -->
+                    <div id="user-depth-settings" class="bg-gray-800/50 p-5 rounded-xl border border-gray-700/50 flex flex-col justify-between">
+                        <h3 class="text-sm font-bold text-gray-300 mb-3 uppercase tracking-wider" data-i18n="set-depth">Depth Settings</h3>
+                        <form id="user-depth-form" class="flex flex-col justify-between flex-1" onsubmit="event.preventDefault(); applyUserDepthSetting()">
+                            <input id="user-depth-target" type="hidden" value="120">
+                            <div class="flex items-center justify-center gap-3 w-full">
+                                <div class="flex items-center justify-center bg-gray-950 border border-gray-800 rounded-2xl p-4 w-36 relative overflow-hidden shadow-inner">
+                                    <div class="absolute left-0 right-0 h-[44px] top-[calc(50%-22px)] border-t border-b border-blue-500/30 bg-blue-500/5 pointer-events-none"></div>
+                                    <div id="picker-depth" class="ios-picker-container w-full" onscroll="onDepthPickerScroll(event)"
+                                        role="spinbutton" tabindex="0" aria-valuemin="50" aria-valuemax="150" aria-valuenow="120"
+                                        aria-label="Target depth in millimeters" data-i18n-aria-label="depth-set-mm"></div>
+                                </div>
+                                <span class="text-[18px] font-bold text-blue-400 font-mono">mm</span>
                             </div>
-                        </div>
-
-                        <!-- SVG Simulation Container -->
-                        <div class="w-full flex-1 flex items-center justify-center bg-gray-950 rounded-xl border border-gray-800 p-2 min-h-[220px] relative overflow-hidden">
-                            <svg id="swath-sim-svg" viewBox="0 0 400 240" class="w-full h-full max-h-[240px]">
-                                <!-- Dynamic SVG elements will be inserted here -->
-                            </svg>
-                        </div>
+                            <button id="btn-set-user-depth" type="submit" data-variant="primary"
+                                class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg text-sm font-semibold transition active:scale-95 shadow-md w-full mt-4">SET</button>
+                        </form>
                     </div>
                 </div>
 
@@ -1223,7 +1119,9 @@
 
     <script>
         // --- 1. Global Variables & DOM Elements ---
-        const isUIPreview = new URLSearchParams(window.location.search).get('preview') === '1';
+        const uiQuery = new URLSearchParams(window.location.search);
+        const isROSSimulation = uiQuery.get('sim') === '1';
+        const isUIPreview = !isROSSimulation && uiQuery.get('preview') === '1';
         const btnConnect = document.getElementById('btn-connect');
         const statusText = document.getElementById('status-text');
         const statusDot = document.getElementById('status-dot');
@@ -1233,7 +1131,14 @@
         const wsUrlInput = document.getElementById('ws-url');
 
         const currentHost = window.location.hostname;
-        wsUrlInput.value = window.location.protocol === 'https:' ? `wss://ws.${currentHost}` : `ws://${currentHost}:9090`;
+        wsUrlInput.value = isROSSimulation
+            ? `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/rosbridge`
+            : window.location.protocol === 'https:' ? `wss://ws.${currentHost}` : `ws://${currentHost}:9090`;
+        if (isROSSimulation) {
+            document.title = 'TractorUI · ROS Simulator';
+            wsUrlInput.readOnly = true;
+            wsUrlInput.title = 'Python ROS simulator';
+        }
 
         const paramsList = document.getElementById('params-list');
         const latDisplay = document.getElementById('data-lat');
@@ -1407,27 +1312,25 @@
                 "voice-auto-active": "Auto-steering engaged.",
                 "voice-auto-recording": "Recording path.",
                 "voice-auto-idle": "Switched to manual control.",
-                "tab-user": "User Settings",
-                "tab-engineer": "Engineer Settings",
+                "tab-user": "USER SETTINGS",
+                "tab-engineer": "ENGINEER SETTINGS",
                 "set-swath-width": "Swath Width (m)",
                 "engineer-auth-title": "Engineer Authentication Required",
                 "engineer-auth-desc": "These settings are reserved for system installation, calibration, and debugging. Modification may cause malfunctions.",
                 "msg-incorrect-pwd": "Incorrect password!",
                 "btn-unlock": "Unlock",
                 "btn-lock": "Lock Engineer Mode",
-                "swath-simulation": "Swath Simulation",
-                "lbl-working-width": "Implement Working Width:",
+                "set-depth": "Depth Settings (mm)",
+                "set-depth-ready": "Depth target prepared for AUTO mode.",
+                "set-depth-confirmed": "Depth target confirmed.",
                 "depth-title": "Depth Control",
-                "depth-mode-auto": "AUTO",
-                "depth-mode-manual": "MANUAL",
-                "depth-home": "HOME (LIFT)",
-                "depth-home-active": "AT HOME · tap AUTO / MANUAL to work",
                 "depth-set-mm": "Target depth (mm)",
                 "depth-set-angle": "Lift arm angle",
                 "depth-activate": "ACTIVATE",
                 "depth-deactivate": "DEACTIVATE",
                 "depth-active": "ACTIVE",
-                "depth-hold-hint": "Tap to engage · hold 1 s to disengage",
+                "depth-hold-hint": "Hold 1 s to activate / return HOME",
+                "depth-engaging": "ACTIVATING...",
                 "depth-releasing": "RELEASING...",
                 "depth-preempted": "Local controller took over. Tap ACTIVATE to control from here again.",
                 "depth-err-no-bridge": "Depth control unavailable: the depth bridge is not running on the tractor.",
@@ -1530,19 +1433,17 @@
                 "msg-incorrect-pwd": "密碼錯誤！",
                 "btn-unlock": "解鎖",
                 "btn-lock": "鎖定工程師模式",
-                "swath-simulation": "作業路徑模擬",
-                "lbl-working-width": "農具作業寬度:",
+                "set-depth": "耕深設定 (mm)",
+                "set-depth-ready": "自動模式目標耕深已準備。",
+                "set-depth-confirmed": "目標耕深已確認。",
                 "depth-title": "耕深控制",
-                "depth-mode-auto": "自動",
-                "depth-mode-manual": "手動",
-                "depth-home": "回原位（升起）",
-                "depth-home-active": "已回原位 · 點「自動/手動」恢復作業",
                 "depth-set-mm": "目標耕深 (mm)",
                 "depth-set-angle": "提升臂角度",
                 "depth-activate": "啟動",
                 "depth-deactivate": "解除",
                 "depth-active": "運行中",
-                "depth-hold-hint": "點擊啟動 · 長按 1 秒解除",
+                "depth-hold-hint": "長按 1 秒啟動／回原位",
+                "depth-engaging": "啟動中...",
                 "depth-releasing": "解除中...",
                 "depth-preempted": "現場控制器已接管。點「啟動」可重新由此控制。",
                 "depth-err-no-bridge": "無法控制深度：曳引機上的深度橋接程式未執行。",
@@ -1585,11 +1486,15 @@
                 }
             });
 
+            document.querySelectorAll('[data-i18n-aria-label]').forEach(el => {
+                el.setAttribute('aria-label', t(el.getAttribute('data-i18n-aria-label')));
+            });
+
             document.getElementById('lang-toggle').innerText = currentLang === 'en' ? '繁體中文' : 'English';
 
             if (ros.isConnected) {
                 btnConnect.innerText = t('btn-disconnect');
-                statusText.innerText = t('hud-connected');
+                statusText.innerText = isROSSimulation ? 'ROS SIMULATOR' : t('hud-connected');
             } else {
                 btnConnect.innerText = t('btn-connect');
                 statusText.innerText = t(isUIPreview ? 'hud-preview' : 'hud-disconnected');
@@ -2414,6 +2319,7 @@
                 modal.classList.remove('opacity-0', 'pointer-events-none');
                 modalContent.classList.replace('scale-95', 'scale-100');
                 switchSettingsTab(currentSettingsTab);
+                syncUserDepthSetting();
                 if (ros.isConnected) {
                     loadUserSwathWidth();
                 } else {
@@ -2609,12 +2515,20 @@
 
         const PICKER_ITEM_HEIGHT = 44;
 
+        function createPickerSpacer() {
+            const spacer = document.createElement('div');
+            spacer.className = 'ios-picker-spacer';
+            spacer.setAttribute('aria-hidden', 'true');
+            return spacer;
+        }
+
         // Picker helper functions
         function initIosPicker() {
             const container = document.getElementById('picker-swath');
             if (!container) return;
 
             container.innerHTML = '';
+            container.appendChild(createPickerSpacer());
             let index = 0;
             for (let val = SWATH_MIN; val <= SWATH_MAX + 0.001; val += SWATH_STEP) {
                 const item = document.createElement('div');
@@ -2629,52 +2543,32 @@
                 container.appendChild(item);
                 index++;
             }
+            container.appendChild(createPickerSpacer());
 
             // Set initial state (default 2.0m if not already loaded)
             selectSwathInPickers(2.0);
+            initDepthPicker();
         }
 
         let pickerScrollTimeout = null;
+        function renderPickerItems(container, index) {
+            const items = container.querySelectorAll('.ios-picker-item');
+            const selectedIndex = Math.max(0, Math.min(items.length - 1, index));
+            items.forEach((item, idx) => {
+                const distance = Math.abs(idx - selectedIndex);
+                item.style.transform = `scale(${1 - Math.min(distance * 0.12, 0.35)}) rotateX(${Math.max(-50, Math.min(50, (idx - selectedIndex) * 18))}deg)`;
+                item.style.opacity = Math.max(0.35, 1 - distance * 0.25);
+                item.classList.toggle('selected', idx === selectedIndex);
+            });
+            return items[selectedIndex];
+        }
+
         function onPickerScroll() {
             const container = document.getElementById('picker-swath');
             if (!container) return;
-
-            const items = container.querySelectorAll('.ios-picker-item');
             const index = Math.round(container.scrollTop / PICKER_ITEM_HEIGHT);
-
-            items.forEach((item, idx) => {
-                const distance = Math.abs(idx - index);
-                let scale = 1 - Math.min(distance * 0.12, 0.35);
-                let opacity = Math.max(0.35, 1 - distance * 0.25);
-                let rotateX = Math.max(-50, Math.min(50, (idx - index) * 18));
-
-                item.style.transform = `scale(${scale}) rotateX(${rotateX}deg)`;
-                item.style.opacity = opacity;
-
-                if (idx === index) {
-                    item.classList.add('selected');
-                } else {
-                    item.classList.remove('selected');
-                }
-            });
-
+            renderPickerItems(container, index);
             clearTimeout(pickerScrollTimeout);
-            pickerScrollTimeout = setTimeout(() => {
-                updateSwathFromPickers();
-            }, 50);
-        }
-
-        function updateSwathFromPickers() {
-            const container = document.getElementById('picker-swath');
-            if (!container) return;
-
-            const index = Math.round(container.scrollTop / PICKER_ITEM_HEIGHT);
-            const items = container.querySelectorAll('.ios-picker-item');
-            const selectedItem = items[index];
-            if (selectedItem) {
-                const val = parseFloat(selectedItem.dataset.value);
-                updateSwathSimulation(val);
-            }
         }
 
         function selectSwathInPickers(val) {
@@ -2691,344 +2585,63 @@
 
             setTimeout(() => {
                 onPickerScroll();
-                updateSwathSimulation(clampedVal);
             }, 100);
         }
 
-        // SWATH WIDTH SIMULATION VISUALIZATION (Picture1.png reference)
-        function updateSwathSimulation(swathVal) {
-            if (swathVal === undefined) {
-                const container = document.getElementById('picker-swath');
-                if (container) {
-                    const index = Math.round(container.scrollTop / PICKER_ITEM_HEIGHT);
-                    const items = container.querySelectorAll('.ios-picker-item');
-                    const selectedItem = items[index];
-                    if (selectedItem) {
-                        swathVal = parseFloat(selectedItem.dataset.value);
-                    }
-                }
+        const DEPTH_PICKER_MIN = 50;
+        const DEPTH_PICKER_MAX = 150;
+        const DEPTH_PICKER_STEP = 5;
+
+        function initDepthPicker() {
+            const container = document.getElementById('picker-depth');
+            if (!container) return;
+            container.replaceChildren();
+            container.appendChild(createPickerSpacer());
+            for (let value = DEPTH_PICKER_MIN; value <= DEPTH_PICKER_MAX; value += DEPTH_PICKER_STEP) {
+                const item = document.createElement('div');
+                item.className = 'ios-picker-item';
+                item.innerText = value;
+                item.dataset.value = value;
+                const index = (value - DEPTH_PICKER_MIN) / DEPTH_PICKER_STEP;
+                item.onclick = () => container.scrollTo({top: index * PICKER_ITEM_HEIGHT, behavior: 'smooth'});
+                container.appendChild(item);
             }
-            if (swathVal === undefined) swathVal = 2.0;
+            container.appendChild(createPickerSpacer());
+            container.addEventListener('keydown', event => {
+                if (!['ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.key)) return;
+                event.preventDefault();
+                const current = Math.round(container.scrollTop / PICKER_ITEM_HEIGHT);
+                const last = container.querySelectorAll('.ios-picker-item').length - 1;
+                const next = event.key === 'Home' ? 0 : event.key === 'End' ? last
+                    : Math.max(0, Math.min(last, current + (event.key === 'ArrowDown' ? 1 : -1)));
+                container.scrollTo({top: next * PICKER_ITEM_HEIGHT, behavior: 'smooth'});
+            });
+            selectDepthInPicker(120, false);
+        }
 
-            const workingWidthEl = document.getElementById('sim-working-width');
-            const workingWidthDisplay = document.getElementById('display-sim-working-width');
-            let workingWidth = 2.0;
-            if (workingWidthEl) {
-                workingWidth = parseFloat(workingWidthEl.value);
-                if (workingWidthDisplay) workingWidthDisplay.innerText = workingWidth.toFixed(1);
-            }
+        function onDepthPickerScroll(event) {
+            const container = document.getElementById('picker-depth');
+            if (!container) return;
+            const index = Math.round(container.scrollTop / PICKER_ITEM_HEIGHT);
+            const selected = renderPickerItems(container, index);
+            if (!selected) return;
+            const value = Number(selected.dataset.value);
+            document.getElementById('user-depth-target').value = value;
+            container.setAttribute('aria-valuenow', value);
+            if (!event || event.isTrusted) userDepthDraftDirty = true;
+        }
 
-            const svg = document.getElementById('swath-sim-svg');
-            if (!svg) return;
-
-            // Clear dynamic elements and make sure defs exists
-            let defs = svg.querySelector('defs');
-            if (!defs) {
-                defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-                defs.innerHTML = `
-                    <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                        <path d="M 0 0 L 10 5 L 0 10 z" fill="context-stroke"/>
-                    </marker>
-                    <marker id="arrow-blue" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                        <path d="M 0 0 L 10 5 L 0 10 z" fill="#3B82F6"/>
-                    </marker>
-                    <marker id="arrow-green" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                        <path d="M 0 0 L 10 5 L 0 10 z" fill="#10B981"/>
-                    </marker>
-                    <marker id="arrow-orange" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                        <path d="M 0 0 L 10 5 L 0 10 z" fill="#F59E0B"/>
-                    </marker>
-                    <marker id="arrow-red" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                        <path d="M 0 0 L 10 5 L 0 10 z" fill="#EF4444"/>
-                    </marker>
-                    <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-                        <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(255, 255, 255, 0.04)" stroke-width="1" />
-                    </pattern>
-                `;
-                svg.appendChild(defs);
-            }
-
-            // Draw Background Grid if not present
-            let gridBg = svg.querySelector('#sim-grid-bg');
-            if (!gridBg) {
-                gridBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-                gridBg.setAttribute('id', 'sim-grid-bg');
-                gridBg.setAttribute('width', '100%');
-                gridBg.setAttribute('height', '100%');
-                gridBg.setAttribute('fill', 'url(#grid)');
-                svg.insertBefore(gridBg, defs.nextSibling);
-            }
-
-            const dynamicGroup = svg.querySelector('#sim-dynamic-content');
-            if (dynamicGroup) svg.removeChild(dynamicGroup);
-
-            const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-            g.setAttribute('id', 'sim-dynamic-content');
-
-            // Dynamic scale calculation based on swathVal
-            let scale = 60; // pixels per meter
-            if (swathVal > 2.5) {
-                scale = 150 / swathVal; // clamp spacing at 150px
-            }
-
-            const trackDistance = swathVal * scale;
-            const leftTrackX = 200 - trackDistance / 2;
-            const rightTrackX = 200 + trackDistance / 2;
-
-            const workedWidthPx = workingWidth * scale;
-            const halfWorkedWidthPx = workedWidthPx / 2;
-
-            const leftFieldLeft = leftTrackX - halfWorkedWidthPx;
-            const leftFieldRight = leftTrackX + halfWorkedWidthPx;
-
-            const rightFieldLeft = rightTrackX - halfWorkedWidthPx;
-            const rightFieldRight = rightTrackX + halfWorkedWidthPx;
-
-            // Draw Background Field
-            // Left worked field rect
-            const leftField = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-            leftField.setAttribute('x', leftFieldLeft);
-            leftField.setAttribute('y', 45);
-            leftField.setAttribute('width', workedWidthPx);
-            leftField.setAttribute('height', 160);
-            leftField.setAttribute('fill', 'rgba(16, 185, 129, 0.12)');
-            leftField.setAttribute('stroke', 'rgba(16, 185, 129, 0.3)');
-            leftField.setAttribute('stroke-dasharray', '3,3');
-            leftField.setAttribute('rx', '2');
-            g.appendChild(leftField);
-
-            // Right worked field rect
-            const rightField = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-            rightField.setAttribute('x', rightFieldLeft);
-            rightField.setAttribute('y', 45);
-            rightField.setAttribute('width', workedWidthPx);
-            rightField.setAttribute('height', 160);
-            rightField.setAttribute('fill', 'rgba(16, 185, 129, 0.12)');
-            rightField.setAttribute('stroke', 'rgba(16, 185, 129, 0.3)');
-            rightField.setAttribute('stroke-dasharray', '3,3');
-            rightField.setAttribute('rx', '2');
-            g.appendChild(rightField);
-
-            // Draw Red Track Lines
-            const leftTrack = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            leftTrack.setAttribute('x1', leftTrackX);
-            leftTrack.setAttribute('y1', 45);
-            leftTrack.setAttribute('x2', leftTrackX);
-            leftTrack.setAttribute('y2', 205);
-            leftTrack.setAttribute('stroke', '#EF4444');
-            leftTrack.setAttribute('stroke-width', '1.5');
-            g.appendChild(leftTrack);
-
-            const rightTrack = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            rightTrack.setAttribute('x1', rightTrackX);
-            rightTrack.setAttribute('y1', 45);
-            rightTrack.setAttribute('x2', rightTrackX);
-            rightTrack.setAttribute('y2', 205);
-            rightTrack.setAttribute('stroke', '#EF4444');
-            rightTrack.setAttribute('stroke-width', '1.5');
-            g.appendChild(rightTrack);
-
-            // U-turn arc
-            const uturn = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            const radius = trackDistance / 2;
-            uturn.setAttribute('d', `M ${leftTrackX} 45 A ${radius} ${radius} 0 0 1 ${rightTrackX} 45`);
-            uturn.setAttribute('fill', 'none');
-            uturn.setAttribute('stroke', '#EF4444');
-            uturn.setAttribute('stroke-width', '1.5');
-            uturn.setAttribute('stroke-dasharray', '3,3');
-            g.appendChild(uturn);
-
-            // Draw Tractor on right track (driving downwards)
-            const tractorG = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-            // Scale the tractor size based on scale/60 so it matches field scale nicely
-            const tractorScale = scale / 60;
-            tractorG.setAttribute('transform', `translate(${rightTrackX}, 135) scale(${tractorScale})`);
-
-            // Left Tread
-            const leftTread = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-            leftTread.setAttribute('x', -14);
-            leftTread.setAttribute('y', -16);
-            leftTread.setAttribute('width', 5);
-            leftTread.setAttribute('height', 32);
-            leftTread.setAttribute('rx', '1.5');
-            leftTread.setAttribute('fill', '#334155');
-            tractorG.appendChild(leftTread);
-
-            // Right Tread
-            const rightTread = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-            rightTread.setAttribute('x', 9);
-            rightTread.setAttribute('y', -16);
-            rightTread.setAttribute('width', 5);
-            rightTread.setAttribute('height', 32);
-            rightTread.setAttribute('rx', '1.5');
-            rightTread.setAttribute('fill', '#334155');
-            tractorG.appendChild(rightTread);
-
-            // Chassis
-            const chassis = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-            chassis.setAttribute('x', -9);
-            chassis.setAttribute('y', -12);
-            chassis.setAttribute('width', 18);
-            chassis.setAttribute('height', 24);
-            chassis.setAttribute('rx', '2');
-            chassis.setAttribute('fill', '#EA580C');
-            chassis.setAttribute('stroke', '#C2410C');
-            chassis.setAttribute('stroke-width', '1');
-            tractorG.appendChild(chassis);
-
-            // Engine hood
-            const hood = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-            hood.setAttribute('x', -5);
-            hood.setAttribute('y', -12);
-            hood.setAttribute('width', 10);
-            hood.setAttribute('height', 12);
-            hood.setAttribute('rx', '1');
-            hood.setAttribute('fill', '#C2410C');
-            tractorG.appendChild(hood);
-
-            // Cabin Roof / Windshield
-            const cabin = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-            cabin.setAttribute('x', -6);
-            cabin.setAttribute('y', 0);
-            cabin.setAttribute('width', 12);
-            cabin.setAttribute('height', 8);
-            cabin.setAttribute('rx', '1.5');
-            cabin.setAttribute('fill', '#38BDF8');
-            cabin.setAttribute('opacity', '0.85');
-            tractorG.appendChild(cabin);
-
-            // Steering Wheel
-            const steer = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-            steer.setAttribute('cx', 0);
-            steer.setAttribute('cy', -2);
-            steer.setAttribute('r', 2);
-            steer.setAttribute('fill', 'none');
-            steer.setAttribute('stroke', '#0F172A');
-            steer.setAttribute('stroke-width', '0.8');
-            tractorG.appendChild(steer);
-
-            // Implement connector hitch
-            const hitch = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-            hitch.setAttribute('x', -2);
-            hitch.setAttribute('y', -17);
-            hitch.setAttribute('width', 4);
-            hitch.setAttribute('height', 5);
-            hitch.setAttribute('fill', '#475569');
-            tractorG.appendChild(hitch);
-
-            // Implement toolbar (represents the worked area of the implement)
-            const localImplementWidth = workingWidth * 60;
-            const localHalfImplementWidth = localImplementWidth / 2;
-            const implement = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-            implement.setAttribute('x', -localHalfImplementWidth);
-            implement.setAttribute('y', -21);
-            implement.setAttribute('width', localImplementWidth);
-            implement.setAttribute('height', 4);
-            implement.setAttribute('rx', '1');
-            implement.setAttribute('fill', '#10B981');
-            implement.setAttribute('stroke', '#047857');
-            implement.setAttribute('stroke-width', '0.5');
-            tractorG.appendChild(implement);
-
-            g.appendChild(tractorG);
-
-            // Draw dimension lines helper
-            function drawDimensionLine(x1, y1, x2, y2, color, labelText, markerName, textYOffset = -6, fontSize = 9) {
-                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                line.setAttribute('x1', x1);
-                line.setAttribute('y1', y1);
-                line.setAttribute('x2', x2);
-                line.setAttribute('y2', y2);
-                line.setAttribute('stroke', color);
-                line.setAttribute('stroke-width', '1.2');
-                line.setAttribute('marker-start', `url(#${markerName})`);
-                line.setAttribute('marker-end', `url(#${markerName})`);
-                g.appendChild(line);
-
-                const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                txt.setAttribute('x', (x1 + x2) / 2);
-                txt.setAttribute('y', ((y1 + y2) / 2) + textYOffset);
-                txt.setAttribute('text-anchor', 'middle');
-                txt.setAttribute('fill', color);
-                txt.setAttribute('font-size', fontSize);
-                txt.setAttribute('font-weight', 'bold');
-                txt.setAttribute('font-family', 'sans-serif');
-                txt.textContent = labelText;
-                g.appendChild(txt);
-            }
-
-            // 1. Swath Width (between red track lines)
-            drawDimensionLine(leftTrackX, 65, rightTrackX, 65, '#3B82F6', `Swath: ${swathVal.toFixed(2)}m`, 'arrow-blue');
-
-            // 2. Working Width
-            drawDimensionLine(leftFieldLeft, 220, leftFieldRight, 220, '#10B981', `Working Width: ${workingWidth.toFixed(1)}m`, 'arrow-green');
-
-            // 3. Overlap / Gap calculation
-            const diff = swathVal - workingWidth;
-            if (Math.abs(diff) < 0.01) {
-                const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                txt.setAttribute('x', 200);
-                txt.setAttribute('y', 105);
-                txt.setAttribute('text-anchor', 'middle');
-                txt.setAttribute('fill', '#10B981');
-                txt.setAttribute('font-size', '9');
-                txt.setAttribute('font-weight', 'bold');
-                txt.setAttribute('font-family', 'sans-serif');
-                txt.textContent = 'Perfect Fit (0.00m)';
-                g.appendChild(txt);
-            } else if (diff < 0) {
-                // Overlap
-                const overlapVal = -diff;
-                drawDimensionLine(rightFieldLeft, 105, leftFieldRight, 105, '#F59E0B', `Overlap: ${overlapVal.toFixed(2)}m`, 'arrow-orange');
-
-                // Helper reference lines
-                const lineL = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                lineL.setAttribute('x1', rightFieldLeft);
-                lineL.setAttribute('y1', 45);
-                lineL.setAttribute('x2', rightFieldLeft);
-                lineL.setAttribute('y2', 120);
-                lineL.setAttribute('stroke', '#F59E0B');
-                lineL.setAttribute('stroke-width', '0.8');
-                lineL.setAttribute('stroke-dasharray', '2,2');
-                g.appendChild(lineL);
-
-                const lineR = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                lineR.setAttribute('x1', leftFieldRight);
-                lineR.setAttribute('y1', 45);
-                lineR.setAttribute('x2', leftFieldRight);
-                lineR.setAttribute('y2', 120);
-                lineR.setAttribute('stroke', '#F59E0B');
-                lineR.setAttribute('stroke-width', '0.8');
-                lineR.setAttribute('stroke-dasharray', '2,2');
-                g.appendChild(lineR);
-            } else {
-                // Gap
-                const gapVal = diff;
-                drawDimensionLine(leftFieldRight, 105, rightFieldLeft, 105, '#EF4444', `Gap: ${gapVal.toFixed(2)}m`, 'arrow-red');
-
-                // Helper reference lines
-                const lineL = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                lineL.setAttribute('x1', leftFieldRight);
-                lineL.setAttribute('y1', 45);
-                lineL.setAttribute('x2', leftFieldRight);
-                lineL.setAttribute('y2', 120);
-                lineL.setAttribute('stroke', '#EF4444');
-                lineL.setAttribute('stroke-width', '0.8');
-                lineL.setAttribute('stroke-dasharray', '2,2');
-                g.appendChild(lineL);
-
-                const lineR = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                lineR.setAttribute('x1', rightFieldLeft);
-                lineR.setAttribute('y1', 45);
-                lineR.setAttribute('x2', rightFieldLeft);
-                lineR.setAttribute('y2', 120);
-                lineR.setAttribute('stroke', '#EF4444');
-                lineR.setAttribute('stroke-width', '0.8');
-                lineR.setAttribute('stroke-dasharray', '2,2');
-                g.appendChild(lineR);
-            }
-
-            svg.appendChild(g);
+        function selectDepthInPicker(value, markDirty = true) {
+            const container = document.getElementById('picker-depth');
+            if (!container) return;
+            const clamped = Math.max(DEPTH_PICKER_MIN, Math.min(DEPTH_PICKER_MAX,
+                Math.round(Number(value) / DEPTH_PICKER_STEP) * DEPTH_PICKER_STEP));
+            const index = (clamped - DEPTH_PICKER_MIN) / DEPTH_PICKER_STEP;
+            document.getElementById('user-depth-target').value = clamped;
+            container.setAttribute('aria-valuenow', clamped);
+            userDepthDraftDirty = markDirty;
+            container.scrollTo({top: index * PICKER_ITEM_HEIGHT, behavior: markDirty ? 'smooth' : 'auto'});
+            renderPickerItems(container, index);
         }
 
         // --- 4. Map & Markers ---
@@ -3181,7 +2794,7 @@
         // BỔ SUNG MỚI: Vệt tâm đậm để so sánh với Reference Line
         let centerTrailLayer = L.polyline([], {
             color: '#111827', // Xám đậm / Đen
-            weight: 3,        // Nét mỏng, sắc nét
+            weight: 1,        // Nét mỏng, sắc nét
             opacity: 1.0,
             lineJoin: 'round'
         }).addTo(map);
@@ -3219,7 +2832,7 @@
             const signed = offset * (Math.cos(vehicleYaw - pathYaw) >= 0 ? 1 : -1);
             if (Math.abs(signed) < 0.005) return '0.00 m';
             const magnitude = Math.abs(signed).toFixed(2);
-            return signed > 0 ? '← +' + magnitude + ' m' : '−' + magnitude + ' m →';
+            return signed > 0 ? '<<< +' + magnitude + ' m' : '−' + magnitude + ' m >>>';
         }
 
         function drawDeviation() {
@@ -4257,40 +3870,42 @@
             messageType: 'tractor_espnow_bridge/msg/DepthUiCommand'
         });
 
-        let depthCurrentMode = 0; // 0 = AUTO, 1 = MANUAL
-        let depthEnabled = false;
-        // The backend (/depth_link/status.streaming) is the truth for the ACTIVATE
-        // button: it drops when the controller at the depth system takes over. Right
-        // after a tap here the status still shows the old state, so it is ignored
-        // for this long.
-        const DEPTH_SYNC_GRACE_MS = 1000;
-        let depthUserActionAt = -DEPTH_SYNC_GRACE_MS;
-        let depthPublishThrottleTimer = null;
-        let depthHoldTimer = null;
-        let depthPressStartTime = 0;
-        let isDepthHolding = false;
+        let userDepthDraftDirty = false;
+        let userDepthPendingTarget = null;
+        let depthReportedMode = null;
 
-        function getDepthTarget() {
-            if (depthCurrentMode === 0) {
-                // AUTO: input in mm, controller operates directly in mm (50..150 mm)
-                const inputEl = document.getElementById('depth-target-mm');
-                let valMm = inputEl ? parseFloat(inputEl.value) : 120;
-                if (isNaN(valMm)) valMm = 120;
-                return Math.max(50.0, Math.min(150.0, valMm));
-            } else {
-                // MANUAL: lift arm angle in deg (0..35 deg)
-                const sliderEl = document.getElementById('depth-target-deg');
-                let valDeg = sliderEl ? parseFloat(sliderEl.value) : 20.0;
-                if (isNaN(valDeg)) valDeg = 20.0;
-                return Math.max(0.0, Math.min(35.0, valDeg));
+        function syncUserDepthSetting() {
+            const input = document.getElementById('user-depth-target');
+            const target = document.getElementById('depth-target-mm');
+            if (input && target && !userDepthDraftDirty) {
+                selectDepthInPicker(target.value, false);
             }
         }
 
+        function applyUserDepthSetting() {
+            const input = document.getElementById('user-depth-target');
+            const target = Math.max(DEPTH_PICKER_MIN, Math.min(DEPTH_PICKER_MAX, Number(input.value)));
+            document.getElementById('depth-target-mm').value = target;
+            try { localStorage.setItem('tractor-depth-target-mm', String(target)); } catch (_) {}
+            userDepthDraftDirty = false;
+            updateDepthGauge();
+            if (ros.isConnected && depthEnabled && depthPendingActive === null) {
+                userDepthPendingTarget = target;
+                setButtonPending('btn-set-user-depth', true, 3000, () => {
+                    userDepthPendingTarget = null;
+                });
+                depthCmdPub.publish(new ROSLIB.Message({mode: 0, target, enable: depthEnabled}));
+            } else {
+                showToast(t('set-depth-ready'), 'success');
+            }
+        }
+
+        let depthEnabled = false;
+        let depthPendingActive = null;
+        let depthHoldTimer = null;
+        let isDepthHolding = false;
+
         const DEPTH_MODE_HOME = 2;
-        // Set by the HOME button. While set, everything this panel publishes keeps
-        // the implement at HOME, so nudging a setpoint cannot lower it by accident.
-        // Choosing AUTO / MANUAL or tapping ACTIVATE clears it.
-        let depthHomeActive = false;
 
         function getDepthAutoTargetMm() {
             const inputEl = document.getElementById('depth-target-mm');
@@ -4299,98 +3914,22 @@
             return Math.max(50.0, Math.min(150.0, valMm));
         }
 
-        function publishDepthCommand() {
-            if (!ros.isConnected) return;
-            // HOME ignores the target, but the bridge files it under the AUTO setpoint
-            const targetVal = depthHomeActive ? getDepthAutoTargetMm() : getDepthTarget();
-            depthCmdPub.publish(new ROSLIB.Message({
-                mode: depthHomeActive ? DEPTH_MODE_HOME : depthCurrentMode,
-                target: targetVal,
-                enable: depthEnabled
-            }));
-        }
-
-        // Lit when this panel commanded HOME, or the depth system reports it is there
-        function updateDepthHomeUI(reportedHome) {
-            const btn = document.getElementById('depth-home-btn');
-            if (!btn) return;
-            const lit = reportedHome === true;
-            btn.classList.toggle('ring-2', lit);
-            btn.classList.toggle('ring-orange-300', lit);
-            const key = lit ? 'depth-home-active' : 'depth-home';
-            if (btn.getAttribute('data-i18n') !== key) {
-                btn.setAttribute('data-i18n', key);
-                btn.innerText = t(key);
-            }
-        }
-
-        // Command ≠ Status: sendDepthHome dispatches command and sets pending state; UI only changes when telemetry confirms
-        function sendDepthHome() {
+        function requestDepthActive(active) {
             if (!ros.isConnected) {
                 showToast(t('toast-no-ros'), 'error');
                 return;
             }
-            setButtonPending('depth-home-btn', true, 3000);
+            depthPendingActive = active;
+            setButtonPending('depth-active-btn', true, 3000, () => {
+                depthPendingActive = null;
+            });
+            // HOME must keep streaming: enable=false only stops sending commands
+            // and leaves the gateway executing its previous target.
             depthCmdPub.publish(new ROSLIB.Message({
-                mode: DEPTH_MODE_HOME,
+                mode: active ? 0 : DEPTH_MODE_HOME,
                 target: getDepthAutoTargetMm(),
                 enable: true
             }));
-            if (navigator.vibrate) navigator.vibrate(80);
-        }
-
-        function throttledPublishDepthCommand() {
-            if (depthPublishThrottleTimer) return;
-            depthPublishThrottleTimer = setTimeout(() => {
-                depthPublishThrottleTimer = null;
-                if (depthEnabled) publishDepthCommand();
-            }, 80);
-        }
-
-        // Command ≠ Status: setDepthMode dispatches requested mode; visual selection updates when backend confirms
-        function setDepthMode(mode) {
-            if (!ros.isConnected) {
-                showToast(t('toast-no-ros'), 'error');
-                return;
-            }
-            const btnId = mode === 0 ? 'depth-mode-auto' : 'depth-mode-manual';
-            setButtonPending(btnId, true, 3000);
-
-            // Gửi lệnh chuyển mode
-            depthCmdPub.publish(new ROSLIB.Message({
-                mode: mode,
-                target: mode === 0 ? getDepthAutoTargetMm() : getDepthTarget(),
-                enable: depthEnabled
-            }));
-        }
-
-        // Cập nhật giao diện lựa chọn mode từ dữ liệu xác nhận thực tế của backend
-        function renderDepthModeSelection(actualMode) {
-            depthCurrentMode = actualMode;
-            const btnAuto = document.getElementById('depth-mode-auto');
-            const btnManual = document.getElementById('depth-mode-manual');
-            const autoInput = document.getElementById('depth-auto-input');
-            const manualInput = document.getElementById('depth-manual-input');
-
-            if (btnAuto) btnAuto.setAttribute('aria-pressed', String(actualMode === 0));
-            if (btnManual) btnManual.setAttribute('aria-pressed', String(actualMode === 1));
-
-            setButtonPending('depth-mode-auto', false);
-            setButtonPending('depth-mode-manual', false);
-
-            if (actualMode === 0) {
-                if (autoInput) autoInput.classList.remove('hidden');
-                if (manualInput) {
-                    manualInput.classList.add('hidden');
-                    manualInput.classList.remove('flex');
-                }
-            } else if (actualMode === 1) {
-                if (manualInput) {
-                    manualInput.classList.remove('hidden');
-                    manualInput.classList.add('flex');
-                }
-                if (autoInput) autoInput.classList.add('hidden');
-            }
         }
 
         function updateDepthActiveUI(enabled) {
@@ -4400,8 +3939,9 @@
             if (!btn || !label) return;
 
             btn.dataset.uiState = enabled ? 'active' : 'idle';
+            btn.setAttribute('aria-pressed', String(enabled));
             // Live telemetry must not restart the user's hold animation.
-            if (isDepthHolding && enabled) return;
+            if (isDepthHolding) return;
 
             if (enabled) {
                 label.setAttribute('data-i18n', 'depth-deactivate');
@@ -4416,54 +3956,8 @@
             }
         }
 
-        // --- Depth UI Steppers & Presets ---
-        function adjustDepthTarget(deltaMm) {
-            const inputMm = document.getElementById('depth-target-mm');
-            if (!inputMm) return;
-            let cur = parseFloat(inputMm.value) || 120;
-            let next = Math.max(50, Math.min(150, cur + deltaMm));
-            inputMm.value = next;
-            updateDepthGauge();
-            if (depthEnabled) {
-                publishDepthCommand();
-            }
-        }
-
-        function setDepthTargetPreset(valMm) {
-            const inputMm = document.getElementById('depth-target-mm');
-            if (!inputMm) return;
-            inputMm.value = valMm;
-            updateDepthGauge();
-            if (depthEnabled) {
-                publishDepthCommand();
-            }
-        }
-
-        function adjustDepthAngle(deltaDeg) {
-            const slider = document.getElementById('depth-target-deg');
-            const valDisplay = document.getElementById('depth-angle-value');
-            if (!slider) return;
-            let cur = parseFloat(slider.value) || 20.0;
-            let next = Math.max(0.0, Math.min(35.0, +(cur + deltaDeg).toFixed(1)));
-            slider.value = next;
-            if (valDisplay) valDisplay.innerText = next.toFixed(1);
-            if (depthEnabled) {
-                publishDepthCommand();
-            }
-        }
-
-        function setDepthAnglePreset(valDeg) {
-            const slider = document.getElementById('depth-target-deg');
-            const valDisplay = document.getElementById('depth-angle-value');
-            if (!slider) return;
-            slider.value = valDeg;
-            if (valDisplay) valDisplay.innerText = valDeg.toFixed(1);
-            if (depthEnabled) {
-                publishDepthCommand();
-            }
-        }
-
         function updateDepthGauge(actualMm) {
+            syncUserDepthSetting();
             const gaugeActual = document.getElementById('depth-gauge-actual');
             const gaugeTarget = document.getElementById('depth-gauge-target');
             const inputMm = document.getElementById('depth-target-mm');
@@ -4477,24 +3971,6 @@
             if (gaugeActual && actualMm !== undefined) {
                 const pctActual = Math.max(0, Math.min(100, (actualMm / maxScaleMm) * 100));
                 gaugeActual.style.width = pctActual + '%';
-            }
-        }
-
-        let isDepthCollapsed = false;
-        function toggleDepthCollapse() {
-            isDepthCollapsed = !isDepthCollapsed;
-            const content = document.getElementById('depth-collapsible-content');
-            const icon = document.getElementById('depth-collapse-icon');
-            document.getElementById('depth-toggle-collapse').setAttribute('aria-expanded', String(!isDepthCollapsed));
-            if (content) {
-                if (isDepthCollapsed) {
-                    content.classList.add('hidden');
-                } else {
-                    content.classList.remove('hidden');
-                }
-            }
-            if (icon) {
-                icon.style.transform = isDepthCollapsed ? 'rotate(180deg)' : 'rotate(0deg)';
             }
         }
 
@@ -4582,7 +4058,7 @@
                     showToast(t('depth-err-no-gateway'), 'warn');
                 }
                 setButtonPending('depth-active-btn', false);
-                setButtonPending('depth-home-btn', false);
+                depthPendingActive = null;
             }
         }
         setInterval(checkDepthTelemetryTimeout, 1000);
@@ -4595,8 +4071,17 @@
 
             if (typeof m.streaming === 'boolean') {
                 const wasEnabled = depthEnabled;
-                depthEnabled = m.streaming;
-                setButtonPending('depth-active-btn', false);
+                depthEnabled = m.link_ok === true && m.mode === 0 && m.streaming && !m.preempted;
+                const confirmed = m.link_ok && m.streaming && !m.preempted &&
+                    m.mode === (depthPendingActive ? 0 : DEPTH_MODE_HOME);
+                if (depthPendingActive !== null && confirmed) {
+                    depthPendingActive = null;
+                    setButtonPending('depth-active-btn', false);
+                }
+                if (wasEnabled !== depthEnabled || m.preempted) {
+                    isDepthHolding = false;
+                    if (depthHoldTimer) { clearTimeout(depthHoldTimer); depthHoldTimer = null; }
+                }
                 updateDepthActiveUI(depthEnabled);
 
                 if (wasEnabled && !depthEnabled && m.preempted === true) {
@@ -4607,26 +4092,21 @@
 
             // Sync mode and HOME status from backend
             if (m.link_ok && typeof m.mode === 'number') {
-                if (m.mode === DEPTH_MODE_HOME) {
-                    updateDepthHomeUI(true);
-                    setButtonPending('depth-home-btn', false);
-                } else {
-                    updateDepthHomeUI(false);
-                    setButtonPending('depth-home-btn', false);
-                    renderDepthModeSelection(m.mode);
-                }
+                depthReportedMode = m.mode;
             }
-
-            isDepthHolding = false;
-            if (depthHoldTimer) { clearTimeout(depthHoldTimer); depthHoldTimer = null; }
         }
 
         function resetDepthControlUI() {
+            depthReportedMode = null;
+            userDepthPendingTarget = null;
+            setButtonPending('btn-set-user-depth', false);
             lastDepthStatusAt = 0;
             depthEnabled = false;
-            depthHomeActive = false;
+            depthPendingActive = null;
+            isDepthHolding = false;
+            if (depthHoldTimer) { clearTimeout(depthHoldTimer); depthHoldTimer = null; }
+            setButtonPending('depth-active-btn', false);
             updateDepthActiveUI(false);
-            updateDepthHomeUI();
             const depthPreemptNotice = document.getElementById('depth-preempt-notice');
             if (depthPreemptNotice) depthPreemptNotice.classList.add('hidden');
             const depthActual = document.getElementById('depth-actual');
@@ -4646,51 +4126,15 @@
         }
 
         function initDepthControl() {
-            const btnAuto = document.getElementById('depth-mode-auto');
-            const btnManual = document.getElementById('depth-mode-manual');
-            const sliderDeg = document.getElementById('depth-target-deg');
-            const inputMm = document.getElementById('depth-target-mm');
+            try {
+                const savedTarget = Number(localStorage.getItem('tractor-depth-target-mm'));
+                if (savedTarget >= 50 && savedTarget <= 150) {
+                    document.getElementById('depth-target-mm').value = savedTarget;
+                }
+            } catch (_) {}
             const activeBtn = document.getElementById('depth-active-btn');
             const activeFill = document.getElementById('depth-active-fill');
             const activeLabel = document.getElementById('depth-active-label');
-
-            if (btnAuto) btnAuto.addEventListener('click', () => setDepthMode(0));
-            if (btnManual) btnManual.addEventListener('click', () => setDepthMode(1));
-
-            if (sliderDeg) {
-                sliderDeg.addEventListener('input', (e) => {
-                    const val = parseFloat(e.target.value);
-                    const valDisplay = document.getElementById('depth-angle-value');
-                    if (valDisplay) valDisplay.innerText = val.toFixed(1);
-                    if (depthEnabled) {
-                        throttledPublishDepthCommand();
-                    }
-                });
-                sliderDeg.addEventListener('change', () => {
-                    if (depthEnabled) {
-                        publishDepthCommand();
-                    }
-                });
-            }
-
-            if (inputMm) {
-                inputMm.addEventListener('input', () => updateDepthGauge());
-                inputMm.addEventListener('change', () => {
-                    updateDepthGauge();
-                    if (depthEnabled) {
-                        publishDepthCommand();
-                    }
-                });
-                inputMm.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter') {
-                        inputMm.blur();
-                        updateDepthGauge();
-                        if (depthEnabled) {
-                            publishDepthCommand();
-                        }
-                    }
-                });
-            }
 
             if (activeBtn) {
                 let activePointerId = null;
@@ -4698,7 +4142,7 @@
                 const startActivePress = (e) => {
                     if (e.type === 'mousedown' && e.button !== 0) return;
                     if (e.pointerType === 'mouse' && e.button !== 0) return;
-                    if (isDepthHolding || activeBtn.disabled) return;
+                    if (isDepthHolding || depthPendingActive !== null || activeBtn.disabled) return;
                     if (!ros.isConnected) { showToast(t('toast-no-ros'), 'error'); return; }
                     e.preventDefault();
                     activePointerId = e.pointerId;
@@ -4709,15 +4153,14 @@
                     if (audioCtx.state === 'suspended') audioCtx.resume();
 
                     isDepthHolding = true;
-                    depthPressStartTime = performance.now();
 
                     if (depthHoldTimer) {
                         clearTimeout(depthHoldTimer);
                         depthHoldTimer = null;
                     }
 
-                    if (depthEnabled) {
-                        // Đang ACTIVE: Chuẩn bị giữ 1s để tắt (Disengage)
+                    // Both transitions require a full 1-second hold.
+                    {
                         if (activeFill) {
                             activeFill.style.transition = 'none';
                             activeFill.style.width = '0%';
@@ -4726,22 +4169,17 @@
                             activeFill.style.width = '100%';
                         }
                         if (activeLabel) {
-                            activeLabel.innerText = t('depth-releasing');
+                            activeLabel.innerText = t(pressWasEnabled ? 'depth-releasing' : 'depth-engaging');
                         }
 
                         depthHoldTimer = setTimeout(() => {
-                            if (isDepthHolding && depthEnabled) {
-                                // Gửi lệnh Disengage: enable = false
-                                setButtonPending('depth-active-btn', true, 3000);
-                                depthCmdPub.publish(new ROSLIB.Message({
-                                    mode: depthCurrentMode,
-                                    target: depthCurrentMode === 0 ? getDepthAutoTargetMm() : getDepthTarget(),
-                                    enable: false
-                                }));
+                            if (isDepthHolding && depthEnabled === pressWasEnabled) {
+                                requestDepthActive(!pressWasEnabled);
                                 if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
                                 playSuccessSound();
                                 isDepthHolding = false;
                                 depthHoldTimer = null;
+                                updateDepthActiveUI(depthEnabled);
                             }
                         }, 1000);
                     }
@@ -4749,7 +4187,6 @@
 
                 const endActivePress = (e) => {
                     if (!isDepthHolding || e.pointerId !== activePointerId) return;
-                    const elapsed = performance.now() - depthPressStartTime;
                     isDepthHolding = false;
 
                     if (depthHoldTimer) {
@@ -4757,34 +4194,8 @@
                         depthHoldTimer = null;
                     }
 
-                    if (!pressWasEnabled && !depthEnabled) {
-                        // Đang TẮT: Tap (<1000ms) để BẬT (Engage)
-                        if (elapsed < 1000) {
-                            if (!ros.isConnected) {
-                                showToast(t('toast-no-ros'), 'error');
-                                return;
-                            }
-                            setButtonPending('depth-active-btn', true, 3000);
-                            depthCmdPub.publish(new ROSLIB.Message({
-                                mode: depthCurrentMode,
-                                target: depthCurrentMode === 0 ? getDepthAutoTargetMm() : getDepthTarget(),
-                                enable: true
-                            }));
-                            if (navigator.vibrate) navigator.vibrate(80);
-                            playSuccessSound();
-                            activeBtn.classList.add('animate-pop-bounce');
-                            setTimeout(() => activeBtn.classList.remove('animate-pop-bounce'), 300);
-                        }
-                    } else {
-                        // Đang BẬT: Nhả trước 1s -> Hủy thao tác tắt
-                        if (activeFill) {
-                            activeFill.style.transition = 'width 0.2s ease-out';
-                            activeFill.style.width = '0%';
-                        }
-                        if (activeLabel) {
-                            activeLabel.innerText = t(depthEnabled ? 'depth-deactivate' : 'depth-activate');
-                        }
-                    }
+                    // Releasing before the timer completes cancels either action.
+                    updateDepthActiveUI(depthEnabled);
                 };
 
                 const cancelActivePress = (e) => {
@@ -4795,15 +4206,7 @@
                         clearTimeout(depthHoldTimer);
                         depthHoldTimer = null;
                     }
-                    if (depthEnabled) {
-                        if (activeFill) {
-                            activeFill.style.transition = 'width 0.2s ease-out';
-                            activeFill.style.width = '0%';
-                        }
-                        if (activeLabel) {
-                            activeLabel.innerText = t(depthEnabled ? 'depth-deactivate' : 'depth-activate');
-                        }
-                    }
+                    updateDepthActiveUI(depthEnabled);
                 };
 
                 activeBtn.addEventListener('pointerdown', startActivePress);
@@ -5270,7 +4673,6 @@
                 const inputMm = document.getElementById('depth-target-mm');
 
                 syncDepthActiveFromBackend(m);
-                updateDepthHomeUI(m.link_ok && m.mode === DEPTH_MODE_HOME);
 
                 if (m.link_ok) {
                     const actualMm = Math.round(m.estimate_depth_cm);
@@ -5285,7 +4687,7 @@
                     }
 
                     // Tính sai số độ sâu khi ở AUTO mode
-                    if (depthCurrentMode === 0 && inputMm) {
+                    if (depthReportedMode === 0 && inputMm) {
                         const targetMm = parseFloat(inputMm.value) || 120;
                         const err = actualMm - targetMm;
                         if (depthErrorVal) {
@@ -5330,17 +4732,14 @@
             subscribeToTopic('/ui/depth_command_ack', 'tractor_espnow_bridge/msg/DepthUiCommand', (m) => {
                 if (m.mode === 0) {
                     const inputMm = document.getElementById('depth-target-mm');
-                    if (inputMm && document.activeElement !== inputMm) {
+                    if (inputMm && userDepthPendingTarget !== null && Math.abs(m.target - userDepthPendingTarget) < 0.01) {
                         inputMm.value = Math.round(m.target);
+                        updateDepthGauge();
                     }
-                } else if (m.mode === 1) {
-                    const sliderDeg = document.getElementById('depth-target-deg');
-                    const valDisplay = document.getElementById('depth-angle-value');
-                    if (sliderDeg && document.activeElement !== sliderDeg) {
-                        sliderDeg.value = m.target;
-                    }
-                    if (valDisplay) {
-                        valDisplay.innerText = m.target.toFixed(1);
+                    if (userDepthPendingTarget !== null && Math.abs(m.target - userDepthPendingTarget) < 0.01) {
+                        userDepthPendingTarget = null;
+                        setButtonPending('btn-set-user-depth', false);
+                        showToast(t('set-depth-confirmed'), 'success');
                     }
                 }
             }, 100);

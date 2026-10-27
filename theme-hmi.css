@@ -324,9 +324,17 @@ input[type="range"]::-moz-range-thumb {
 
 /* iOS Style Wheel Picker - Mục G */
 .ios-picker-container {
+    --picker-spacer: 88px;
+    box-sizing: border-box;
     height: 220px !important;
-    padding-top: 88px !important;
-    padding-bottom: 88px !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+.ios-picker-spacer {
+    height: var(--picker-spacer);
+    min-height: var(--picker-spacer);
+    pointer-events: none;
 }
 
 .ios-picker-item {
@@ -651,8 +659,7 @@ button.glass-panel,
 #mobile-xte-container,
 #xte-header,
 .ab-dialog-panel input,
-.ab-dialog-panel select,
-#depth-target-mm {
+.ab-dialog-panel select {
     box-sizing: border-box;
     height: var(--hmi-control-height) !important;
     min-height: var(--hmi-control-height) !important;
@@ -899,12 +906,6 @@ button svg {
 .ab-load-picker,
 .sl-grid,
 .sl-btns,
-#depth-collapsible-content,
-#depth-auto-input,
-#depth-manual-input,
-#depth-collapsible-content > div,
-#depth-auto-input > div,
-#depth-manual-input > div,
 .hmi-readout-panel > .grid {
     gap: var(--hmi-control-gap) !important;
 }
@@ -1064,17 +1065,10 @@ button svg {
     display: none;
 }
 
-#depth-toggle-collapse {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-}
-
 #top-controls-panel button,
 .hmi-tool-actions button,
 #btn-recenter,
 #minimap-swap,
-#depth-toggle-collapse,
 .leaflet-bar a {
     width: var(--hmi-control-height) !important;
     padding: 6px !important;
@@ -1102,31 +1096,6 @@ button svg {
     align-items: center;
     justify-content: center;
     margin-top: var(--hmi-control-gap);
-}
-
-.depth-stepper-btn {
-    flex: 1 1 0;
-    width: 0;
-    min-width: 0 !important;
-    padding: 6px !important;
-}
-
-#depth-target-mm {
-    flex: 1.25 1 0;
-    min-width: 56px;
-    padding: 6px !important;
-    background: var(--hmi-bg-inset) !important;
-    color: var(--hmi-text-bright);
-}
-
-.depth-preset-chip {
-    flex: 1 1 0;
-    min-width: 0 !important;
-}
-
-#depth-mode-auto,
-#depth-mode-manual {
-    width: 100%;
 }
 
 #tab-user,
@@ -1158,9 +1127,6 @@ button svg {
         display: flex;
     }
 
-    #depth-toggle-collapse {
-        display: none;
-    }
 }
 
 @media (orientation: landscape) and (max-height: 500px) and (pointer: coarse) {
@@ -1265,9 +1231,10 @@ button svg {
     }
 
     #settings-content .ios-picker-container {
+        --picker-spacer: 44px;
         height: 132px !important;
-        padding-top: 44px !important;
-        padding-bottom: 44px !important;
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
     }
 
     #panel-user .w-36 {
@@ -1346,32 +1313,9 @@ button svg {
     margin: 0 !important;
 }
 
-#depth-modes-row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) var(--hmi-control-height);
-    gap: 6px !important;
-}
-
-#depth-collapsible-content,
-#depth-auto-input,
-#depth-manual-input {
-    gap: 6px !important;
-}
-
-#depth-auto-input > div,
-#depth-manual-input > div {
-    gap: 6px !important;
-    padding-top: 0 !important;
-}
-
-#depth-collapsible-content label {
-    font-size: 11px;
-    line-height: 14px;
-}
-
 #depth-actions {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
     gap: 6px;
 }
 
@@ -1410,8 +1354,7 @@ button svg {
         grid-template-columns: repeat(2, minmax(0, 1fr));
         grid-template-areas:
             "header header"
-            "summary settings"
-            "modes settings"
+            "summary summary"
             "alerts alerts"
             "actions actions"
             "hint hint";
@@ -1430,8 +1373,6 @@ button svg {
 
     #depth-header { grid-area: header; }
     #depth-summary { grid-area: summary; }
-    #depth-modes-row { grid-area: modes; }
-    #depth-collapsible-content { grid-area: settings; }
     #depth-alerts { grid-area: alerts; }
     #depth-actions { grid-area: actions; }
     #depth-hold-hint { grid-area: hint; }
