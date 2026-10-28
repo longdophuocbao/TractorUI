@@ -294,6 +294,11 @@
             border: 1px solid rgba(59, 130, 246, 0.4);
             color: #93c5fd;
         }
+        .ui-toast-success {
+            background: rgba(6, 78, 59, 0.95);
+            border: 1px solid rgba(16, 185, 129, 0.5);
+            color: #a7f3d0;
+        }
         .ui-toast-warn {
             background: rgba(69, 26, 3, 0.95);
             border: 1px solid rgba(245, 158, 11, 0.4);
@@ -1322,7 +1327,8 @@
                 "btn-lock": "Lock Engineer Mode",
                 "set-depth": "Depth Settings (mm)",
                 "set-depth-ready": "Depth target prepared for AUTO mode.",
-                "set-depth-confirmed": "Depth target confirmed.",
+                "set-depth-confirmed": "Depth command accepted by the bridge.",
+                "set-depth-timeout": "Depth command was not acknowledged by the bridge.",
                 "depth-title": "Depth Control",
                 "depth-set-mm": "Target depth (mm)",
                 "depth-set-angle": "Lift arm angle",
@@ -1435,7 +1441,8 @@
                 "btn-lock": "鎖定工程師模式",
                 "set-depth": "耕深設定 (mm)",
                 "set-depth-ready": "自動模式目標耕深已準備。",
-                "set-depth-confirmed": "目標耕深已確認。",
+                "set-depth-confirmed": "深度指令已由橋接節點接收。",
+                "set-depth-timeout": "橋接節點未確認深度指令。",
                 "depth-title": "耕深控制",
                 "depth-set-mm": "目標耕深 (mm)",
                 "depth-set-angle": "提升臂角度",
@@ -3622,6 +3629,7 @@
             toast.className = `ui-toast ui-toast-${type}`;
             const iconMap = {
                 info: 'ℹ️',
+                success: '✅',
                 warn: '⚠️',
                 error: '❌'
             };
@@ -3933,7 +3941,27 @@
 
         let userDepthDraftDirty = false;
         let userDepthPendingTarget = null;
+        let userDepthAckTimer = null;
+        let userDepthFeedbackTimer = null;
         let depthReportedMode = null;
+
+        function showUserDepthButtonResult(label) {
+            const button = document.getElementById('btn-set-user-depth');
+            if (!button) return;
+            clearTimeout(userDepthFeedbackTimer);
+            button.disabled = false;
+            button.classList.remove('btn-pending', 'btn-set-active', 'bg-red-600');
+            button.classList.add('bg-blue-600');
+            button.innerText = label;
+            if (label === 'OK' || label === 'READY') button.classList.add('btn-set-active');
+            if (label === 'ERR') button.classList.replace('bg-blue-600', 'bg-red-600');
+            userDepthFeedbackTimer = setTimeout(() => {
+                button.innerText = 'SET';
+                button.classList.remove('btn-set-active', 'bg-red-600');
+                button.classList.add('bg-blue-600');
+                userDepthFeedbackTimer = null;
+            }, 1800);
+        }
 
         function syncUserDepthSetting() {
             const input = document.getElementById('user-depth-target');
@@ -3951,12 +3979,24 @@
             userDepthDraftDirty = false;
             updateDepthGauge();
             if (ros.isConnected && depthEnabled && depthPendingActive === null) {
+                clearTimeout(userDepthAckTimer);
+                clearTimeout(userDepthFeedbackTimer);
                 userDepthPendingTarget = target;
-                setButtonPending('btn-set-user-depth', true, 3000, () => {
+                const button = document.getElementById('btn-set-user-depth');
+                button.innerText = '...';
+                button.disabled = true;
+                button.classList.remove('btn-set-active', 'bg-red-600');
+                button.classList.add('bg-blue-600');
+                button.classList.add('btn-pending');
+                userDepthAckTimer = setTimeout(() => {
+                    userDepthAckTimer = null;
                     userDepthPendingTarget = null;
-                });
+                    showUserDepthButtonResult('ERR');
+                    showToast(t('set-depth-timeout'), 'warn');
+                }, 3000);
                 depthCmdPub.publish(new ROSLIB.Message({mode: 0, target, enable: depthEnabled}));
             } else {
+                showUserDepthButtonResult('READY');
                 showToast(t('set-depth-ready'), 'success');
             }
         }
@@ -4160,7 +4200,15 @@
         function resetDepthControlUI() {
             depthReportedMode = null;
             userDepthPendingTarget = null;
-            setButtonPending('btn-set-user-depth', false);
+            clearTimeout(userDepthAckTimer);
+            clearTimeout(userDepthFeedbackTimer);
+            userDepthAckTimer = null;
+            userDepthFeedbackTimer = null;
+            const depthSetButton = document.getElementById('btn-set-user-depth');
+            depthSetButton.disabled = false;
+            depthSetButton.innerText = 'SET';
+            depthSetButton.classList.remove('btn-pending', 'btn-set-active', 'bg-red-600');
+            depthSetButton.classList.add('bg-blue-600');
             lastDepthStatusAt = 0;
             depthEnabled = false;
             depthPendingActive = null;
@@ -4799,7 +4847,9 @@
                     }
                     if (userDepthPendingTarget !== null && Math.abs(m.target - userDepthPendingTarget) < 0.01) {
                         userDepthPendingTarget = null;
-                        setButtonPending('btn-set-user-depth', false);
+                        clearTimeout(userDepthAckTimer);
+                        userDepthAckTimer = null;
+                        showUserDepthButtonResult('OK');
                         showToast(t('set-depth-confirmed'), 'success');
                     }
                 }
