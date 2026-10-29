@@ -5065,7 +5065,12 @@
 
         // Đăng ký sự kiện nhấn giữ cho 3 nút (Thời gian 800ms)
         setupHoldButton('btn-record-vertex', () => callService('/record_vertex', 'btn-record-vertex'), 500);
-        setupHoldButton('btn-generate-path', () => callService('/generate_path', 'btn-generate-path'), 500);
+        setupHoldButton('btn-generate-path', () => callService(
+            '/generate_path', 'btn-generate-path', 'std_srvs/Trigger', (ok, res) => {
+                if (!ok || !res?.success) return;
+                const coverage = Number(res.message?.match(/coverage\s+([\d.]+)%/)?.[1]);
+                showToast(res.message, Number.isFinite(coverage) && coverage < 95 ? 'warn' : 'success', 9000);
+            }), 500);
         setupHoldButton('btn-record-line', toggleRecordLine, 500);
 
         // BỔ SUNG: Nhấn giữ nút Thùng rác 1 giây để xóa toàn bộ
