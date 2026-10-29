@@ -148,3 +148,18 @@ TractorUI/
     ├── CURRENT_STATUS.md
     └── AGENT_ONBOARDING.md
 ```
+
+### Soil height (`heightsoil`)
+
+**Depth Settings** có thêm bánh xe **Soil height (mm)**: 0–50 mm, bước 1 mm,
+ban đầu 40 mm. Nhấn SET dưới bánh xe này để gửi riêng cấu hình; không thay đổi
+mode, độ sâu mục tiêu hoặc trạng thái ACTIVATE. Nút chỉ báo OK sau khi nhận lại
+đúng giá trị từ bộ điều khiển độ sâu; thiếu xác nhận sau 3,5 giây thì báo ERR.
+Giao diện giữ bản nháp khi đang chỉnh, và đồng bộ giá trị thực sau khi nhận lại
+telemetry. Local storage chỉ lưu bản hiển thị gần nhất, không tự gửi lại khi mở web.
+Giá trị thực được lưu bằng Preferences/NVS trên bo độ sâu, tồn tại sau mất điện.
+
+Phải cập nhật TractorUI + ROS bridge và nạp lại cả **master, gateway, DepthStableV4_2**
+để sử dụng. Firmware master/gateway nạp cho chức năng chẩn đoán reset trước đó
+chưa có tính năng soil height này. Firmware cũ bỏ qua gói mới, giao diện sẽ báo ERR
+thay vì báo OK giả.

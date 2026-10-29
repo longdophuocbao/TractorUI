@@ -53,6 +53,7 @@ class Simulation:
         self.mode = 1
         self.depth = {"mode": 0, "target": 120.0, "enable": False}
         self.actual_depth = 120.0
+        self.height_soil_mm = 40.0
         self.steer_command = None
         self.jog = 0.0
         self.calibration = [0.0, -30.0, 30.0, 0.0]
@@ -153,12 +154,17 @@ class Simulation:
                 "depth_target_cm": self.depth["target"], "link_ok": True,
                 "streaming": self.depth["enable"], "control_source": 1, "preempted": False}),
             "/espnow_link/stats": ("tractor_espnow_bridge/msg/EspNowLinkStats", stats),
+            "/depth_link/height_soil_actual_mm": ("std_msgs/Float32", {"data": self.height_soil_mm}),
             "/ui/depth_command_ack": ("tractor_espnow_bridge/msg/DepthUiCommand", dict(self.depth)),
         })
         return result
 
     def publish(self, topic, msg):
-        if topic == "/ui/depth_command":
+        if topic == "/depth_link/height_soil_mm":
+            height = float(msg["data"])
+            if math.isfinite(height) and 0 <= height <= 50:
+                self.height_soil_mm = height
+        elif topic == "/ui/depth_command":
             mode = int(msg["mode"])
             limits = {0: (5.0, 150.0), 1: (0.0, 35.0), 2: (5.0, 150.0), 3: (-150.0, 150.0)}
             low, high = limits[mode]

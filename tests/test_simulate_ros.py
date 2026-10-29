@@ -33,6 +33,16 @@ class SimulationTests(unittest.TestCase):
         self.assertEqual(status['mode'], 2)
         self.assertLess(status['estimate_depth_cm'], 120)
 
+    def test_soil_height_is_independent_of_depth_mode(self):
+        before = dict(self.sim.depth)
+        for height in (0.0, 50.0, 23.0):
+            self.sim.publish('/depth_link/height_soil_mm', {'data': height})
+            self.assertEqual(self.sim.messages()['/depth_link/height_soil_actual_mm'][1]['data'], height)
+            self.assertEqual(self.sim.depth, before)
+        for bad in (-1, 51, float('nan'), float('inf')):
+            self.sim.publish('/depth_link/height_soil_mm', {'data': bad})
+            self.assertEqual(self.sim.height_soil_mm, 23.0)
+
     def test_ab_record_save_load_and_shift(self):
         service = '/steer_planner_node/'
         for expected in (1, 2, 3):
@@ -73,7 +83,7 @@ class ProtocolTests(AsyncHTTPTestCase):
         self.assertIn(b'ROS SIMULATOR', self.fetch('/?sim=1').body)
         status = json.loads(self.fetch('/api/sim/status').body)
         self.assertEqual(status['mode'], 'simulation')
-        self.assertEqual(status['topics'], 25)
+        self.assertEqual(status['topics'], 26)
         self.assertEqual(self.fetch('/.git/config').code, 404)
 
     @gen_test

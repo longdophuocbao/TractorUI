@@ -884,20 +884,35 @@
                     <!-- Cấu hình độ sâu, cùng kiểu bánh xe với Swath Width -->
                     <div id="user-depth-settings" class="bg-gray-800/50 p-5 rounded-xl border border-gray-700/50 flex flex-col justify-between">
                         <h3 class="text-sm font-bold text-gray-300 mb-3 uppercase tracking-wider" data-i18n="set-depth">Depth Settings</h3>
-                        <form id="user-depth-form" class="flex flex-col justify-between flex-1" onsubmit="event.preventDefault(); applyUserDepthSetting()">
+                        <div class="grid grid-cols-2 gap-3 min-w-0">
+                        <form id="user-depth-form" class="flex flex-col justify-between min-w-0" onsubmit="event.preventDefault(); applyUserDepthSetting()">
+                            <label class="text-xs text-gray-400 mb-2 text-center" data-i18n="depth-set-mm">Target depth (mm)</label>
                             <input id="user-depth-target" type="hidden" value="120">
-                            <div class="flex items-center justify-center gap-3 w-full">
-                                <div class="flex items-center justify-center bg-gray-950 border border-gray-800 rounded-2xl p-4 w-36 relative overflow-hidden shadow-inner">
+                            <div class="flex items-center justify-center gap-1 w-full">
+                                <div class="flex items-center justify-center bg-gray-950 border border-gray-800 rounded-2xl p-2 w-full min-w-0 relative overflow-hidden shadow-inner">
                                     <div class="absolute left-0 right-0 h-[44px] top-[calc(50%-22px)] border-t border-b border-blue-500/30 bg-blue-500/5 pointer-events-none"></div>
                                     <div id="picker-depth" class="ios-picker-container w-full" onscroll="onDepthPickerScroll(event)"
                                         role="spinbutton" tabindex="0" aria-valuemin="50" aria-valuemax="150" aria-valuenow="120"
                                         aria-label="Target depth in millimeters" data-i18n-aria-label="depth-set-mm"></div>
                                 </div>
-                                <span class="text-[18px] font-bold text-blue-400 font-mono">mm</span>
+
                             </div>
                             <button id="btn-set-user-depth" type="submit" data-variant="primary"
                                 class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg text-sm font-semibold transition active:scale-95 shadow-md w-full mt-4">SET</button>
                         </form>
+                        <form id="user-soil-form" class="flex flex-col justify-between min-w-0" onsubmit="event.preventDefault(); applySoilHeightSetting()">
+                            <label class="text-xs text-gray-400 mb-2 text-center" data-i18n="soil-height-mm">Soil height (mm)</label>
+                            <input id="user-soil-height" type="hidden" value="40">
+                            <div class="flex items-center justify-center bg-gray-950 border border-gray-800 rounded-2xl p-2 w-full min-w-0 relative overflow-hidden shadow-inner">
+                                <div class="absolute left-0 right-0 h-[44px] top-[calc(50%-22px)] border-t border-b border-blue-500/30 bg-blue-500/5 pointer-events-none"></div>
+                                <div id="picker-soil" class="ios-picker-container w-full" onscroll="onSoilPickerScroll(event)"
+                                    role="spinbutton" tabindex="0" aria-valuemin="0" aria-valuemax="50" aria-valuenow="40"
+                                    aria-label="Soil height in millimeters" data-i18n-aria-label="soil-height-mm"></div>
+                            </div>
+                            <button id="btn-set-soil-height" type="submit" data-variant="primary"
+                                class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg text-sm font-semibold transition active:scale-95 shadow-md w-full mt-4">SET</button>
+                        </form>
+                        </div>
                     </div>
                 </div>
 
@@ -1326,6 +1341,9 @@
                 "btn-unlock": "Unlock",
                 "btn-lock": "Lock Engineer Mode",
                 "set-depth": "Depth Settings (mm)",
+                "soil-height-mm": "Soil height (mm)",
+                "soil-confirmed": "Soil height saved by the depth controller.",
+                "soil-timeout": "Soil height was not confirmed by the depth controller.",
                 "set-depth-ready": "Depth target prepared for AUTO mode.",
                 "set-depth-confirmed": "Depth command accepted by the bridge.",
                 "set-depth-timeout": "Depth command was not acknowledged by the bridge.",
@@ -1440,6 +1458,9 @@
                 "btn-unlock": "解鎖",
                 "btn-lock": "鎖定工程師模式",
                 "set-depth": "耕深設定 (mm)",
+                "soil-height-mm": "土壤高度 (mm)",
+                "soil-confirmed": "深度控制器已儲存土壤高度。",
+                "soil-timeout": "深度控制器未確認土壤高度。",
                 "set-depth-ready": "自動模式目標耕深已準備。",
                 "set-depth-confirmed": "深度指令已由橋接節點接收。",
                 "set-depth-timeout": "橋接節點未確認深度指令。",
@@ -2555,6 +2576,7 @@
             // Set initial state (default 2.0m if not already loaded)
             selectSwathInPickers(2.0);
             initDepthPicker();
+            initSoilPicker();
         }
 
         let pickerScrollTimeout = null;
@@ -2649,6 +2671,97 @@
             userDepthDraftDirty = markDirty;
             container.scrollTo({top: index * PICKER_ITEM_HEIGHT, behavior: markDirty ? 'smooth' : 'auto'});
             renderPickerItems(container, index);
+        }
+
+        let soilDraftDirty = false;
+        let soilPending = null;
+        let soilAckTimer = null;
+        let soilFeedbackTimer = null;
+        function selectSoilInPicker(value, dirty = false) {
+            const container = document.getElementById('picker-soil');
+            const number = Number(value);
+            if (!container || !Number.isFinite(number)) return;
+            const height = Math.max(0, Math.min(50, Math.round(number)));
+            document.getElementById('user-soil-height').value = height;
+            container.setAttribute('aria-valuenow', height);
+            soilDraftDirty = dirty;
+            container.scrollTo({top: height * PICKER_ITEM_HEIGHT, behavior: 'auto'});
+            renderPickerItems(container, height);
+        }
+        function initSoilPicker() {
+            const container = document.getElementById('picker-soil');
+            container.replaceChildren(createPickerSpacer());
+            for (let value = 0; value <= 50; ++value) {
+                const item = document.createElement('div');
+                item.className = 'ios-picker-item';
+                item.textContent = value;
+                item.dataset.value = value;
+                item.onclick = () => selectSoilInPicker(value, true);
+                container.appendChild(item);
+            }
+            container.appendChild(createPickerSpacer());
+            container.addEventListener('keydown', event => {
+                if (!['ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.key)) return;
+                event.preventDefault();
+                const current = Number(document.getElementById('user-soil-height').value);
+                selectSoilInPicker(event.key === 'Home' ? 0 : event.key === 'End' ? 50
+                    : current + (event.key === 'ArrowDown' ? 1 : -1), true);
+            });
+            let saved = 40;
+            try { saved = Number(localStorage.getItem('tractor-soil-height-mm') ?? 40); } catch (_) {}
+            selectSoilInPicker(saved);
+        }
+        function onSoilPickerScroll(event) {
+            const container = event.target;
+            const height = Math.max(0, Math.min(50, Math.round(container.scrollTop / PICKER_ITEM_HEIGHT)));
+            document.getElementById('user-soil-height').value = height;
+            container.setAttribute('aria-valuenow', height);
+            renderPickerItems(container, height);
+            // Programmatic telemetry sync must not lock the wheel as a draft.
+            if (document.activeElement === container || performance.now() < soilInteractingUntil) soilDraftDirty = true;
+        }
+        let soilInteractingUntil = 0;
+        document.addEventListener('pointerdown', event => {
+            if (event.target.closest('#picker-soil')) soilInteractingUntil = performance.now() + 3000;
+        });
+        document.addEventListener('wheel', event => {
+            if (event.target.closest('#picker-soil')) soilInteractingUntil = performance.now() + 3000;
+        }, {passive: true});
+        function showSoilResult(text) {
+            const button = document.getElementById('btn-set-soil-height');
+            button.disabled = false;
+            button.classList.remove('btn-pending', 'btn-set-active');
+            button.textContent = text;
+            if (text === 'OK') button.classList.add('btn-set-active');
+            clearTimeout(soilFeedbackTimer);
+            soilFeedbackTimer = setTimeout(() => {
+                button.textContent = 'SET'; button.classList.remove('btn-set-active');
+            }, 1800);
+        }
+        function applySoilHeightSetting() {
+            if (!ros.isConnected) { showToast(t('toast-no-ros'), 'error'); return; }
+            const height = Number(document.getElementById('user-soil-height').value);
+            if (!Number.isFinite(height) || height < 0 || height > 50) return;
+            soilPending = height;
+            clearTimeout(soilAckTimer); clearTimeout(soilFeedbackTimer);
+            const button = document.getElementById('btn-set-soil-height');
+            button.disabled = true; button.textContent = '...'; button.classList.add('btn-pending');
+            soilAckTimer = setTimeout(() => {
+                soilPending = null; soilAckTimer = null; showSoilResult('ERR');
+                showToast(t('soil-timeout'), 'warn');
+            }, 3500);
+            soilHeightPub.publish(new ROSLIB.Message({data: height}));
+        }
+        function onSoilHeightActual(message) {
+            const height = Number(message.data);
+            if (!Number.isFinite(height) || height < 0 || height > 50) return;
+            if (soilPending !== null && Math.abs(height - soilPending) < 0.01) {
+                clearTimeout(soilAckTimer); soilAckTimer = null; soilPending = null;
+                soilDraftDirty = false; showSoilResult('OK');
+                showToast(t('soil-confirmed'), 'success');
+            }
+            if (!soilDraftDirty && soilPending === null) selectSoilInPicker(height);
+            try { localStorage.setItem('tractor-soil-height-mm', String(height)); } catch (_) {}
         }
 
         // --- 4. Map & Markers ---
@@ -3941,6 +4054,10 @@
             messageType: 'tractor_espnow_bridge/msg/DepthUiCommand'
         });
 
+        const soilHeightPub = new ROSLIB.Topic({
+            ros, name: '/depth_link/height_soil_mm', messageType: 'std_msgs/Float32'
+        });
+
         let userDepthDraftDirty = false;
         let userDepthPendingTarget = null;
         let userDepthAckTimer = null;
@@ -4774,6 +4891,7 @@
             },100);
 
             // --- Depth Control Subscriptions ---
+            subscribeToTopic('/depth_link/height_soil_actual_mm', 'std_msgs/Float32', onSoilHeightActual, 100);
             subscribeToTopic('/depth_link/status', 'tractor_espnow_bridge/msg/DepthLinkStatus', (m) => {
                 const depthActual = document.getElementById('depth-actual');
                 const depthLinkDot = document.getElementById('depth-link-dot');
