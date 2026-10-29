@@ -68,6 +68,11 @@ class SimulationTests(unittest.TestCase):
     def test_clear_path_and_start_stop(self):
         self.sim.service('/path_follower_bridge/start_stop', {'data': True})
         self.assertEqual(self.sim.follower_state, 4)
+        self.sim.advance(2.0)
+        progress = self.sim.messages()
+        self.assertIn('/planned_path/remaining_length', progress)
+        self.assertLess(progress['/planned_path/remaining_length'][1]['data'], self.sim.path_total_length_m)
+        self.assertGreater(progress['/planned_path/estimated_total_time_s'][1]['data'], 0.0)
         self.sim.service('/path_follower_bridge/start_stop', {'data': False})
         self.assertEqual(self.sim.follower_state, 0)
         self.sim.service('/clear_all', {})
@@ -83,7 +88,7 @@ class ProtocolTests(AsyncHTTPTestCase):
         self.assertIn(b'ROS SIMULATOR', self.fetch('/?sim=1').body)
         status = json.loads(self.fetch('/api/sim/status').body)
         self.assertEqual(status['mode'], 'simulation')
-        self.assertEqual(status['topics'], 26)
+        self.assertEqual(status['topics'], 30)
         self.assertEqual(self.fetch('/.git/config').code, 404)
 
     @gen_test

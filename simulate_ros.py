@@ -61,6 +61,9 @@ class Simulation:
         self.boundary = [(float(x), float(y)) for x, y in
                          [(-18, -50), (18, -50), (18, 50), (-18, 50)]]
         self.planned = self.make_plan()
+        self.path_total_length_m = self.path_length(self.planned)
+        self.path_progress_m = 0.0
+        self.path_elapsed_time_s = 0.0
         self.saved = {"Demo AB": copy.deepcopy(self.reference)}
         self.params = {
             "/steer_planner_node": {"swath_width_m": 2.0, "reference_line_name": "Demo AB"},
@@ -74,8 +77,26 @@ class Simulation:
         return path([(float(x), float(y)) for i, x in enumerate(range(-16, 17, 4))
                      for y in ((-45, 45) if i % 2 == 0 else (45, -45))])
 
+    @staticmethod
+    def path_length(path_message):
+        poses = path_message.get("poses", [])
+        points = [pose["pose"]["position"] for pose in poses]
+        return sum(math.hypot(b["x"] - a["x"], b["y"] - a["y"])
+                   for a, b in zip(points, points[1:]))
+
+    def reset_path_progress(self):
+        self.path_total_length_m = self.path_length(self.planned)
+        self.path_progress_m = 0.0
+        self.path_elapsed_time_s = 0.0
+
     def advance(self, dt):
         self.elapsed += dt
+        if self.follower_state == 4:
+            self.path_elapsed_time_s += dt
+            self.path_progress_m = min(
+                self.path_total_length_m,
+                self.path_progress_m + max(0.0, self.speed) * dt,
+            )
         # Smooth movement within the demo field; ROS yaw is measured from east.
         phase = self.elapsed * self.speed / 40.0
         self.x = 1.2 * math.sin(phase)
@@ -118,6 +139,10 @@ class Simulation:
                                   "orientation": q}, "covariance": [0.0] * 36},
                 "twist": {"twist": {"linear": {"x": self.speed, "y": 0.0, "z": 0.0},
                                     "angular": {"x": 0.0, "y": 0.0, "z": 0.0}}, "covariance": [0.0] * 36}}
+        remaining_length = max(0.0, self.path_total_length_m - self.path_progress_m)
+        progress_speed = self.speed if self.follower_state == 4 and self.speed >= 0.05 else 0.2
+        estimated_remaining_time = remaining_length / progress_speed
+        estimated_total_time = self.path_elapsed_time_s + estimated_remaining_time
         simple = {
             "/f9r/num_sv": ("std_msgs/msg/Int32", 28 + int(2 * math.sin(t / 20))),
             "/f9r/rtk_status": ("std_msgs/msg/String", self.rtk),
@@ -131,6 +156,10 @@ class Simulation:
             "/steer_planner_node/state_machine": ("std_msgs/msg/Int32", self.planner_state),
             "/path_follower_bridge/state": ("std_msgs/msg/Int32", self.follower_state),
             "/field_planner/state": ("std_msgs/msg/Int32", self.field_state),
+            "/planned_path/remaining_length": ("std_msgs/msg/Float64", remaining_length),
+            "/planned_path/elapsed_time_s": ("std_msgs/msg/Float64", self.path_elapsed_time_s),
+            "/planned_path/estimated_remaining_time_s": ("std_msgs/msg/Float64", estimated_remaining_time),
+            "/planned_path/estimated_total_time_s": ("std_msgs/msg/Float64", estimated_total_time),
         }
         result = {topic: (kind, {"data": value}) for topic, (kind, value) in simple.items()}
         result.update({
@@ -248,11 +277,17 @@ class Simulation:
                 success, message = False, "Record at least three boundary points"
             else:
                 self.planned, self.field_state = self.make_plan(), 3
+                self.reset_path_progress()
         elif name == "/clear_all":
             self.boundary, self.planned = [], path([])
+            self.reset_path_progress()
             self.field_state, self.follower_state = 1, 0
         elif name == "/path_follower_bridge/start_stop":
-            self.follower_state = 4 if args.get("data") else 0
+            if args.get("data"):
+                self.reset_path_progress()
+                self.follower_state = 4
+            else:
+                self.follower_state = 0
         elif name == "/path_follower_bridge/resume":
             self.follower_state = 4
         elif name.startswith("/steer_motor_node/") and action in (
