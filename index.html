@@ -3755,6 +3755,7 @@
         }
 
         function setJogEnabled(enabled) {
+            const wasStreaming = jogTimer !== null;
             const checkbox = document.getElementById('jog-enable');
             const slider = document.getElementById('jog-slider');
             if (enabled && (!ros.isConnected || slBusy)) {
@@ -3776,8 +3777,9 @@
                     }
                     jogPub.publish(new ROSLIB.Message({ data: jogRate() }));
                 }, JOG_PUBLISH_MS);
-            } else if (ros.isConnected) {
-                // One explicit stop; the node then times the stream out and releases
+            } else if (wasStreaming && ros.isConnected) {
+                // Stop only a session this UI actually streamed. Idle page resets
+                // must not send JOG commands while automatic steering is active.
                 jogPub.publish(new ROSLIB.Message({ data: 0.0 }));
             }
         }
