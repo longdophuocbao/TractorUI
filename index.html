@@ -571,7 +571,7 @@
             </button>
         </div>
 
-        <div id="path-progress-panel" class="path-progress-panel" aria-live="polite" aria-label="Path progress" aria-hidden="true">
+        <div id="path-progress-panel" class="path-progress-panel" aria-live="polite" aria-label="Path progress" aria-hidden="true" hidden>
             <div class="path-progress-item">
                 <span class="path-progress-label">Remaining</span>
                 <span id="path-remaining-distance" class="path-progress-value">-- m</span>
@@ -2079,6 +2079,7 @@
             if (!panel || !distance || !totalTime) return;
 
             const visible = currentControlMode === 'path' && pathFollowerState === 4;
+            panel.hidden = !visible;
             panel.classList.toggle('is-visible', visible);
             panel.setAttribute('aria-hidden', String(!visible));
             distance.innerText = Number.isFinite(pathRemainingDistanceM)

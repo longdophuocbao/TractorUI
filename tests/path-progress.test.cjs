@@ -12,6 +12,7 @@ assert.ok(start >= 0 && end > start, 'path progress helpers missing');
 const classes = new Set();
 const values = { distance: '', time: '' };
 const panel = {
+    hidden: true,
     classList: { toggle(name, enabled) { enabled ? classes.add(name) : classes.delete(name); } },
     setAttribute() {},
 };
@@ -34,11 +35,13 @@ assert.equal(context.formatPathDuration(125), '02:05');
 assert.equal(context.formatPathDuration(3661), '1:01:01');
 context.updatePathProgressUI();
 assert.ok(classes.has('is-visible'));
+assert.equal(panel.hidden, false, 'progress must unhide while Path is running');
 assert.equal(values.distance, '12.3 m');
 assert.equal(values.time, '1:01:01');
 
 context.pathFollowerState = 3;
 context.updatePathProgressUI();
 assert.ok(!classes.has('is-visible'), 'progress must hide when Path is not running');
+assert.equal(panel.hidden, true, 'hidden attribute must be restored when Path stops');
 
 console.log('PASS: Path distance and total-time display follows the active follower state');

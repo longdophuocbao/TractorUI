@@ -1018,6 +1018,10 @@ button svg {
     pointer-events: none;
 }
 
+.path-progress-panel[hidden] {
+    display: none !important;
+}
+
 .path-progress-panel.is-visible {
     display: flex !important;
 }
