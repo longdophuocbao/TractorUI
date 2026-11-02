@@ -4415,6 +4415,10 @@
             const view = TractorStartupStatus.viewModel(localizationStartupPayload,
                 performance.now() - localizationStartupReceivedAt, ros.isConnected, currentLang);
             const banner = document.getElementById('localization-startup-banner');
+            // Startup guidance is transient. Once ESKF confirms initialization,
+            // remove it from the map so it cannot obscure the operator view.
+            // It becomes visible again if the status later turns stale or fails.
+            banner.style.display = view.phase === 'ready' ? 'none' : '';
             const colors = {ready: ['#22c55e', '#dcfce7'], waiting: ['#f59e0b', '#fef3c7'], lost: ['#ef4444', '#fee2e2']};
             banner.style.borderColor = colors[view.level][0];
             banner.style.color = colors[view.level][1];
