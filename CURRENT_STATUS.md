@@ -61,3 +61,22 @@ Dựa trên yêu cầu mở rộng dự án máy cày thông minh, các chức n
 1. **Module hóa mã nguồn (Code Modularization)**: Tách file `index.html` thành cấu trúc component chuẩn (ES Modules / Web Components).
 2. **Quản lý Bản đồ Ngoại tuyến (Offline Field Map Caching)**: Lưu trữ bản đồ vệ tinh dạng Tile Cache (IndexedDB) để hoạt động ở những cánh đồng xa không có sóng di động 4G.
 3. **Quản lý Lịch sử Công việc (Task & Job Logging)**: Lưu trữ diện tích đất đã cày xong, thời gian hoàn thành, và lượng tiêu hao nhiên liệu/pin.
+
+## 2026-11-02 — Hướng dẫn khởi tạo định vị trên HUD
+
+Thêm banner trạng thái từ `/tractor_eskf/initialization_status`, có các bước:
+chờ GNSS/chốt gốc, giữ xe yên để lấy mẫu (số mẫu và thời gian thực), yêu cầu
+lái tay tiến thẳng >= tốc độ khởi tạo để lấy hướng, chờ ESKF xác nhận và đã
+khởi tạo xong. Tiếng Anh/Trung theo `currentLang`; model cũng có chuỗi tiếng
+Việt. Không tự bật điều khiển hoặc suy ra sẵn sàng từ nút bấm/GPS.
+
+`localization-status.js` chứa view-model độc lập. Banner hủy hướng dẫn cũ
+khi mất WebSocket hoặc dữ liệu quá 5 s. Subscribe một lần và để ROSLIB
+resubscribe, không tạo thêm subscriber cho banner sau mỗi reconnect.
+Backend heartbeat 1 Hz và giới hạn log nhắc chờ 30 s; nguồn GNSS/ESKF mất
+freshness không được tiếp tục báo yêu cầu di chuyển/sẵn sàng.
+
+Kiểm chứng: test logic view-model và mô phỏng event/DOM trong V8 (runtime
+Node không có trên máy này), gồm EN/ZH/VI, chuyển trạng thái, chống ready
+lạc quan, timeout, disconnect/reconnect không trùng subscribe. Chưa kiểm tra
+ảnh chụp giao diện trong trình duyệt thực. Reload trang sau khi triển khai.

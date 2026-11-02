@@ -408,6 +408,14 @@
 
     <!-- LỚP 1: GIAO DIỆN ĐIỀU KHIỂN (HUD Overlay) -->
 
+    <div id="localization-startup-banner" role="status" aria-live="polite"
+        class="absolute top-24 left-1/2 -translate-x-1/2 z-20 pointer-events-none rounded-xl px-4 py-3 shadow-lg"
+        style="width:min(90vw,680px);background:rgba(15,23,42,.96);border:1px solid #f59e0b;color:#fef3c7">
+        <div id="localization-startup-title" class="font-bold text-sm">Chờ trạng thái định vị</div>
+        <div id="localization-startup-message" class="text-sm mt-1">Giữ tự động lái TẮT. Chờ thông báo từ hệ thống.</div>
+        <div id="localization-startup-progress" class="text-xs mt-1 font-mono"></div>
+    </div>
+
     <!-- TOP BAR: Trạng thái & Telemetry -->
     <div class="hmi-top-bar absolute top-4 left-4 right-4 z-10 flex justify-between items-start pointer-events-none">
 
@@ -1131,6 +1139,7 @@
         </div>
     </div>
 
+    <script src="localization-status.js"></script>
     <script>
         // --- 1. Global Variables & DOM Elements ---
         const uiQuery = new URLSearchParams(window.location.search);
@@ -4397,6 +4406,43 @@
         function subscribeToTopic(name, type, callback, throttleRate=0) {
             new ROSLIB.Topic({ ros: ros, name: name, messageType: type, throttle_rate: throttleRate }).subscribe(callback);
         }
+
+        // Startup guidance: never infer readiness from GPS reception or a button click.
+        let localizationStartupPayload = null;
+        let localizationStartupReceivedAt = 0;
+        let localizationStartupSubscription = null;
+        function renderLocalizationStartup() {
+            const view = TractorStartupStatus.viewModel(localizationStartupPayload,
+                performance.now() - localizationStartupReceivedAt, ros.isConnected, currentLang);
+            const banner = document.getElementById('localization-startup-banner');
+            const colors = {ready: ['#22c55e', '#dcfce7'], waiting: ['#f59e0b', '#fef3c7'], lost: ['#ef4444', '#fee2e2']};
+            banner.style.borderColor = colors[view.level][0];
+            banner.style.color = colors[view.level][1];
+            for (const [id, value] of [['title', view.title], ['message', view.message], ['progress', view.progress]]) {
+                const element = document.getElementById('localization-startup-' + id);
+                if (element.textContent !== value) element.textContent = value;
+            }
+        }
+        ros.on('close', () => { localizationStartupPayload = null; renderLocalizationStartup(); });
+        ros.on('connection', () => {
+            localizationStartupPayload = null;
+            renderLocalizationStartup();
+            if (!localizationStartupSubscription) {
+                localizationStartupSubscription = new ROSLIB.Topic({ros, name: '/tractor_eskf/initialization_status',
+                    messageType: 'std_msgs/String', throttle_rate: 500, queue_length: 1});
+                localizationStartupSubscription.subscribe(message => {
+                    if (!ros.isConnected) return;
+                    try {
+                        const payload = JSON.parse(message.data);
+                        if (!payload || typeof payload.operator_phase !== 'string') return;
+                        localizationStartupPayload = payload;
+                        localizationStartupReceivedAt = performance.now();
+                        renderLocalizationStartup();
+                    } catch (_) { /* Keep the age watchdog active on malformed input. */ }
+                });
+            }
+        });
+        setInterval(renderLocalizationStartup, 1000);
 
         // --- 9. Subscribe to specific topics ---
         ros.on('connection', () => {
