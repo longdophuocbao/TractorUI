@@ -57,10 +57,21 @@
         }
         const speed = payload && Number.isFinite(payload.minimum_heading_speed_mps) && payload.minimum_heading_speed_mps > 0
             ? String(payload.minimum_heading_speed_mps) : '0.4';
+        let message = text[phase][1].replace('{speed}', speed);
+        if (phase === 'waiting_heading' && Number.isFinite(payload.heading_confirmation_duration_sec)
+                && payload.heading_confirmation_duration_sec > 0) {
+            const duration = payload.heading_confirmation_duration_sec;
+            message += language === 'en' ? ` Maintain stable heading continuously for ${duration} s.`
+                : language === 'zh' ? ` 請連續保持穩定航向 ${duration} 秒。`
+                : ` Duy trì hướng ổn định liên tục ${duration} giây.`;
+            if (Number.isFinite(payload.heading_confirmation_elapsed_sec)) {
+                progress = `${text.time}: ${Math.min(duration, payload.heading_confirmation_elapsed_sec).toFixed(1)}/${duration} s`;
+            }
+        }
         return {
             phase, progress,
             level: phase === 'ready' ? 'ready' : ['offline', 'stale'].includes(phase) ? 'lost' : 'waiting',
-            title: text[phase][0], message: text[phase][1].replace('{speed}', speed)
+            title: text[phase][0], message
         };
     }
     return {viewModel};

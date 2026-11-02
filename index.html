@@ -2870,6 +2870,9 @@
             }
         }
 
+        let recenterButtonVisible = false;
+        const recenterShowDistancePx = 120;
+        const recenterHideDistancePx = 60;
         function checkRecenterVisibility() {
             if (!firstGpsFix) return;
             const centerPoint = map.latLngToContainerPoint(map.getCenter());
@@ -2877,8 +2880,14 @@
             const distance = centerPoint.distanceTo(tractorPoint);
             const btn = document.getElementById('btn-recenter');
 
-            // Hiển thị Recenter nếu khoảng cách lệch lớn hơn 30px
-            if (distance > 30) {
+            if (!Number.isFinite(distance)) return;
+            // Separate thresholds prevent jitter at the edge from toggling the button.
+            const shouldShow = recenterButtonVisible
+                ? distance > recenterHideDistancePx
+                : distance > recenterShowDistancePx;
+            if (shouldShow === recenterButtonVisible) return;
+            recenterButtonVisible = shouldShow;
+            if (shouldShow) {
                 btn.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-4');
                 btn.classList.add('pointer-events-auto');
             } else {
