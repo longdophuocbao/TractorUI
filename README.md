@@ -163,3 +163,28 @@ Phải cập nhật TractorUI + ROS bridge và nạp lại cả **master, gatewa
 để sử dụng. Firmware master/gateway nạp cho chức năng chẩn đoán reset trước đó
 chưa có tính năng soil height này. Firmware cũ bỏ qua gói mới, giao diện sẽ báo ERR
 thay vì báo OK giả.
+
+### Web subscription lifecycle and load
+
+`subscriptions.js` manages UI subscriptions. Each ROS topic has one transport
+shared by its active consumers; reconnect replaces the socket subscription
+without retaining old handlers. The topic inspector shares an existing transport
+when possible and renders at most 2 Hz. Telemetry uses `queue_length: 1`;
+faults, calibration, planner state and command acknowledgements are unthrottled
+event consumers and remain active when settings are closed.
+
+IMU charts, motor angle and motor current subscribe only while the unlocked
+Engineer panel is visible. Closing it or switching to User settings unsubscribes
+those diagnostics and the topic inspector. Topic/node discovery for diagnostics
+also waits until Engineer settings are opened. Chart histories stop updating
+while hidden.
+
+Raw `/gps/fix` positions display the tractor during startup, without needing an
+ENU origin. After valid ESKF map odometry takes over, that startup subscription
+is disabled; a localization reset or ROS disconnect re-enables it. ESKF/MPC
+frequencies and command publishers are unchanged. Reload the browser after
+updating both `index.html` and `subscriptions.js`; no ROS restart is needed.
+
+Test with `node tests/subscriptions.test.cjs`. It also exercises the bundled
+ROSLIB's real subscribe IDs/listeners through 20 reconnects. Run all UI regression
+tests with `for f in tests/*.test.cjs; do node "$f" || exit 1; done`.

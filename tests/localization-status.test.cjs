@@ -26,6 +26,6 @@ for (const lang of ['vi', 'en', 'zh']) {
 }
 const html = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
 assert.ok(html.includes('role="status" aria-live="polite"'));
-assert.ok(html.includes("name: '/tractor_eskf/initialization_status'"));
+assert.ok(html.includes("subscribeToTopic('/tractor_eskf/initialization_status'"));
 assert.ok(html.indexOf('src="localization-status.js"') < html.indexOf('TractorStartupStatus.viewModel'));
 console.log('PASS operator guidance, localization truth, stale/disconnect and three languages');

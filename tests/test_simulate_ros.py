@@ -86,6 +86,9 @@ class ProtocolTests(AsyncHTTPTestCase):
 
     def test_http_and_hidden_files(self):
         self.assertIn(b'ROS SIMULATOR', self.fetch('/?sim=1').body)
+        subscriptions = self.fetch('/subscriptions.js')
+        self.assertEqual(subscriptions.code, 200)
+        self.assertIn(b'TractorSubscriptions', subscriptions.body)
         status = json.loads(self.fetch('/api/sim/status').body)
         self.assertEqual(status['mode'], 'simulation')
         self.assertEqual(status['topics'], 30)
