@@ -165,7 +165,7 @@ class Simulation:
         result.update({
             "/map_origin": ("sensor_msgs/msg/NavSatFix", dict(gps, latitude=self.latitude, longitude=self.longitude)),
             "/gps/fix": ("sensor_msgs/msg/NavSatFix", gps),
-            "/odom/absolute": ("nav_msgs/msg/Odometry", odom),
+            "/odometry/filtered": ("nav_msgs/msg/Odometry", odom),
             "/odometry/global": ("nav_msgs/msg/Odometry", odom),
             "/imu": ("sensor_msgs/msg/Imu", {"header": header, "orientation": q,
                 "angular_velocity": {"x": 0.0, "y": 0.0, "z": 0.0},

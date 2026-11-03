@@ -17,7 +17,7 @@ class SimulationTests(unittest.TestCase):
     def test_motion_matches_gps_and_orientation(self):
         self.sim.advance(1.0)
         messages = self.sim.messages()
-        pose = messages['/odom/absolute'][1]['pose']['pose']
+        pose = messages['/odometry/filtered'][1]['pose']['pose']
         gps = messages['/gps/fix'][1]
         self.assertGreater(pose['position']['y'], 0)
         self.assertAlmostEqual(gps['latitude'], self.sim.latitude + math.degrees(self.sim.y / 6378137))

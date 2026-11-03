@@ -4593,7 +4593,7 @@
                 }
             },100, {group: 'engineer'});
 
-            subscribeToTopic('/odom/absolute', 'nav_msgs/Odometry', (m) => {
+            subscribeToTopic('/odometry/filtered', 'nav_msgs/Odometry', (m) => {
                 // ESKF longitudinal velocity in the vehicle frame (m/s).
                 const speed = m.twist?.twist?.linear?.x;
                 const markerSpeedDisplay = document.getElementById('marker-speed');

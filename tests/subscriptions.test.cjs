@@ -20,7 +20,7 @@ class Topic {
 let now = 0;
 const ros = new Ros(), manager = new Manager(ros, Topic, () => now);
 let oldCalls = 0, calls = 0, inspected = 0;
-const odom = {name: '/odom/absolute', messageType: 'nav_msgs/Odometry', throttleRate: 100};
+const odom = {name: '/odometry/filtered', messageType: 'nav_msgs/Odometry', throttleRate: 100};
 manager.set('map', odom, () => { oldCalls++; });
 assert.equal(Topic.active.size, 0);
 ros.connect();
@@ -69,7 +69,7 @@ for (let reconnect = 0; reconnect < 20; reconnect++) {
 const before = calls;
 first.callback({});
 assert.equal(calls, before, 'a queued callback from the old socket was delivered');
-const current = [...Topic.active].find(t => t.options.name === '/odom/absolute');
+const current = [...Topic.active].find(t => t.options.name === '/odometry/filtered');
 current.callback({});
 assert.equal(calls, before + 1);
 assert.equal(ros.listenerCount('connection'), 1);
@@ -123,13 +123,13 @@ for (let i = 0; i < 20; i++) {
     actualRos.emit('connection');
     actualManager.set('map', odom, () => { delivered++; });
     assert.equal(wireSubscriptions.size, 1);
-    assert.equal(actualRos.listeners('/odom/absolute').length, 1);
+    assert.equal(actualRos.listeners('/odometry/filtered').length, 1);
     assert.equal(actualRos.listeners('close').length, 1);
-    actualRos.emit('/odom/absolute', {sample: i});
+    actualRos.emit('/odometry/filtered', {sample: i});
     actualRos.isConnected = false;
     wireSubscriptions.clear(); // The server discards subscriptions with the socket.
     actualRos.emit('close');
-    assert.equal(actualRos.listeners('/odom/absolute').length, 0);
+    assert.equal(actualRos.listeners('/odometry/filtered').length, 0);
 }
 assert.equal(delivered, 20);
 console.log('PASS bundled ROSLIB: 20 real subscribe/unsubscribe/reconnect cycles without duplicate listeners');
