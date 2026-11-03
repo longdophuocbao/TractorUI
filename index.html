@@ -4569,11 +4569,6 @@
                 updateTractorMapPosition(m.latitude, m.longitude, 'gps');
             },100, {group: 'startup-position'});
 
-            subscribeToTopic('/f9r/speed', 'std_msgs/Float32', (m) => {
-                const markerCmdDisplay = document.getElementById('marker-speed');
-                if (markerCmdDisplay) markerCmdDisplay.innerText = m.data.toFixed(1);
-            },100);
-
             subscribeToTopic('/steering_command', 'std_msgs/Float64', (m) => {
                 lastSteeringCmd = m.data;
                 updateMarkerCmdUI();
@@ -4599,6 +4594,12 @@
             },100, {group: 'engineer'});
 
             subscribeToTopic('/odom/absolute', 'nav_msgs/Odometry', (m) => {
+                // ESKF longitudinal velocity in the vehicle frame (m/s).
+                const speed = m.twist?.twist?.linear?.x;
+                const markerSpeedDisplay = document.getElementById('marker-speed');
+                if (markerSpeedDisplay) {
+                    markerSpeedDisplay.innerText = Number.isFinite(speed) ? speed.toFixed(1) : '--';
+                }
                 let rawOdomX = m.pose.pose.position.x;
                 let rawOdomY = m.pose.pose.position.y;
                 if (!Number.isFinite(rawOdomX) || !Number.isFinite(rawOdomY)) return;
