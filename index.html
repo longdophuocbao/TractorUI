@@ -4497,6 +4497,24 @@
         let localizationStartupPayload = null;
         let localizationStartupReceivedAt = 0;
         let localizationStartupSubscription = null;
+        let markerGnssSpeed = null;
+        let markerEskfSpeed = null;
+        function renderMarkerSpeed() {
+            const now = performance.now();
+            const ready = localizationStartupPayload?.estimator_initialized === true;
+            const sample = ready ? markerEskfSpeed : markerGnssSpeed;
+            const element = document.getElementById('marker-speed');
+            if (!element) return;
+            const fresh = ros.isConnected && sample && now - sample.at <= 2000;
+            element.innerText = fresh ? sample.value.toFixed(1) : '--';
+            element.title = ready ? 'ESKF: signed forward speed (m/s)'
+                : 'GNSS: horizontal ground speed (m/s), temporary before initialization';
+        }
+        setInterval(renderMarkerSpeed, 500);
+        ros.on('close', () => {
+            markerGnssSpeed = markerEskfSpeed = null;
+            renderMarkerSpeed();
+        });
         function renderLocalizationStartup() {
             const view = TractorStartupStatus.viewModel(localizationStartupPayload,
                 performance.now() - localizationStartupReceivedAt, ros.isConnected, currentLang);
@@ -4534,6 +4552,7 @@
                         }
                         localizationStartupPayload = payload;
                         localizationStartupReceivedAt = performance.now();
+                        renderMarkerSpeed();
                         renderLocalizationStartup();
                     } catch (_) { /* Keep the age watchdog active on malformed input. */ }
                 }, 0, {events: true});
@@ -4569,6 +4588,13 @@
                 updateTractorMapPosition(m.latitude, m.longitude, 'gps');
             },100, {group: 'startup-position'});
 
+            subscribeToTopic('/f9r/velocity', 'nav_msgs/Odometry', (m) => {
+                const v = m.twist?.twist?.linear;
+                if (!v || !Number.isFinite(v.x) || !Number.isFinite(v.y)) return;
+                markerGnssSpeed = {value: Math.hypot(v.x, v.y), at: performance.now()};
+                renderMarkerSpeed();
+            },100);
+
             subscribeToTopic('/steering_command', 'std_msgs/Float64', (m) => {
                 lastSteeringCmd = m.data;
                 updateMarkerCmdUI();
@@ -4596,10 +4622,9 @@
             subscribeToTopic('/odometry/filtered', 'nav_msgs/Odometry', (m) => {
                 // ESKF longitudinal velocity in the vehicle frame (m/s).
                 const speed = m.twist?.twist?.linear?.x;
-                const markerSpeedDisplay = document.getElementById('marker-speed');
-                if (markerSpeedDisplay) {
-                    markerSpeedDisplay.innerText = Number.isFinite(speed) ? speed.toFixed(1) : '--';
-                }
+                markerEskfSpeed = Number.isFinite(speed)
+                    ? {value: speed, at: performance.now()} : null;
+                renderMarkerSpeed();
                 let rawOdomX = m.pose.pose.position.x;
                 let rawOdomY = m.pose.pose.position.y;
                 if (!Number.isFinite(rawOdomX) || !Number.isFinite(rawOdomY)) return;

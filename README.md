@@ -1,5 +1,10 @@
 # TractorUI - Web Cockpit & Telemetry Interface
 
+Marker Speed uses GNSS horizontal ground speed (`/f9r/velocity`) before ESKF
+initialization is confirmed, then signed body-forward ESKF velocity from
+`/odometry/filtered`. Values older than two seconds show `--`; disconnect clears
+the cached samples. Hover over the value to see its source and units (m/s).
+
 Giao diện điều khiển Web Cockpit dành cho hệ thống máy kéo tự động **Smart Tractor**, cung cấp khả năng trực quan hóa bản đồ vệ tinh thời gian thực, điều khiển bẻ lái tự động, vẽ đường AB-line, tạo đường bao thửa ruộng (Headland/Swaths), hiệu chỉnh giới hạn cơ khí motor lái và kiểm soát độ sâu dàn cày (Implement Depth).
 
 ---
